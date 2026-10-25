@@ -616,7 +616,7 @@ html.ui-mobile #topbar{height:auto;min-height:calc(52px + env(safe-area-inset-to
 @media(max-width:600px){ #topbar{height:auto;min-height:calc(46px + env(safe-area-inset-top,0px));} }
 /* 行: ①ツールバー ②内容(左パネル・地図・右パネル) ③時間軸。パネルの基準を、内容の行にする(これまでは地図画面の全体で、時間軸まで届いた) */
 #mapview{display:flex;flex-direction:column;min-height:0;}
-#mapbody{flex:1 1 0;min-height:0;min-width:0;}
+#mapbody{position:relative;flex:1 1 0;min-height:0;min-width:0;}   /* v43: パネル(ドロワー)の基準=内容の行。ツールバーの下から、時間軸の上まで */
 #mapbody>#mapLayerPanel,#mapbody>#mapRightPanel{min-height:0;max-height:100%;overscroll-behavior:contain;}
 #mapcanvaswrap{min-width:0;min-height:0;}
 #mapTimeline{flex:0 0 auto;width:100%;min-width:0;flex-wrap:wrap;padding-bottom:calc(8px + max(env(safe-area-inset-bottom,0px), var(--tb-inset,0px)));}
@@ -627,6 +627,11 @@ html.ui-mobile #topbar{height:auto;min-height:calc(52px + env(safe-area-inset-to
 }
 @media (min-width:600px) and (min-height:600px) and (max-width:820px){
   html.ui-pc #mapLayerPanel,html.ui-pc #mapRightPanel{position:static;inset:auto;z-index:auto;box-shadow:none;flex:0 0 auto;}
+}
+
+/* ===== v43: 開いたままのツールバー(スマートフォン) ===== */
+@media (max-width:599.98px),(max-height:599.98px){
+  html.ui-mobile #maptoolbar:not(.tb-collapsed){max-height:min(30dvh,240px);overflow-y:auto;overscroll-behavior:contain;}
 }
 </style>
 
@@ -1192,8 +1197,8 @@ const MobileInput=(function(){
   document.addEventListener('contextmenu',(e)=>{ if(mob()&&e.target.closest&&e.target.closest('[data-tip]')) e.preventDefault(); },true);
   /* 表示が切り替わったら、ツールバーの開閉をそれに合わせる(再読み込みなし) */
   DeviceMode.onChange((ev)=>{ if(!ev.changed) return; try{ const bar=document.getElementById('maptoolbar'), tgl=document.getElementById('toolbarToggle'); if(!bar||!tgl||typeof MapView==='undefined') return;
-      const c=ev.mode==='mobile'||window.matchMedia('(max-width: 639.98px)').matches; MapView.tbCollapsed=c; bar.classList.toggle('tb-collapsed',c); tgl.setAttribute('aria-expanded',String(!c)); tgl.classList.toggle('active',!c);
-      ['mapLayerPanel','mapRightPanel'].forEach(id=>{ const p=document.getElementById(id); if(p) p.classList.remove('show'); }); window.dispatchEvent(new Event('resize')); }catch(e){} });
+      /* v43: 開閉の状態は、利用者の操作の結果のまま。見た目だけを状態に合わせる(閉じない・開かない)。配置の違いは CSS(html.ui-mobile / html.ui-pc)が、開いたまま直す */
+      const c=!!MapView.tbCollapsed; bar.classList.toggle('tb-collapsed',c); tgl.setAttribute('aria-expanded',String(!c)); tgl.classList.toggle('active',!c); }catch(e){} });
   return {touches};
 })();
 
@@ -6207,8 +6212,8 @@ function renderMapToolbar(){
     if(MapView.tbCollapsed===undefined) MapView.tbCollapsed=(mq.matches||DeviceMode.isMobile());
     applyTb();
     tgl.addEventListener('click',()=>{ MapView.tbCollapsed=!MapView.tbCollapsed; applyTb(); window.dispatchEvent(new Event('resize')); });
-    bar.querySelectorAll('[data-tool]').forEach(b=> b.addEventListener('click',()=>{ if(mq.matches||DeviceMode.isMobile()){ MapView.tbCollapsed=true; applyTb(); window.dispatchEvent(new Event('resize')); } }));
-    if(!window.__tbMq){ window.__tbMq=mq; mq.addEventListener('change',(e)=>{ MapView.tbCollapsed=e.matches; const b2=document.getElementById('maptoolbar'); if(b2){ b2.classList.toggle('tb-collapsed',e.matches); const t2=document.getElementById('toolbarToggle'); if(t2) t2.setAttribute('aria-expanded',String(!e.matches)); } window.dispatchEvent(new Event('resize')); }); }
+    /* v43: ツールを選んでも、ツールバーは閉じない(開閉は「ツール」ボタンだけ) */
+    if(!window.__tbMq){ window.__tbMq=mq; mq.addEventListener('change',()=>{ /* v43: 利用者の開閉の結果(MapView.tbCollapsed)を保つ。幅では書き換えない */ const b2=document.getElementById('maptoolbar'); if(b2){ const c=!!MapView.tbCollapsed; b2.classList.toggle('tb-collapsed',c); const t2=document.getElementById('toolbarToggle'); if(t2){ t2.setAttribute('aria-expanded',String(!c)); t2.classList.toggle('active',!c); } } }); }
   }
   refreshToolbarActive();
 }
