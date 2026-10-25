@@ -239,7 +239,7 @@ table.datatable td.txt{font-family:var(--font-body);}
 .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;font-size:11px;}
 .legend .li{display:flex;align-items:center;gap:5px;}
 .legend .sw{width:10px;height:10px;border-radius:2px;}
-#milPanel{position:fixed;right:10px;top:60px;width:340px;max-height:calc(100vh - 130px);overflow:auto;z-index:900;background:var(--panel,#1b1f27);color:var(--text,#e8e2d4);border:1px solid var(--line,#444);border-radius:6px;padding:8px;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,.45);}
+#milPanel{position:fixed;right:10px;top:60px;width:340px;max-height:calc(100vh - 130px);max-height:calc(100dvh - 130px);overflow:auto;z-index:900;background:var(--panel,#1b1f27);color:var(--text,#e8e2d4);border:1px solid var(--line,#444);border-radius:6px;padding:8px;font-size:12px;box-shadow:0 6px 24px rgba(0,0,0,.45);}
 #milPanel a{cursor:pointer;color:var(--accent,#d6a550);margin-left:6px;}
 .mil-h{display:flex;justify-content:space-between;margin-bottom:6px;}
 .mil-time{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap;} .mil-time input{flex:1;min-width:120px;}
@@ -603,6 +603,31 @@ html.ui-mobile.drawing-lock,html.ui-mobile.drawing-lock body{overflow:hidden !im
 #uiModeAsk .ask-b{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 #uiModePanel .uim-opts{display:flex;flex-wrap:wrap;gap:14px;margin:8px 0;}
 #uiModePanel .uim-status{font-size:13px;margin:6px 0;}
+
+/* ===== v42: iPad(Safari)の地図画面 ===== */
+/* 高さ: vh(Safariでは実際の表示領域より大きい)→ dvh。未対応の環境は、JSが --vvh に visualViewport の高さを入れる(html.no-dvh) */
+#app{height:100vh;height:100dvh;}
+html.no-dvh #app{height:var(--vvh,100vh);}
+/* 安全領域は、1回だけ数える。根の padding(env 2つ分)が、#app の高さに足されて、下端に帯ができていた */
+:root{padding:0;}
+html,body{overflow:hidden;}
+#topbar{height:calc(46px + env(safe-area-inset-top,0px));}
+html.ui-mobile #topbar{height:auto;min-height:calc(52px + env(safe-area-inset-top,0px));}
+@media(max-width:600px){ #topbar{height:auto;min-height:calc(46px + env(safe-area-inset-top,0px));} }
+/* 行: ①ツールバー ②内容(左パネル・地図・右パネル) ③時間軸。パネルの基準を、内容の行にする(これまでは地図画面の全体で、時間軸まで届いた) */
+#mapview{display:flex;flex-direction:column;min-height:0;}
+#mapbody{flex:1 1 0;min-height:0;min-width:0;}
+#mapbody>#mapLayerPanel,#mapbody>#mapRightPanel{min-height:0;max-height:100%;overscroll-behavior:contain;}
+#mapcanvaswrap{min-width:0;min-height:0;}
+#mapTimeline{flex:0 0 auto;width:100%;min-width:0;flex-wrap:wrap;padding-bottom:calc(8px + max(env(safe-area-inset-bottom,0px), var(--tb-inset,0px)));}
+/* タブレット(短い辺が600px以上): それまで地図に重ねていた(position:absolute。基準が地図画面の全体で、時間軸まで届いていた)パネルを、内容の行の中の列にする。
+   表示/非表示(.show)の動きは、これまでどおり。幅は変えない。PC(幅821px以上のPC表示)と、スマートフォン(短い辺600px未満)は、触らない */
+@media (min-width:600px) and (min-height:600px){
+  html.ui-mobile #mapLayerPanel,html.ui-mobile #mapRightPanel{position:static;inset:auto;z-index:auto;box-shadow:none;flex:0 0 auto;}
+}
+@media (min-width:600px) and (min-height:600px) and (max-width:820px){
+  html.ui-pc #mapLayerPanel,html.ui-pc #mapRightPanel{position:static;inset:auto;z-index:auto;box-shadow:none;flex:0 0 auto;}
+}
 </style>
 
 <div id="welcome">
@@ -1190,6 +1215,34 @@ function renderUiModePanel(){
 document.addEventListener('change',(ev)=>{ const t=ev.target; if(!t||!t.matches||!t.matches('input[name="uiModePref"]')) return; DeviceMode.setPref(t.value); renderUiModePanel(); });
 document.addEventListener('atlas-ui-mode',()=>{ if(document.getElementById('uiModePanel')) renderUiModePanel(); });
 (function(){ const o=renderSettingsView; renderSettingsView=function(){ const r=o.apply(this,arguments); try{ renderUiModePanel(); }catch(e){ console.warn(e); } return r; }; })();
+
+/* ---------- v42: 表示領域の変化への追従(地図の再配置) ---------- */
+const MapLayoutFit=(function(){
+  /* dvh に対応していない環境だけ、visualViewport の高さを使う */
+  let dvh=true; try{ dvh=!!(window.CSS&&CSS.supports&&CSS.supports('height','100dvh')); }catch(e){}
+  const root=document.documentElement;
+  function setVV(){ if(dvh) return; const h=(window.visualViewport&&window.visualViewport.height)||window.innerHeight; root.style.setProperty('--vvh',Math.round(h)+'px'); }
+  if(!dvh){ root.classList.add('no-dvh'); setVV(); }
+  let last=null;
+  function relayout(){
+    const wrap=document.getElementById('mapcanvaswrap'); if(!wrap||typeof MapView==='undefined'||typeof W!=='function'||!W()) return;
+    const cw=wrap.clientWidth, ch=wrap.clientHeight; if(!cw||!ch) return;     /* 非表示のときは何もしない */
+    const cv=document.getElementById('mapcanvas');
+    if(last && last.w===cw && last.h===ch && cv && cv.width===cw && cv.height===ch) return;
+    const first=!last; const atFit=!first && (MapView.fitScale && Math.abs(MapView.scale-MapView.fitScale)<1e-9);
+    if(!first && !atFit){ MapView.offX+=(cw-last.w)/2; MapView.offY+=(ch-last.h)/2; }   /* 表示位置(中心)を保つ */
+    last={w:cw,h:ch};
+    if(typeof resizeMapCanvas==='function') resizeMapCanvas();
+    if(atFit && typeof fitMapView==='function') fitMapView();                          /* 全体表示のままなら、領域に合わせて全体表示し直す */
+  }
+  let t=null; const sched=()=>{ clearTimeout(t); t=setTimeout(()=>{ setVV(); relayout(); },60); };
+  window.addEventListener('resize',sched); window.addEventListener('orientationchange',sched);
+  if(window.visualViewport){ window.visualViewport.addEventListener('resize',sched); }
+  const obs=()=>{ const wrap=document.getElementById('mapcanvaswrap'); if(wrap&&window.ResizeObserver&&!wrap.__v42ro){ wrap.__v42ro=1; new ResizeObserver(sched).observe(wrap); } };
+  obs(); setTimeout(obs,500);
+  return {relayout,sched,get last(){return last;},get dvh(){return dvh;}};
+})();
+
 function toast(msg, type){ const el=document.createElement('div'); el.className='toast'; if(type==='err') el.style.borderColor='var(--danger)'; el.textContent=msg; document.getElementById('toastwrap').appendChild(el); setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),320); },type==='err'?4200:2600); }
 function yearLabel(y, world){ const cal = world && world.calendarUnit ? world.calendarUnit : '年'; return `${y}${cal}`; }
 function normalizeTreatyDate(v){
@@ -16265,13 +16318,13 @@ async function wkPrepareImages(rc,pages){
    ===================================================================== */
 
 const WK_VIEW_CSS=String.raw`
-html{-webkit-text-size-adjust:100%}body.wk-themed{margin:0;min-height:100vh}
+html{-webkit-text-size-adjust:100%}body.wk-themed{margin:0;min-height:100vh;min-height:100dvh}
 .wk-top{position:sticky;top:0;z-index:20;display:flex;gap:10px;align-items:center;padding:8px 14px;background:var(--wk-soft);border-bottom:1px solid var(--wk-line)}
 .wk-top .wk-title{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wk-top input{width:min(46vw,300px);padding:6px 10px;border:1px solid var(--wk-line);border-radius:6px;background:var(--wk-bg);color:var(--wk-fg);font:inherit;font-size:14px}
 #wk-menu{display:none;border:1px solid var(--wk-line);background:var(--wk-bg);color:var(--wk-fg);border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer}
 .wk-cols{display:flex;align-items:flex-start;max-width:1240px;margin:0 auto}
-#wk-toc{width:276px;flex:0 0 276px;position:sticky;top:50px;max-height:calc(100vh - 50px);overflow:auto;padding:14px 10px 30px 14px;font-size:14px}
+#wk-toc{width:276px;flex:0 0 276px;position:sticky;top:50px;max-height:calc(100vh - 50px);max-height:calc(100dvh - 50px);overflow:auto;padding:14px 10px 30px 14px;font-size:14px}
 #wk-toc ul{list-style:none;margin:0;padding-left:14px}#wk-toc>ul{padding-left:0}
 #wk-toc a{display:block;padding:3px 6px;border-radius:4px;text-decoration:none;color:var(--wk-fg)}#wk-toc a:hover{background:var(--wk-soft)}#wk-toc a.on{background:var(--wk-acs);font-weight:700;color:var(--wk-ac)}
 #wk-toc summary{cursor:pointer;padding:3px 4px;font-weight:700}
