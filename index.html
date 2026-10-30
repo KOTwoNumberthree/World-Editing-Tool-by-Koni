@@ -633,6 +633,54 @@ html.ui-mobile #topbar{height:auto;min-height:calc(52px + env(safe-area-inset-to
 @media (max-width:599.98px),(max-height:599.98px){
   html.ui-mobile #maptoolbar:not(.tb-collapsed){max-height:min(30dvh,240px);overflow-y:auto;overscroll-behavior:contain;}
 }
+/* v50: 宇宙 */
+#view-universe{padding:0;}
+#uvRoot{flex:1;display:flex;flex-direction:column;min-height:0;min-width:0;}
+#uvBar{flex:none;background:var(--panel);border-bottom:1px solid var(--line);padding:6px 10px;display:flex;flex-direction:column;gap:5px;max-height:40vh;overflow:auto;}
+.uvrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);}
+.uvrow select,.uvrow input[type=number]{background:var(--ink);color:var(--text);border:1px solid var(--line);border-radius:var(--radius-s);padding:3px 6px;font-size:12px;}
+.uvl{font-size:11px;color:var(--brass);letter-spacing:.06em;min-width:3.2em;}
+.uvsep{width:1px;height:18px;background:var(--line);margin:0 4px;}
+.uvhint{color:var(--warn);font-size:11.5px;}.uvwarn{color:var(--warn);font-size:11.5px;}
+#uvNowText{color:var(--text);font-family:var(--font-mono);}
+#uvBody{flex:1;display:flex;min-height:0;min-width:0;flex-direction:column;}
+#uvTableWrap{flex:1;overflow:auto;padding:8px 10px;min-height:0;}
+.uvfilter{display:flex;gap:10px;align-items:center;margin-bottom:6px;}.uvfilter input{max-width:280px;}.uvsum{color:var(--text-dim);font-size:12px;}
+.uvtablewrap{overflow:auto;}
+.uvtable{border-collapse:collapse;width:100%;font-size:12px;min-width:1100px;}
+.uvtable th{position:sticky;top:0;background:var(--panel-2);color:var(--text-dim);text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap;font-weight:500;}
+.uvtable th.on{color:var(--brass);}
+.uvtable td{padding:4px 6px;border-bottom:1px solid var(--line-soft);vertical-align:top;}
+.uvtable tr.on td{background:rgba(184,134,63,.12);}
+.uvc{background:var(--ink);color:var(--text);border:1px solid var(--line-soft);border-radius:var(--radius-s);padding:3px 5px;font-size:12px;}
+.uvc.w40{width:44px;}.uvc.w60{width:64px;}.uvc.w80{width:86px;}.uvc.w120{width:130px;}.uvc.w140{width:150px;resize:vertical;}
+.uvbtns{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.uvopen{color:var(--teal);font-size:11px;}
+#uvMapWrap{flex:1;display:none;min-height:0;min-width:0;}
+#uvWrap{flex:1;position:relative;min-width:0;min-height:0;background:#06080d;overflow:hidden;touch-action:none;}
+#uvCanvas,#uv3dCanvas{position:absolute;inset:0;width:100%;height:100%;display:block;}
+#uvLabels{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+#uvLabels .uvlab{position:absolute;left:0;top:0;font-size:11px;color:#e7e2d4;text-shadow:0 0 3px #000,0 0 3px #000;white-space:nowrap;}
+#uvLabels .uvlab.sel{color:#ffe9a8;}
+#uvSide{flex:none;width:280px;max-width:42%;background:var(--panel);border-left:1px solid var(--line);overflow:auto;padding:8px;font-size:12px;}
+.uvnone{color:var(--text-faint);padding:6px;}
+.uvdetail h4{margin:4px 0;font-size:14px;color:var(--brass);}
+.uvdetail dl{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;margin:0;}.uvdetail dt{color:var(--text-faint);}.uvdetail dd{margin:0;}
+.uvdv{margin:8px 0;}
+#uvBackBar{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 8px);z-index:900;background:var(--panel);border:1px solid var(--brass);border-radius:20px;padding:4px 6px 4px 12px;display:flex;gap:8px;align-items:center;font-size:12px;box-shadow:0 2px 10px #0008;}
+#uvBackBar[hidden]{display:none;}
+@media (max-width:800px){ #uvMapWrap{flex-direction:column;} #uvSide{width:auto;max-width:none;max-height:42%;border-left:0;border-top:1px solid var(--line);} #uvBar{max-height:34vh;} }
+.uvring{position:absolute;left:0;top:0;border:2px solid #ffe9a8;border-radius:50%;pointer-events:none;box-shadow:0 0 6px #ffe9a8aa;}
+.uvsw{display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #fff4;vertical-align:-2px;}
+select.uvc{max-width:70px;}
+
+#uvDragHud{position:absolute;left:10px;top:10px;z-index:5;background:#0b1020e6;border:1px solid var(--brass);border-radius:8px;padding:6px 10px;font-size:12px;color:#f3ecd0;line-height:1.5;pointer-events:none;max-width:calc(100% - 20px);}
+#uvDragHud .uvh2{color:#9fb0d8;font-size:11px;}
+#uvHelp{position:absolute;right:8px;bottom:8px;z-index:4;max-width:min(420px,calc(100% - 16px));background:#0b1020cc;border:1px solid #3a4a70;border-radius:8px;padding:5px 9px;font-size:11px;line-height:1.55;color:#cfd8ff;pointer-events:none;}
+#uvHelp span{color:#ffe28a;}
+#uvWrap.uvmoving{cursor:grabbing;}
+#uv3dCanvas{touch-action:none;}
+.uvgrow{margin:6px 0;}
 </style>
 
 <div id="welcome">
@@ -677,6 +725,7 @@ html.ui-mobile #topbar{height:auto;min-height:calc(52px + env(safe-area-inset-to
       <div class="navitem active" data-view="dashboard" data-tip="概要|世界全体の統計・最近の出来事・進行中の戦争などをまとめて確認します"><span class="g">◈</span>概要</div>
       <div class="navitem" data-view="map" data-tip="地図|地形・国境・行政区画・都市・河川などを表示/直接編集する、このアプリの中心画面です"><span class="g">🗺</span>地図</div>
       <div class="navitem" data-view="globe3d" data-tip="3D地球儀|地理設定を行った上で、2D地図を球体に変換して立体的に表示します"><span class="g">🌐</span>3D地球儀</div>
+      <div class="navitem" data-view="universe" data-tip="宇宙|この世界の宇宙です。恒星・惑星の位置・周期・宇宙暦と、惑星ごとの年代の換算を管理します。3Dで宇宙を見られます(何もない所の長押しで移動・回転、星の長押しで位置を動かせます)"><span class="g">✦</span>宇宙</div>
       <div class="navitem" data-view="nations" data-tip="国家|国家の作成・年代別データ・領土・系譜を管理します"><span class="g">⛨</span>国家</div>
       <div class="navitem" data-view="regions" data-tip="地域|大陸・地方などの階層構造を管理します"><span class="g">▦</span>地域</div>
       <div class="navitem" data-view="genealogy" data-tip="系譜|国家同士の建国・分裂・統合・継承の関係を図で確認します"><span class="g">⌥</span>系譜</div>
@@ -727,6 +776,15 @@ html.ui-mobile #topbar{height:auto;min-height:calc(52px + env(safe-area-inset-to
         </div>
       </div>
 
+      <div class="view flush" id="view-universe">
+        <div id="uvRoot">
+          <div id="uvBar"></div>
+          <div id="uvBody">
+            <div id="uvTableWrap"></div>
+            <div id="uvMapWrap"><div id="uvWrap"><canvas id="uvCanvas"></canvas><canvas id="uv3dCanvas" style="display:none"></canvas><div id="uvLabels"></div></div><div id="uvSide"></div></div>
+          </div>
+        </div>
+      </div>
       <!-- Map -->
       <div class="view flush" id="view-map">
         <div id="mapview" style="flex:1;display:flex;flex-direction:column;min-height:0;">
@@ -1248,6 +1306,1033 @@ const MapLayoutFit=(function(){
   return {relayout,sched,get last(){return last;},get dvh(){return dvh;}};
 })();
 
+/* v45: 宇宙 */
+/* =========================================================
+   v51: 世界 = 宇宙。宇宙は、世界のデータの一部(世界の作成と同時に存在する。1つの世界に宇宙は1つだけ)。
+   ・世界の項目: uvCalendar(宇宙暦・1つ) / uvStars(恒星) / uvPlanets(惑星)。同期の登録・正規化・移行は、ほかの世界の機能と同じ登録式
+   ・惑星は世界を持たない(v50 の「惑星=世界」は廃止)。表面の「世界の地図」は、この世界の地図
+   ・宇宙の版 = 世界の版(revision)。位置・暦・大きさ・速度を確定すると、世界の版が上がる(1回の確定につき1回)
+   ・3D のカメラ(向き・ズーム)は、端末の表示設定(IndexedDB の kv)。世界のデータには入れない
+   ・恒星・惑星・暦・換算の数値は、すべて利用者が入力する。旧形式を開いたときの「恒星1つ・惑星1つ」の自動変換だけは、仕様どおり
+   ========================================================= */
+const UV_PERM='universe';
+const UV_MAX=5000;                        /* 恒星+惑星の合計の上限 */
+const UV_FILE_VERSION=3;                  /* atlas-v2 の formatVersion(既存の値) */
+const UV_LONG_MS=400;                     /* 長押しの時間(ms) */
+const UV_MOVE_PX=8;                       /* 長押し中に、これ以上動いたら「移動」として扱う(px) */
+const UV_PLANET_DPY=365;                  /* 惑星の1年の日数: 世界の年表の月日の構成(12か月・平年)。閏年は扱わない */
+const UV_MDAYS=[31,28,31,30,31,30,31,31,30,31,30,31];
+const UV_OLD_MSG='この形式の宇宙ファイルは、このバージョンでは扱えません';
+/* 長さの単位(km 換算)。恒星の大きさ・惑星の大きさ・軌道の半径の単位の一覧 */
+const UV_KM={'太陽半径':695700,'地球半径':6371,'木星半径':71492,'km':1,'AU':149597870.7,'光年':9460730472580.8};
+const UV_STAR_UNITS=['太陽半径','km','AU'];
+const UV_PLANET_UNITS=['地球半径','木星半径','km'];
+const UV_ORBIT_UNITS=['AU','km','光年'];
+const UV_PERIOD_UNITS=['時間','日','年'];
+const UV_DEF={ star:{radius:{value:1,unit:'太陽半径'},color:'#ffe9b0',brightness:0.8,glow:0.5},
+  planet:{radius:1,radiusUnit:'AU',tilt:0,phase:0,size:{value:1,unit:'地球半径'},color:'#5f8fd0'} };
+const UV_LOD_DEF={near:0.001,mid:10,cell:8};   /* 簡略化の区切り(光年)と、遠いときにまとめる範囲(px) */
+const UV={ mem:{}, cam:{}, mode:'3d', sel:'', ref:'', sortKey:'name', sortDir:1, filter:'', lines:true, labels:true, stats:{}, hit:[], drag:null, lod:Object.assign({},UV_LOD_DEF), thumbs:{}, hop:false, step:'1y', orbits:true, rev:0, help:true, guide:null, bodyDrag:null };
+
+/* ---------- 値の整え ---------- */
+const uvNum=(v,d)=>{ if(v===''||v===null||v===undefined) return d; const n=Number(v); return Number.isFinite(n)?n:d; };
+const uvStr=(v,n)=>String(v===undefined||v===null?'':v).slice(0,n||2000);
+const uvClamp01=(v,d)=>Math.min(1,Math.max(0,uvNum(v,d)));
+const uvColor=(v,d)=>/^#[0-9a-fA-F]{6}$/.test(String(v))?String(v).toLowerCase():d;
+const uvUnit=(v,list,d)=>{ v=String(v===undefined||v===null?'':v); return list.includes(v)?v:d; };
+function uvMeta(o){ if(typeof o._rev!=='number'||!Number.isFinite(o._rev)) o._rev=0; if(typeof o._by!=='string') o._by=''; if(typeof o._at!=='number'||!Number.isFinite(o._at)) o._at=0; }
+const uvPos=(v)=>{ v=(v&&typeof v==='object')?v:{}; return {x:uvNum(v.x,0),y:uvNum(v.y,0),z:uvNum(v.z,0)}; };
+const uvPeriod=(v,du)=>{ v=(v&&typeof v==='object')?v:{}; const n=uvNum(v.value,null); return {unit:uvUnit(v.unit,UV_PERIOD_UNITS,du||'日'),value:(n!==null&&n>=0)?n:null}; };
+const uvVal=(v,list,dv,du)=>{ v=(v&&typeof v==='object')?v:{}; const n=uvNum(v.value,dv); return {value:n>=0?n:dv,unit:uvUnit(v.unit,list,du)}; };
+const uvYD=(v,d)=>{ v=(v&&typeof v==='object')?v:{}; d=d||{year:0,day:1}; return {year:Math.round(uvNum(v.year,d.year)),day:uvNum(v.day,d.day)}; };
+function uvNormConv(c){
+  if(!c||typeof c!=='object'||Array.isArray(c)||!c.epochUniverse||!c.epochPlanet) return null;
+  const d=uvNum(c.daysPerUniverseDay,null); if(!(d>0)) return null; const y=uvNum(c.yearsPerUniverseYear,null);
+  return {epochUniverse:uvYD(c.epochUniverse),epochPlanet:uvYD(c.epochPlanet),daysPerUniverseDay:d,yearsPerUniverseYear:(y>0?y:null)};
+}
+function uvNormStar(s){
+  s=(s&&typeof s==='object'&&!Array.isArray(s))?Object.assign({},s):{};
+  s.id=s.id?String(s.id):uid('st'); s.name=uvStr(s.name,200); s.notes=uvStr(s.notes,8000); s.position=uvPos(s.position);
+  s.radius=uvVal(s.radius,UV_STAR_UNITS,UV_DEF.star.radius.value,UV_DEF.star.radius.unit); s.color=uvColor(s.color,UV_DEF.star.color);
+  s.brightness=uvClamp01(s.brightness,UV_DEF.star.brightness); s.glow=uvClamp01(s.glow,UV_DEF.star.glow); uvMeta(s); return s;
+}
+function uvNormPlanet(p){
+  p=(p&&typeof p==='object'&&!Array.isArray(p))?Object.assign({},p):{}; delete p.position; delete p.world; delete p.tiles;
+  p.id=p.id?String(p.id):uid('pl'); p.name=uvStr(p.name,200); p.notes=uvStr(p.notes,8000); p.starId=uvStr(p.starId,200); delete p.worldId; delete p.ownWorld;
+  const o=(p.orbit&&typeof p.orbit==='object')?p.orbit:{};
+  p.orbit={radius:Math.max(0,uvNum(o.radius,UV_DEF.planet.radius)),radiusUnit:uvUnit(o.radiusUnit,UV_ORBIT_UNITS,UV_DEF.planet.radiusUnit),tilt:uvNum(o.tilt,0),phase:uvNum(o.phase,0),angleUnit:'度'};
+  p.size=uvVal(p.size,UV_PLANET_UNITS,UV_DEF.planet.size.value,UV_DEF.planet.size.unit);
+  p.rotationPeriod=uvPeriod(p.rotationPeriod,'時間'); p.orbitalPeriod=uvPeriod(p.orbitalPeriod,'日');
+  const sf=(p.surface&&typeof p.surface==='object')?p.surface:{}; p.surface={mode:(sf.mode==='map'||sf.mode==='color')?sf.mode:'color',color:uvColor(sf.color,UV_DEF.planet.color)};
+  p.conversion=uvNormConv(p.conversion); uvMeta(p); return p;
+}
+function uvNormCal(c){
+  c=(c&&typeof c==='object'&&!Array.isArray(c))?c:{}; const pos=(v)=>{ const n=uvNum(v,null); return (n!==null&&n>0)?n:null; };
+  const o={startYear:Math.round(uvNum(c.startYear,0)),startMonth:Math.round(uvNum(c.startMonth,1))||1,startDay:uvNum(c.startDay,1),daysPerYear:pos(c.daysPerYear),monthsPerYear:pos(c.monthsPerYear),daysPerMonth:pos(c.daysPerMonth)};
+  o.now=uvYD(c.now,{year:o.startYear,day:1}); if(!c.now) o.now={year:o.startYear,day:uvStartDay(o)}; return o;
+}
+function uvStartDay(cal){ const m=(cal.monthsPerYear&&cal.daysPerMonth)?(cal.startMonth-1)*cal.daysPerMonth:0; return m+cal.startDay; }
+/* 旧(v45〜v49)の端末の記録: 恒星がなく、惑星が位置を持っていた。位置を失わないよう、惑星ごとに、その位置に恒星を1つ置く(移行だけの処理) */
+function uvFromLegacy(raw){
+  const u=Object.assign({},raw); u.stars=[];
+  u.planets=(Array.isArray(raw.planets)?raw.planets:[]).filter(p=>p&&typeof p==='object').map(p=>{ const st=uvNormStar({name:p.name,position:p.position}); u.stars.push(st);
+    const q=Object.assign({},p,{starId:st.id,orbit:{radius:0,radiusUnit:'AU',tilt:0,phase:0}}); delete q.position; return q; });
+  return u;
+}
+/* 世界の宇宙の項目を整える(不足の既定値を補うだけ。恒星・惑星は作らない)。登録式の正規化として、世界の読み込みのたびに呼ばれる */
+function uvNormalizeWorld(w){
+  if(!w||typeof w!=='object') return;
+  const ss=new Set(); w.uvStars=(Array.isArray(w.uvStars)?w.uvStars:[]).map(uvNormStar).filter(s=>{ if(ss.has(s.id)) return false; ss.add(s.id); return true; });
+  const seen=new Set(); w.uvPlanets=(Array.isArray(w.uvPlanets)?w.uvPlanets:[]).map(uvNormPlanet).filter(p=>{ if(seen.has(p.id)) return false; seen.add(p.id); return true; });
+  w.uvCalendar=uvNormCal(w.uvCalendar);
+}
+/* 世界の宇宙の項目を、宇宙(v50 の形: calendar / stars / planets)の内容で置き換える。惑星の worldId は外す */
+function uvApplyUniverse(w,raw,keepWorldId){
+  let r=raw; if(!Array.isArray(r.stars)) r=uvFromLegacy(r);
+  w.uvCalendar=uvNormCal(r.calendar); w.uvStars=(Array.isArray(r.stars)?r.stars:[]).map(uvNormStar);
+  w.uvPlanets=(Array.isArray(r.planets)?r.planets:[]).map(p=>{ const q=uvNormPlanet(Object.assign({},p,(p&&p.worldId&&p.worldId!==keepWorldId)?{surface:Object.assign({},p.surface,{mode:'color'})}:{}));  return q; });
+  uvNormalizeWorld(w); return w;
+}
+/* 世界 = 宇宙。いま開いている世界の宇宙を、v50 までの「宇宙」と同じ形の窓口(getter)で見せる。恒星・惑星の配列は世界のものそのもの */
+const UVU={}; Object.defineProperties(UVU,{
+  id:{get:()=>{ const w=W(); return w?'world:'+w.id:''; }}, name:{get:()=>{ const w=W(); return w?w.name:''; }},
+  calendar:{get:()=>W().uvCalendar,set:(v)=>{ W().uvCalendar=v; }}, stars:{get:()=>W().uvStars,set:(v)=>{ W().uvStars=v; }}, planets:{get:()=>W().uvPlanets,set:(v)=>{ W().uvPlanets=v; }},
+  revision:{get:()=>{ const w=W(); return w?(Number(w.revision)||0):0; }} });
+function uvCur(){ const w=(typeof W==='function')?W():null; return (w&&Array.isArray(w.uvStars))?UVU:null; }
+const uvWid=()=>{ const w=W(); return w?w.id:''; };
+const uvStar=(u,id)=>u&&u.stars.find(s=>s.id===id)||null;
+function uvPlanet(u,id){ return u&&u.planets.find(p=>p.id===id)||null; }
+/* 恒星か惑星か(id から) */
+function uvBody(u,id){ if(!u||!id) return null; const s=uvStar(u,id); if(s) return {kind:'star',o:s}; const p=uvPlanet(u,id); return p?{kind:'planet',o:p}:null; }
+const uvCount=(u)=>u.stars.length+u.planets.length;
+function uvCapCheck(u,add){ if(uvCount(u)+add>UV_MAX) throw new Error('恒星と惑星の合計は、最大 '+UV_MAX+' 個までです(いま '+uvCount(u)+' 個)。これ以上は追加できません'); }
+/* 長さの換算 */
+const uvKm=(v,unit)=>v*(UV_KM[unit]||1);
+const uvLy=(v,unit)=>uvKm(v,unit)/UV_KM['光年'];
+const uvStarRadiusLy=(s)=>uvLy(s.radius.value,s.radius.unit);
+const uvPlanetRadiusLy=(p)=>uvLy(p.size.value,p.size.unit);
+/* 惑星の位置(光年) = 恒星の位置 + 軌道。軌道は、半径 R・傾き i・位相 φ: (R cosφ, R sinφ cos i, R sinφ sin i)。惑星の位置は、保存せず、いつも計算で出す */
+function uvPlanetPos(u,p){
+  const s=uvStar(u,p.starId); const b=s?s.position:{x:0,y:0,z:0}; const R=uvLy(p.orbit.radius,p.orbit.radiusUnit); const ph=p.orbit.phase*Math.PI/180, ti=p.orbit.tilt*Math.PI/180;
+  return {x:b.x+R*Math.cos(ph),y:b.y+R*Math.sin(ph)*Math.cos(ti),z:b.z+R*Math.sin(ph)*Math.sin(ti)};
+}
+function uvPosOf(u,b){ return b.kind==='star'?b.o.position:uvPlanetPos(u,b.o); }
+/* 距離(光年)。位置から計算する。光の遅れは扱わない */
+function uvDistPos(a,b){ const dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z; return Math.sqrt(dx*dx+dy*dy+dz*dz); }
+function uvDist(u,a,b){ return uvDistPos(uvPosOf(u,a),uvPosOf(u,b)); }
+function uvFmt(v){ if(!Number.isFinite(v)) return ''; const a=Math.abs(v); if(a>=1000) return v.toLocaleString('ja-JP',{maximumFractionDigits:2}); return String(Math.round(v*10000)/10000); }
+/* 距離の表示: 小さい値は有効数字で(0 にならないように) */
+function uvFmtLy(v){ if(!Number.isFinite(v)) return ''; if(v===0) return '0'; if(Math.abs(v)>=0.01) return uvFmt(v); return Number(v.toPrecision(4)).toExponential(3).replace(/\.?0+e/,'e'); }
+function uvCan(){ try{ if(typeof isViewOnly==='function'&&isViewOnly()) return false; return roleHasPerm(UV_PERM); }catch(e){ return false; } }
+function uvDeny(){ toast('現在の権限(「'+roleLabel(currentRole)+'」)では、宇宙は編集できません(権限: universe)','err'); }
+function uvWorldOf(p){ return (p&&p.surface&&p.surface.mode==='map')?(W()||null):null; }   /* 表面「世界の地図」= この世界の地図 */
+
+/* ---------- 宇宙暦と換算(閏年は扱わない。年の長さは一定) ---------- */
+const uvDpy=(u)=>{ const d=u&&u.calendar&&u.calendar.daysPerYear; return (typeof d==='number'&&d>0)?d:null; };
+function uvMonthsOk(u){ const c=u.calendar; return !!(c.monthsPerYear&&c.daysPerMonth&&c.monthsPerYear*c.daysPerMonth===c.daysPerYear); }
+/* 通算の日数(宇宙暦): 年×1年の日数+(年内の日-1)。1年の日数が未設定なら null */
+function uvOrd(u,d){ const dpy=uvDpy(u); return dpy===null?null:d.year*dpy+(d.day-1); }
+function uvFromOrd(u,o){ const dpy=uvDpy(u); if(dpy===null||!Number.isFinite(o)) return null; const r=Math.round(o); const y=Math.floor(r/dpy); return {year:y,day:r-y*dpy+1}; }
+function uvDateText(u,d){
+  if(uvDpy(u)===null||!d) return '未設定';
+  if(uvMonthsOk(u)){ const dm=u.calendar.daysPerMonth; const m=Math.floor((d.day-1)/dm)+1, dd=Math.round(d.day-(m-1)*dm); return d.year+'年'+m+'月'+dd+'日'; }
+  return d.year+'年 '+Math.round(d.day)+'日目';
+}
+/* 惑星の年の通算日: 年×365+(年内の日-1) */
+const uvPOrd=(d)=>d.year*UV_PLANET_DPY+(d.day-1);
+function uvPFromOrd(o){ const r=Math.round(o); const y=Math.floor(r/UV_PLANET_DPY); const di=r-y*UV_PLANET_DPY; let m=0,rest=di; while(m<11&&rest>=UV_MDAYS[m]){ rest-=UV_MDAYS[m]; m++; } return {year:y,day:di+1,month:m+1,mday:rest+1}; }
+/* 宇宙暦(通算日) → 惑星の年代。換算なし・1年の日数が未設定のときは null。
+   式: 惑星の通算日 = P(epochPlanet) + (U(now) − U(epochUniverse)) × daysPerUniverseDay   (内部は小数のまま。表示のときだけ四捨五入) */
+function uvPlanetOrdAt(u,p,uOrd){ const c=p&&p.conversion; const eo=c?uvOrd(u,c.epochUniverse):null; if(!c||eo===null||uOrd===null||!Number.isFinite(uOrd)) return null; return uvPOrd(c.epochPlanet)+(uOrd-eo)*c.daysPerUniverseDay; }
+function uvPlanetDate(u,p,uOrd){ if(uOrd===undefined) uOrd=uvOrd(u,u.calendar.now); const o=uvPlanetOrdAt(u,p,uOrd); return o===null?null:uvPFromOrd(o); }
+/* 惑星の年代(通算日) → 宇宙暦の通算日(逆変換)。式: U = U(epochUniverse) + (惑星の通算日 − P(epochPlanet)) ÷ daysPerUniverseDay */
+function uvUniverseOrdFrom(u,p,pOrd){ const c=p&&p.conversion; const eo=c?uvOrd(u,c.epochUniverse):null; if(!c||eo===null) return null; return eo+(pOrd-uvPOrd(c.epochPlanet))/c.daysPerUniverseDay; }
+function uvPDateText(p,d){ if(!d) return '換算なし'; const w=W(); return d.year+((w&&w.calendarUnit)||'年')+d.month+'月'+d.mday+'日'; }
+/* 宇宙暦の1年 = 惑星の何年: daysPerUniverseDay から導く(参考値) */
+const uvYearsPerUY=(u,c)=>{ const dpy=uvDpy(u); return dpy===null?(c.yearsPerUniverseYear||null):c.daysPerUniverseDay*dpy/UV_PLANET_DPY; };
+
+/* ---------- 端末の保存(IndexedDB の kv。使えないときはメモリ)。カメラ・簡略化・操作説明の表示は、端末の表示設定 ---------- */
+async function uvKvGet(k){ try{ if(IDB.ok) return await IDB.get('kv',k); }catch(e){ console.warn('universe kv get',e); } return UV.mem[k]; }
+async function uvKvPut(k,v){ try{ if(IDB.ok){ await IDB.put('kv',k,v); return; } }catch(e){ console.error('universe kv put',e); } UV.mem[k]=v; }
+async function uvKvDel(k){ try{ if(IDB.ok){ await IDB.del('kv',k); } }catch(e){} delete UV.mem[k]; }
+function uvNormLod(l){ const n=(v,d,lo)=>{ const x=uvNum(v,d); return x>=lo?x:d; }; const o={near:n(l.near,UV_LOD_DEF.near,1e-12),mid:n(l.mid,UV_LOD_DEF.mid,1e-12),cell:n(l.cell,UV_LOD_DEF.cell,1)}; if(o.mid<o.near) o.mid=o.near; return o; }
+/* 起動時に1回: 表示設定を読み、v50 までの端末内の宇宙(世界とは別に持っていた記録)を、世界の中の宇宙へ移す */
+async function uvBoot(){
+  try{ const l=await uvKvGet('uvlod'); if(l&&typeof l==='object') UV.lod=uvNormLod(l); }catch(e){}
+  try{ const h=await uvKvGet('uvhelp'); if(h===false) UV.help=false; }catch(e){}
+  try{ await uvLegacyMigrate(); }catch(e){ console.error('universe legacy migrate',e); }
+}
+async function uvSetHelp(on){ UV.help=!!on; await uvKvPut('uvhelp',UV.help); uvApplyHelp(); }
+/* 開いている世界のカメラ(端末内)を読む。世界を切り替えたときも呼ぶ */
+async function uvLoad(){ const u=uvCur(); if(!u) return; if(UV.cam[u.id]===undefined){ UV.cam[u.id]=null; try{ UV.cam[u.id]=(await uvKvGet('universecam:'+u.id))||null; }catch(e){} } UV.loaded=true; }
+
+/* ---------- 変更の入り口(権限・閲覧専用の確認 → 世界の通常の編集 mutate。取り消し(Undo)は1回の編集につき1つ。版は、世界の同期の仕組みで上がる) ---------- */
+function uvMutate(label,fn,u){
+  u=u||uvCur(); if(!u){ toast('世界がありません','err'); return false; }
+  if(!uvCan()){ uvDeny(); return false; }
+  const w=W(); const snap=JSON.stringify([w.uvCalendar,w.uvStars,w.uvPlanets]);
+  const ok=mutate('宇宙: '+label,()=>{ try{ fn(u); }catch(e){ const b=JSON.parse(snap); w.uvCalendar=b[0]; w.uvStars=b[1]; w.uvPlanets=b[2]; throw e; } },UV_PERM);
+  if(ok){ UV.rev++; uvRefresh(); }
+  return ok;
+}
+
+/* ---------- 恒星・惑星の追加と削除(上限 5000。超えるときは、理由を出して止める) ---------- */
+function uvAddStar(fields,u){
+  u=u||uvCur(); if(!u) return null; try{ uvCapCheck(u,1); }catch(e){ toast(e.message,'err'); return null; }
+  const st=uvNormStar(Object.assign({},fields,{id:undefined})); const ok=uvMutate('恒星を追加',(uu)=>{ uu.stars.push(st); },u); return ok?st:null;
+}
+function uvRemoveStar(starId,u){
+  u=u||uvCur(); const st=uvStar(u,starId); if(!st) return false; const n=u.planets.filter(p=>p.starId===starId).length;
+  if(n){ toast('この恒星には惑星が '+n+' 個あります。先に惑星を外してください','err'); return false; }
+  return uvMutate('恒星を削除',(uu)=>{ uu.stars=uu.stars.filter(s=>s.id!==starId); },u);
+}
+function uvAddPlanet(fields,u){
+  u=u||uvCur(); if(!u) return null; try{ uvCapCheck(u,1); }catch(e){ toast(e.message,'err'); return null; }
+  if(!uvStar(u,fields&&fields.starId)){ toast('属する恒星を選んでください(恒星がないときは、先に恒星を追加してください)','err'); return null; }
+  const pl=uvNormPlanet(Object.assign({},fields,{id:undefined})); const ok=uvMutate('惑星を追加',(uu)=>{ uu.planets.push(pl); },u); return ok?pl:null;
+}
+function uvRemovePlanet(planetId){
+  const u=uvCur(); const p=uvPlanet(u,planetId); if(!p) return false;
+  const ok=uvMutate('惑星を削除',(uu)=>{ uu.planets=uu.planets.filter(x=>x.id!==planetId); },u); if(ok){ if(UV.sel===planetId) UV.sel=''; if(UV.ref===planetId) UV.ref=''; } return ok;
+}
+
+/* ---------- 位置の変更(星図・表・3D のドラッグで同じ関数を使う) ---------- */
+/* 惑星を、恒星を中心にした同じ半径の球の上の、向き dir(単位ベクトルでなくてもよい。宇宙の座標)へ動かす。軌道の位相・傾きを更新する(半径は変えない) */
+function uvOrbitFromDir(p,dir){
+  const L=Math.hypot(dir.x,dir.y,dir.z); if(!(L>0)) return null; const a=dir.x/L,b=dir.y/L,c=dir.z/L;
+  const ph=Math.acos(Math.max(-1,Math.min(1,a)));            /* 位相 φ: cosφ = a */
+  const o={phase:Math.round(ph*180/Math.PI*1e4)/1e4,tilt:p.orbit.tilt};
+  if(Math.hypot(b,c)>1e-9) o.tilt=Math.round(Math.atan2(c,b)*180/Math.PI*1e4)/1e4;   /* 傾き i: (b,c)=sinφ(cos i, sin i) */
+  return o;
+}
+
+/* ---------- v50 までの端末内の宇宙 → 世界の中の宇宙(起動時に1回。元の記録は消さずに残す) ---------- */
+const uvSafeName=(s,d)=>String(s||d||'universe').replace(/[\\\/:*?"<>|]/g,'_');
+async function uvWorldDoc(wid){
+  const w=DB.worlds[wid]; if(!w) return null;
+  if(wid===Store.worldId){ try{ await Store.flush(); }catch(e){} return JSON.parse(JSON.stringify(atlasPack(w))); }
+  const tiles={}; (w.mapStates||[]).forEach(s=>{ tiles[s.id]={}; LAYER_IDS.forEach(l=>{ tiles[s.id][l]={}; }); });
+  if(IDB.ok) await IDB.cursor('tiles',wid+'|',(k,v)=>{ const p=k.split('|'); if(p.length!==4||!v||!v.d) return; const sid=p[1],layer=p[2]; (tiles[sid]||(tiles[sid]={}));(tiles[sid][layer]||(tiles[sid][layer]={}))[p[3]]={k:v.k,b:bytesToB64(new Uint8Array(v.d.buffer,v.d.byteOffset,v.d.byteLength))}; });
+  return JSON.parse(JSON.stringify(syncExportDoc(w,tiles)));
+}
+async function uvLegacyMigrate(){
+  const st=await uvKvGet('uvlegacy51'); if(st&&st.done) return;
+  const ids=(await uvKvGet('universes'))||[]; const raws=[];
+  for(const id of ids){ const r=await uvKvGet('universe:'+id); if(r&&typeof r==='object'&&Array.isArray(r.planets)){ raws.push(r); try{ await uvKvPut('universe_v50:'+id,r); }catch(e){} } }
+  if(!raws.length){ await uvKvPut('uvlegacy51',{done:true,pending:[]}); return; }
+  const r0=raws[0]; const pw=(r0.planets||[]).find(p=>p&&p.worldId&&DB.worlds[p.worldId]); let w=pw?DB.worlds[pw.worldId]:null;
+  if(!w){ const f=Object.values(DB.worlds).find(x=>!x.readOnly); w=f||null; }
+  if(w&&!w.readOnly){ uvApplyUniverse(w,r0,w.id); syncBaseline(w); DB.metaDirty.add(w.id); try{ await saveAll(); }catch(e){} }
+  const pending=raws.slice(1).map(r=>({id:r.id,name:r.name||'(無名の宇宙)',planets:(r.planets||[]).length}));
+  await uvKvPut('uvlegacy51',{done:true,first:r0.id,firstWorld:w?w.id:'',pending});
+  if(pending.length) setTimeout(()=>{ try{ uvShowLegacyGuide(); }catch(e){} },800);
+}
+/* 残りの宇宙(別のファイルとして書き出す)の、世界のファイルを作る: その宇宙の最初の世界の一式 + 宇宙の内容 */
+async function uvLegacyExportDoc(id){
+  const r=await uvKvGet('universe_v50:'+id)||await uvKvGet('universe:'+id); if(!r) throw new Error('この宇宙の記録が見つかりません');
+  const pw=(r.planets||[]).find(p=>p&&p.worldId&&DB.worlds[p.worldId]); if(!pw) throw new Error('この宇宙には、書き出せる世界がありません');
+  const doc=await uvWorldDoc(pw.worldId); uvApplyUniverse(doc.world,r,pw.worldId); doc.world.schemaVersion=syncSchemaVersion(); return {doc,name:uvSafeName(r.name)+'.atlas.json'};
+}
+async function uvLegacyGuideDone(){ const st=(await uvKvGet('uvlegacy51'))||{done:true}; st.pending=[]; await uvKvPut('uvlegacy51',st); }
+const UV_GUIDE_STEPS='<ol><li>下の「別のファイルとして書き出す」を押すと、その宇宙が、1つの世界のファイル(atlas-v2)として保存されます。</li><li>書き出したファイルは、ウェルカム画面または「ファイル」から「世界を開く(読み込む)」で、別の世界として開けます。</li><li>書き出しが終わったら、「案内を終了」を押してください(元の記録は、端末に残したままです。削除はしません)。</li></ol>';
+async function uvShowLegacyGuide(){
+  const st=await uvKvGet('uvlegacy51'); const pend=(st&&st.pending)||[]; if(!pend.length) return;
+  const rows=pend.map((p,i)=>`<div class="uvgrow"><b>${esc(p.name)}</b>(惑星 ${p.planets} 個) <button class="btn small primary" data-uvgx="${i}">別のファイルとして書き出す</button></div>`).join('');
+  openModal('宇宙が複数あった端末の記録について',`<div class="helpbox"><b>1つの世界(ファイル)には、宇宙は1つだけです。</b>最初の宇宙を、その世界の宇宙として開きました。残りの宇宙 ${pend.length} 件は、読み込みを止めずに残してあります。それぞれを、別のファイルとして書き出してください。</div>${UV_GUIDE_STEPS}${rows}`,
+    [{label:'あとで(次回も案内する)',onClick:closeModal},{label:'案内を終了',cls:'primary',onClick:async()=>{ await uvLegacyGuideDone(); closeModal(); }}]);
+  document.querySelectorAll('[data-uvgx]').forEach(b=>b.addEventListener('click',async()=>{ const p=pend[+b.dataset.uvgx]; try{ const r=await uvLegacyExportDoc(p.id); download(r.name,JSON.stringify(r.doc),'application/json'); toast('書き出しました: '+r.name); }catch(e){ toast(e.message||String(e),'err'); } }));
+}
+/* 宇宙を複数持つファイル(v50 の形)を開いたときの案内。UV.guide = {title, items:[{name, doc}]}(残りの宇宙の世界のファイル) */
+function uvShowGuide(){
+  const g=UV.guide; if(!g||!g.items.length) return; UV.guide=null;
+  const rows=g.items.map((it,i)=>`<div class="uvgrow"><b>${esc(it.name)}</b> <button class="btn small primary" data-uvgf="${i}">別のファイルとして書き出す</button></div>`).join('');
+  openModal('宇宙が複数あるファイルについて',`<div class="helpbox"><b>1つの世界(ファイル)には、宇宙は1つだけです。</b>最初の惑星の世界を、この世界(宇宙)として開きました。残り ${g.items.length} 件は、読み込みを止めずに案内します。それぞれを、別のファイルとして書き出してください。</div>${UV_GUIDE_STEPS}${rows}`,[{label:'閉じる',onClick:closeModal}]);
+  document.querySelectorAll('[data-uvgf]').forEach(b=>b.addEventListener('click',()=>{ const it=g.items[+b.dataset.uvgf]; download(it.file,JSON.stringify(it.doc),'application/json'); toast('書き出しました: '+it.file); }));
+}
+/* 宇宙の文書(v50 のファイル: atlas-v2 の universe 項目・world なし)を、世界の文書(atlas-v2)にする。最初の世界を、この世界とし、残りは案内へ */
+const UV_ENV_RE=/^uv:/;
+function uvDocHeader(universe){
+  let wr=0; (universe.planets||[]).forEach(p=>{ const w=p.world; if(w&&typeof w==='object') wr+=Number(w.revision)||0; });
+  return {id:'uv:'+universe.id,worldId:'uv:'+universe.id,name:universe.name||'universe',revision:(Number(universe.revision)||0)+wr,schemaVersion:Number(universe.schemaVersion)||0,updatedAt:Date.now()};
+}
+function uvConvertUniverseDoc(raw){
+  const ru=raw.universe; const ps=(Array.isArray(ru.planets)?ru.planets:[]).filter(p=>p&&typeof p==='object'&&p.world&&typeof p.world==='object'&&Array.isArray(p.world.nations));
+  if(!ps.length) throw atlasErr('not_a_world','この宇宙のファイルには、世界(惑星の世界)がないため、世界として開けません');
+  const p0=ps[0]; const w=JSON.parse(JSON.stringify(p0.world)); uvApplyUniverse(w,ru,p0.world.id||''); w.schemaVersion=syncSchemaVersion();
+  const items=ps.slice(1).map(p=>({name:(p.name||p.world.name||'(無名)')+'の世界',file:uvSafeName(p.world.name||p.name,'world')+'.atlas.json',doc:{format:'atlas-v2',formatVersion:UV_FILE_VERSION,exportedAt:Date.now(),world:p.world,tiles:p.tiles||{},readOnly:p.readOnly===true}}));
+  UV.guide=items.length?{items}:null; if(items.length) setTimeout(uvShowGuide,600);
+  return {format:'atlas-v2',formatVersion:UV_FILE_VERSION,exportedAt:Date.now(),world:w,tiles:p0.tiles||{},readOnly:p0.readOnly===true};
+}
+
+/* ---------- 惑星の表面の地図(この世界の地図を小さな画像にして、端末に覚えておく。世界の版が変わったら作り直す) ---------- */
+function uvThumbOf(wid){ return UV.thumbs[wid]||null; }
+async function uvMakeThumb(){
+  const w=W(); if(!w) return null; const cv0=await buildMapTextureCanvas(1024); let cv=cv0;
+  try{ if(w.geo3d&&w.geo3d.configured) cv=reprojectMapToEquirect(cv0,w.geo3d); }catch(e){ cv=cv0; }
+  const sm=document.createElement('canvas'); sm.width=1024; sm.height=512; const c=sm.getContext('2d'); c.drawImage(cv,0,0,cv.width,cv.height,0,0,1024,512);
+  const t=document.createElement('canvas'); t.width=8; t.height=4; const tc=t.getContext('2d'); tc.drawImage(sm,0,0,8,4); const d=tc.getImageData(0,0,8,4).data; let r=0,g=0,b=0,n=0; for(let i=0;i<d.length;i+=4){ if(d[i+3]>8){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; } }
+  const avg=n?'#'+[r,g,b].map(v=>Math.round(v/n).toString(16).padStart(2,'0')).join(''):null;
+  return {rev:Number(w.revision)||0,canvas:sm,avg};
+}
+async function uvStoreThumb(wid){
+  const t=await uvMakeThumb(); if(!t) return null; UV.thumbs[wid]=t;
+  try{ await uvKvPut('uvthumb:'+wid,{rev:t.rev,avg:t.avg,url:t.canvas.toDataURL('image/png')}); }catch(e){} return t;
+}
+async function uvLoadThumbFromKv(wid){
+  if(UV.thumbs[wid]) return UV.thumbs[wid]; const rec=await uvKvGet('uvthumb:'+wid); if(!rec||!rec.url) return null;
+  const img=await new Promise((res)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=rec.url; }); if(!img) return null;
+  const c=document.createElement('canvas'); c.width=img.width; c.height=img.height; c.getContext('2d').drawImage(img,0,0); UV.thumbs[wid]={rev:rec.rev,avg:rec.avg,canvas:c}; return UV.thumbs[wid];
+}
+/* いま開いている世界の地図の画像を、最新にする(開いていない世界は対象外) */
+async function uvEnsureThumb(wid){
+  const w=W(); if(!w||w.id!==wid) return null; let t=await uvLoadThumbFromKv(wid); if(t&&t.rev===(Number(w.revision)||0)) return t;
+  if(UV.hop) return t; UV.hop=true; try{ return await uvStoreThumb(wid); }catch(e){ console.warn('universe thumb',e); return t; } finally{ UV.hop=false; }
+}
+
+/* ---------- 画面(宇宙の画面。3D(既定)・星図(2D)・惑星の一覧・恒星の一覧。編集できるのは 恒星・惑星の位置/周期/換算・宇宙暦・名前・メモ だけ。世界の中身は、世界を開いて編集する) ---------- */
+const uvOpt=(v,t,sel)=>`<option value="${esc(v)}"${sel?' selected':''}>${esc(t)}</option>`;
+const uvV=(id)=>{ const e=document.getElementById(id); return e?e.value:''; };
+const uvBodyName=(b)=>b?(b.o.name||'(無名)'):'';
+function uvBarHtml(u){
+  const can=uvCan(), dis=can?'':' disabled title="権限「universe」がないため編集できません"';
+  const refOpts='<option value="">(基準なし)</option>'+(u?u.stars.map(s=>uvOpt(s.id,'★ '+(s.name||'(無名)'),s.id===UV.ref)).join('')+u.planets.map(p=>uvOpt(p.id,'● '+(p.name||'(無名)'),p.id===UV.ref)).join(''):'');
+  const ok=u&&uvDpy(u)!==null, mo=u&&ok&&uvMonthsOk(u); const now=u?u.calendar.now:{year:0,day:1};
+  let nowIn;
+  if(!u) nowIn='';
+  else if(!ok) nowIn='<span class="uvwarn">宇宙暦の1年の日数が未設定です(「宇宙暦の設定」で入力)</span>';
+  else if(mo){ const dm=u.calendar.daysPerMonth; const m=Math.floor((now.day-1)/dm)+1, d=Math.round(now.day-(m-1)*dm); nowIn=`<input type="number" id="uvNowY" value="${now.year}" style="width:92px"${dis} aria-label="年"><span>年</span><input type="number" id="uvNowM" value="${m}" min="1" max="${u.calendar.monthsPerYear}" style="width:56px"${dis} aria-label="月"><span>月</span><input type="number" id="uvNowD" value="${d}" min="1" max="${dm}" style="width:56px"${dis} aria-label="日"><span>日</span>`; }
+  else nowIn=`<input type="number" id="uvNowY" value="${now.year}" style="width:92px"${dis} aria-label="年"><span>年</span><input type="number" id="uvNowD" value="${Math.round(now.day)}" min="1" max="${u.calendar.daysPerYear}" style="width:72px"${dis} aria-label="年内の日"><span>日目</span>`;
+  const stepOpts=[['1d','1日'],['10d','10日'],...(mo?[['1m','1か月']]:[]),['1y','1年'],['10y','10年'],['100y','100年']].map(([v,t])=>uvOpt(v,t,v===(UV.step||'1y'))).join('');
+  const m=UV.mode; const b=(id,t,k)=>`<button class="btn small${m===k?' primary':''}" id="${id}" aria-pressed="${m===k}">${t}</button>`;
+  const full=u&&uvCount(u)>=UV_MAX;
+  return `<div class="uvrow">
+    <span class="uvl">宇宙</span><b id="uvWorldName" title="この世界が、そのまま宇宙です">${esc(W()?W().name:'')}</b>
+    <button class="btn small" id="uvInfo"${u&&can?'':' disabled'}>宇宙暦の設定</button><button class="btn small" id="uvPngBtn"${u?'':' disabled'}>PNG出力</button><button class="btn small" id="uvDocxBtn"${u?'':' disabled'}>Word出力</button>
+    <span class="uvsep"></span>${b('uvMode3d','3D','3d')}${b('uvModeMap','星図(2D)','map')}${b('uvModeTable','惑星の一覧','table')}${b('uvModeStars','恒星の一覧','stars')}
+    <span class="uvsep"></span>
+    <button class="btn small primary" id="uvAddStar"${u&&can&&!full?'':' disabled'}>＋恒星</button><button class="btn small primary" id="uvAddPlanet"${u&&can&&!full?'':' disabled'} data-tip="惑星を追加|恒星の周りを回る惑星を追加します">＋惑星</button>
+    ${u?`<span class="uvsum">恒星 ${u.stars.length} ・ 惑星 ${u.planets.length} ・ 合計 ${uvCount(u)} / ${UV_MAX}</span>`:''}
+  </div>
+  <div class="uvrow">
+    <span class="uvl">宇宙暦</span><b id="uvNowText">${u?esc(uvDateText(u,now)):''}</b>${nowIn}
+    <button class="icon-btn" id="uvNowPrev"${u&&ok&&can?'':' disabled'} aria-label="戻す">◀</button><select id="uvStep" aria-label="進める量">${stepOpts}</select><button class="icon-btn" id="uvNowNext"${u&&ok&&can?'':' disabled'} aria-label="進める">▶</button>
+    <span class="uvsep"></span><span class="uvl">距離の基準</span><select id="uvRef" aria-label="距離の基準">${refOpts}</select>
+    ${m==='map'?`<label class="lp-chk"><input type="checkbox" id="uvLinesChk"${UV.lines?' checked':''}>距離線</label>`:''}${m==='map'||m==='3d'?`<label class="lp-chk"><input type="checkbox" id="uvLabelsChk"${UV.labels?' checked':''}>名前</label>`:''}
+    ${m==='3d'?`<span class="uvsep"></span><button class="btn small" id="uv3Overview">俯瞰(全体)</button><button class="btn small" id="uv3Back"${U3.focusId?'':' disabled'}>← 宇宙の全体に戻る</button><label class="lp-chk"><input type="checkbox" id="uvOrbitChk"${UV.orbits?' checked':''}>軌道</label><button class="btn small" id="uvLodBtn">簡略化の設定</button><label class="lp-chk"><input type="checkbox" id="uvHelpChk"${UV.help?' checked':''}>操作の説明</label>`:''}
+  </div>`;
+}
+/* 惑星の表の行: 並べ替えと絞り込みを通したもの */
+function uvRows(u){
+  const f=(UV.filter||'').trim().toLowerCase(); const ref=uvBody(u,UV.ref); const uo=uvOrd(u,u.calendar.now);
+  let rows=u.planets.map(p=>{ const st=uvStar(u,p.starId); const pos=uvPlanetPos(u,p); return {p,st,pos,dist:ref&&ref.o.id!==p.id?uvDistPos(uvPosOf(u,ref),pos):null,date:uvPlanetDate(u,p,uo),w:null}; });
+  if(f) rows=rows.filter(r=>(r.p.name+' '+(r.st?r.st.name:'')+' '+r.p.notes).toLowerCase().includes(f));
+  const k=UV.sortKey, dir=UV.sortDir; const val=(r)=>({name:r.p.name,star:r.st?r.st.name:'',x:r.pos.x,y:r.pos.y,z:r.pos.z,dist:r.dist===null?Infinity:r.dist,orbit:r.p.orbitalPeriod.value===null?Infinity:r.p.orbitalPeriod.value,rot:r.p.rotationPeriod.value===null?Infinity:r.p.rotationPeriod.value,date:r.date?uvPOrd(r.date):Infinity,notes:r.p.notes})[k];
+  rows.sort((a,b)=>{ const x=val(a),y=val(b); const c=(typeof x==='string'||typeof y==='string')?String(x).localeCompare(String(y),'ja'):(x-y); return ((c||a.p.id.localeCompare(b.p.id)))*dir; });
+  return rows;
+}
+const uvTh=(k,t)=>`<th data-uvsort="${k}" class="${UV.sortKey===k?'on':''}" role="button" tabindex="0">${t}${UV.sortKey===k?(UV.sortDir>0?' ▲':' ▼'):''}</th>`;
+function uvPerCell(p,key,dis){ const o=key==='o'?p.orbitalPeriod:p.rotationPeriod; return `<input class="uvc w60" data-uvb="${esc(p.id)}" data-uvf="${key}v" type="number" step="any" value="${o.value===null?'':o.value}"${dis}><select class="uvc" data-uvb="${esc(p.id)}" data-uvf="${key}u"${dis}>${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===o.unit)).join('')}</select>`; }
+function uvTableHtml(u){
+  if(!u) return `<div class="empty"><div class="big">✦</div>世界が開かれていません。<br>世界を作る(または開く)と、その世界の宇宙が使えます。</div>`;
+  if(UV.mode==='stars') return uvStarTableHtml(u);
+  const can=uvCan(), dis=can?'':' disabled'; const rows=uvRows(u);
+  const body=rows.map(r=>{ const p=r.p;
+    return `<tr class="${p.id===UV.sel?'on':''}" data-uvrow="${esc(p.id)}"><td><input class="uvc w120" data-uvb="${esc(p.id)}" data-uvf="name" value="${esc(p.name)}"${dis}></td>
+      <td>${r.st?esc(r.st.name||'(無名)'):'<span class="uvwarn">恒星なし</span>'}</td>
+      ${['x','y','z'].map(a=>`<td data-uvpos="${esc(p.id)}:${a}">${uvFmtLy(r.pos[a])}</td>`).join('')}
+      <td data-uvdist="${esc(p.id)}">${r.dist===null?'—':uvFmtLy(r.dist)+' 光年'}</td><td>${uvPerCell(p,'o',dis)}</td><td>${uvPerCell(p,'r',dis)}</td>
+      <td data-uvdate="${esc(p.id)}">${esc(uvPDateText(p,r.date))}<div class="uvbtns"><button class="btn small" data-uvconv="${esc(p.id)}"${dis}>換算</button></div></td>
+      <td><textarea class="uvc w140" rows="1" data-uvb="${esc(p.id)}" data-uvf="notes"${dis}>${esc(p.notes)}</textarea></td>
+      <td><div class="uvbtns"><button class="btn small" data-uvedit="${esc(p.id)}"${dis}>編集</button><button class="btn small" data-uvfocus="${esc(p.id)}">3Dで見る</button><button class="btn small danger" data-uvout="${esc(p.id)}"${dis}>削除</button></div></td></tr>`; }).join('');
+  const ref=uvBody(u,UV.ref);
+  return `<div class="uvfilter"><input id="uvFilter" class="lp-search" type="search" placeholder="惑星・恒星を検索…" value="${esc(UV.filter||'')}"><span class="uvsum">惑星 ${u.planets.length}${UV.filter?'(表示 '+rows.length+')':''} ・ 版 ${u.revision}${ref?' ・ 距離の基準: '+esc(uvBodyName(ref)):''}</span></div>
+  <div class="uvtablewrap"><table class="uvtable" id="uvTable"><thead><tr>${uvTh('name','名前')}${uvTh('star','恒星')}${uvTh('x','x(光年)')}${uvTh('y','y(光年)')}${uvTh('z','z(光年)')}${uvTh('dist','距離(基準から)')}${uvTh('orbit','公転周期')}${uvTh('rot','自転周期')}${uvTh('date','惑星の現在の年代')}${uvTh('notes','メモ')}<th></th></tr></thead><tbody>${body||'<tr><td colspan="11" class="empty" style="padding:14px">惑星がありません。「＋惑星」で追加します</td></tr>'}</tbody></table></div>`;
+}
+function uvStarTableHtml(u){
+  const can=uvCan(), dis=can?'':' disabled'; const ref=uvBody(u,UV.ref); const f=(UV.filter||'').trim().toLowerCase();
+  let stars=u.stars.filter(s=>!f||(s.name+' '+s.notes).toLowerCase().includes(f));
+  const body=stars.map(s=>{ const d=ref&&ref.o.id!==s.id?uvDistPos(uvPosOf(u,ref),s.position):null; const np=u.planets.filter(p=>p.starId===s.id).length;
+    return `<tr class="${s.id===UV.sel?'on':''}" data-uvrow="${esc(s.id)}"><td><input class="uvc w120" data-uvb="${esc(s.id)}" data-uvf="name" value="${esc(s.name)}"${dis}></td>
+      ${['x','y','z'].map(a=>`<td><input class="uvc w80" data-uvb="${esc(s.id)}" data-uvf="${a}" type="number" step="any" value="${s.position[a]}"${dis}></td>`).join('')}
+      <td>${s.radius.value} ${esc(s.radius.unit)}</td><td><span class="uvsw" style="background:${esc(s.color)}"></span> ${esc(s.color)}</td><td>${s.brightness}</td><td>${s.glow}</td><td>${np}</td>
+      <td data-uvdist="${esc(s.id)}">${d===null?'—':uvFmtLy(d)+' 光年'}</td>
+      <td><textarea class="uvc w140" rows="1" data-uvb="${esc(s.id)}" data-uvf="notes"${dis}>${esc(s.notes)}</textarea></td>
+      <td><div class="uvbtns"><button class="btn small" data-uvsedit="${esc(s.id)}"${dis}>編集</button><button class="btn small" data-uvfocus="${esc(s.id)}">3Dで見る</button><button class="btn small danger" data-uvsdel="${esc(s.id)}"${dis}>削除</button></div></td></tr>`; }).join('');
+  return `<div class="uvfilter"><input id="uvFilter" class="lp-search" type="search" placeholder="恒星を検索…" value="${esc(UV.filter||'')}"><span class="uvsum">恒星 ${u.stars.length} ・ 版 ${u.revision}${ref?' ・ 距離の基準: '+esc(uvBodyName(ref)):''}</span></div>
+  <div class="uvtablewrap"><table class="uvtable" id="uvTable" style="min-width:900px"><thead><tr><th>名前</th><th>x(光年)</th><th>y(光年)</th><th>z(光年)</th><th>大きさ</th><th>色</th><th>光の強さ</th><th>光の広がり</th><th>惑星</th><th>距離(基準から)</th><th>メモ</th><th></th></tr></thead><tbody>${body||'<tr><td colspan="12" class="empty" style="padding:14px">恒星がありません。「＋恒星」で追加します</td></tr>'}</tbody></table></div>`;
+}
+function uvSideHtml(u){
+  const b=uvBody(u,UV.sel); if(!u||!b) return '<div class="uvnone">恒星・惑星を選ぶと、ここに情報が出ます</div>';
+  const can=uvCan(), dis=can?'':' disabled'; const ref=uvBody(u,UV.ref); const o=b.o;
+  const distHtml=`<div class="uvdv" id="uvDistVal">${ref&&ref.o.id!==o.id?esc(uvBodyName(ref))+' — '+esc(o.name||'(無名)')+': <b>'+uvFmtLy(uvDist(u,ref,b))+'</b> 光年':'距離の基準を選ぶと、ここに距離が出ます'}</div>`;
+  if(b.kind==='star'){ const np=u.planets.filter(p=>p.starId===o.id);
+    return `<div class="uvdetail"><h4>★ ${esc(o.name||'(無名)')}</h4><dl><dt>大きさ</dt><dd>${o.radius.value} ${esc(o.radius.unit)}</dd><dt>色</dt><dd><span class="uvsw" style="background:${esc(o.color)}"></span> ${esc(o.color)}</dd><dt>光の強さ</dt><dd>${o.brightness}</dd><dt>光の広がり</dt><dd>${o.glow}</dd><dt>惑星</dt><dd>${np.length ? np.map(p=>esc(p.name||'(無名)')).join('、') : 'なし'}</dd></dl>
+      <div class="formgrid" style="margin-top:6px">${['x','y','z'].map(a=>`<div><label>${a}(光年)</label><input class="uvc" data-uvb="${esc(o.id)}" data-uvf="${a}" type="number" step="any" value="${o.position[a]}"${dis}></div>`).join('')}</div>${distHtml}
+      <div class="uvbtns"><button class="btn small primary" data-uvfocus="${esc(o.id)}">寄って見る</button><button class="btn small" data-uvsedit="${esc(o.id)}"${dis}>編集</button><button class="btn small danger" data-uvsdel="${esc(o.id)}"${dis}>削除</button></div></div>`; }
+  const st=uvStar(u,o.starId); const d=uvPlanetDate(u,o); const pos=uvPlanetPos(u,o);
+  return `<div class="uvdetail"><h4>● ${esc(o.name||'(無名)')}</h4><dl><dt>恒星</dt><dd>${st?esc(st.name||'(無名)'):'なし'}</dd><dt>惑星の年代</dt><dd>${esc(uvPDateText(o,d))}</dd>
+    <dt>軌道</dt><dd>半径 ${o.orbit.radius} ${esc(o.orbit.radiusUnit)} ・ 傾き ${o.orbit.tilt}° ・ 位相 ${o.orbit.phase}°</dd><dt>大きさ</dt><dd>${o.size.value} ${esc(o.size.unit)}</dd>
+    <dt>表面</dt><dd>${o.surface.mode==='map'?'この世界の地図':'単色 '+esc(o.surface.color)}</dd><dt>位置(光年)</dt><dd>${uvFmtLy(pos.x)}, ${uvFmtLy(pos.y)}, ${uvFmtLy(pos.z)}</dd></dl>${distHtml}
+    <div class="uvbtns"><button class="btn small primary" data-uvfocus="${esc(o.id)}">寄って見る</button><button class="btn small" data-uvedit="${esc(o.id)}"${dis}>編集</button><button class="btn small" data-uvconv="${esc(o.id)}"${dis}>換算</button><button class="btn small danger" data-uvout="${esc(o.id)}"${dis}>削除</button></div></div>`;
+}
+function uvRefresh(){
+  const root=document.getElementById('uvRoot'); if(!root||currentView!=='universe') return; const u=uvCur();
+  const bar=document.getElementById('uvBar');
+  if(bar){ const key=JSON.stringify([W()?W().id+'|'+W().name:'',UV.mode,UV.help,UV.labels,UV.lines,UV.orbits,UV.ref,uvCan(),!!u,u?u.stars.map(p=>p.id+p.name).join(',')+'/'+u.planets.map(p=>p.id+p.name).join(','):'',u?JSON.stringify(Object.assign({},u.calendar,{now:0})):'',UV.step,U3.focusId,u?uvCount(u):0]);
+    if(bar._k!==key){ bar.innerHTML=uvBarHtml(u); bar._k=key; } else if(u) uvPatchNow(u); }
+  const isTable=UV.mode==='table'||UV.mode==='stars';
+  const tw=document.getElementById('uvTableWrap'), mw=document.getElementById('uvMapWrap'); tw.style.display=isTable?'block':'none'; mw.style.display=isTable?'none':'flex';
+  const active=document.activeElement; const editing=active&&tw.contains(active)&&/INPUT|TEXTAREA|SELECT/.test(active.tagName)&&active.id!=='uvFilter';
+  if(isTable&&!editing&&!(active&&active.id==='uvFilter')) tw.innerHTML=uvTableHtml(u); else if(isTable&&editing) uvPatchTable();
+  if(!isTable){ const side=document.getElementById('uvSide'); const ae=document.activeElement; if(!(ae&&side.contains(ae)&&/INPUT/.test(ae.tagName))) side.innerHTML=uvSideHtml(u); document.getElementById('uvCanvas').style.display=UV.mode==='map'?'block':'none'; document.getElementById('uv3dCanvas').style.display=UV.mode==='3d'?'block':'none'; document.getElementById('uvLabels').style.display=UV.mode==='3d'?'block':'none'; uvRenderSoon(); }
+  const nt=document.getElementById('uvNowText'); if(nt&&u) nt.textContent=uvDateText(u,u.calendar.now);
+  uvApplyHelp();
+}
+/* 宇宙暦の入力欄は、作りが変わらないかぎり作り直さない(入力中に差し替えない)。値だけ、その場で更新する */
+function uvPatchNow(u){ if(uvDpy(u)===null) return; const now=u.calendar.now; const set=(id,v)=>{ const e=document.getElementById(id); if(e&&document.activeElement!==e&&String(e.value)!==String(v)) e.value=v; };
+  set('uvNowY',now.year); if(uvMonthsOk(u)){ const dm=u.calendar.daysPerMonth; const m=Math.floor((now.day-1)/dm)+1; set('uvNowM',m); set('uvNowD',Math.round(now.day-(m-1)*dm)); } else set('uvNowD',Math.round(now.day)); }
+/* 入力中の表では、距離・年代の欄だけを、その場で更新する(入力欄を差し替えない) */
+function uvPatchTable(){ const u=uvCur(); if(!u) return; const ref=uvBody(u,UV.ref); const uo=uvOrd(u,u.calendar.now);
+  u.planets.forEach(p=>{ const pos=uvPlanetPos(u,p); const d=document.querySelector('[data-uvdist="'+p.id+'"]'); if(d) d.textContent=(ref&&ref.o.id!==p.id)?uvFmtLy(uvDistPos(uvPosOf(u,ref),pos))+' 光年':'—'; const t=document.querySelector('[data-uvdate="'+p.id+'"]'); if(t&&t.firstChild) t.firstChild.textContent=uvPDateText(p,uvPlanetDate(u,p,uo)); ['x','y','z'].forEach(a=>{ const c=document.querySelector('[data-uvpos="'+p.id+':'+a+'"]'); if(c) c.textContent=uvFmtLy(pos[a]); }); });
+  u.stars.forEach(s=>{ const d=document.querySelector('[data-uvdist="'+s.id+'"]'); if(d) d.textContent=(ref&&ref.o.id!==s.id)?uvFmtLy(uvDistPos(uvPosOf(u,ref),s.position))+' 光年':'—'; }); }
+async function renderUniverseView(){
+  if(UV.hop) return;
+  await uvLoad(); if(currentView!=='universe') return;
+  uvWire(); uvWireMap();
+  if(U3.inited&&UV.mode==='3d'){ /* 世界の地図が変わっているかもしれないので、地図の画像を作り直す */ try{ const w=W(); if(w) uvStoreThumb(w.id).then(()=>{ U3.thumbV++; }); }catch(e){} }
+  uvRefresh();
+  if(UV.mode==='3d'){ if(await uv3dInit()){ uv3dResize(); uv3dCamLoad(); U3.key=''; uv3dStart(); } else UV.mode='map'; uvRefresh(); }
+  else if(UV.mode==='map') uvRender2D();
+}
+function uvSetMode(m){
+  if(UV.mode===m) return; UV.mode=m; uv3dPause();
+  (async()=>{ if(m==='3d'){ if(!(await uv3dInit())){ UV.mode='map'; } else { uv3dResize(); uv3dCamLoad(); U3.key=''; uv3dStart(); } } uvRefresh(); if(UV.mode==='3d') uv3dStart(); })();
+}
+function uvStepNow(dir){
+  const u=uvCur(); if(!u||uvDpy(u)===null) return; const sel=UV.step||'1y'; const n=parseInt(sel,10); const un=sel.slice(-1); const dpy=uvDpy(u);
+  const days=un==='d'?n:un==='m'?n*u.calendar.daysPerMonth:n*dpy; const o=uvOrd(u,u.calendar.now)+dir*days; uvMutate('宇宙暦を変更',(uu)=>{ const d=uvFromOrd(uu,o); uu.calendar.now=d; });
+}
+function uvSetNow(y,m,d){
+  const u=uvCur(); if(!u||uvDpy(u)===null) return; const mo=uvMonthsOk(u); const day=mo?(m-1)*u.calendar.daysPerMonth+d:d;
+  uvMutate('宇宙暦を変更',(uu)=>{ uu.calendar.now={year:y,day:Math.min(uu.calendar.daysPerYear,Math.max(1,day))}; });
+}
+
+/* ---------- 入力画面(確認を経て、利用者が入力したものだけを保存する) ---------- */
+function uvFormOpen(title,html,onOk,okLabel){
+  openModal(title,html,[{label:'キャンセル',onClick:closeModal},{label:okLabel||'保存',cls:'primary',onClick:()=>{ let r; try{ r=onOk(); }catch(e){ toast(e.message||String(e),'err'); return; } if(r!==false) closeModal(); }}]);
+}
+/* 宇宙暦の入力欄(世界の作成の画面と、宇宙の画面の「宇宙暦の設定」で、同じ部品を使う)。p: 入力欄の id の前置き */
+function uvCalFields(c,p){ p=p||'uvg';
+  return `<div class="full"><p class="hint">宇宙暦(宇宙の共通の年代)です。1年の日数は、入力してください(未設定のあいだは、日付は「未設定」と表示され、換算は行われません)。閏年は扱いません(年の長さは一定)。</p></div>
+    <div><label>1年の日数</label><input id="${p}Dpy" type="number" step="any" min="0" value="${c.daysPerYear===null?'':c.daysPerYear}"></div><div></div>
+    <div><label>1年の月の数(省略できます)</label><input id="${p}Mpy" type="number" min="0" value="${c.monthsPerYear===null?'':c.monthsPerYear}"></div><div><label>1か月の日数(省略できます)</label><input id="${p}Dpm" type="number" step="any" min="0" value="${c.daysPerMonth===null?'':c.daysPerMonth}"></div>
+    <div class="full"><label>基準の日付(宇宙暦の起点)</label></div>
+    <div><label>年</label><input id="${p}SY" type="number" value="${c.startYear}"></div><div><label>月(月の構成があるとき)</label><input id="${p}SM" type="number" min="1" value="${c.startMonth}"></div>
+    <div><label>日</label><input id="${p}SD" type="number" step="any" min="1" value="${c.startDay}"></div>`; }
+function uvReadCal(p){ p=p||'uvg';
+  const dpy=uvNum(uvV(p+'Dpy'),null), mpy=uvNum(uvV(p+'Mpy'),null), dpm=uvNum(uvV(p+'Dpm'),null);
+  if(dpy!==null&&!(dpy>0)) throw new Error('1年の日数は、0より大きい数にしてください'); if((mpy!==null&&!(mpy>0))||(dpm!==null&&!(dpm>0))) throw new Error('月の数・1か月の日数は、0より大きい数にしてください');
+  if(mpy&&dpm&&dpy&&mpy*dpm!==dpy) throw new Error('月の数×1か月の日数が、1年の日数と合いません('+mpy+'×'+dpm+'='+(mpy*dpm)+')。合わせるか、月の構成を空にしてください');
+  return {startYear:Math.round(uvNum(uvV(p+'SY'),0)),startMonth:Math.round(uvNum(uvV(p+'SM'),1))||1,startDay:uvNum(uvV(p+'SD'),1),daysPerYear:dpy,monthsPerYear:mpy,daysPerMonth:dpm};
+}
+function uvUniverseForm(){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); if(!u) return; const c=u.calendar;
+  uvFormOpen('宇宙暦の設定',`<div class="formgrid">${uvCalFields(c,'uvg')}</div><p class="hint">宇宙の名前は、世界の名前です(世界の設定で変えられます)。</p>`,()=>{
+    const cal=uvReadCal('uvg');
+    if(!uvMutate('宇宙暦を設定',(uu)=>{ const keep=uu.calendar.now; const oldD=uu.calendar.daysPerYear; uu.calendar=uvNormCal(Object.assign(cal,{now:keep})); if(uu.calendar.daysPerYear===null||uu.calendar.daysPerYear===oldD) uu.calendar.now=keep; else uu.calendar.now={year:keep.year,day:Math.min(uu.calendar.daysPerYear,keep.day)}; })) return false; });
+}
+/* 恒星の追加・編集 */
+function uvStarForm(starId){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); if(!u) return; const s=starId?uvStar(u,starId):uvNormStar({}); if(starId&&!s) return;
+  uvFormOpen(starId?'恒星を編集':'恒星を追加',`<div class="formgrid"><div class="full"><label>名前</label><input id="uvsName" value="${esc(s.name)}"></div>
+    <div class="full"><label>メモ</label><textarea id="uvsNotes" rows="2">${esc(s.notes)}</textarea></div>
+    ${['x','y','z'].map(a=>`<div><label>${a}(光年・小数可)</label><input id="uvs_${a}" type="number" step="any" value="${s.position[a]}"></div>`).join('')}
+    <div><label>大きさ(半径)</label><input id="uvsR" type="number" step="any" min="0" value="${s.radius.value}"></div><div><label>大きさの単位</label><select id="uvsRU">${UV_STAR_UNITS.map(x=>uvOpt(x,x==='太陽半径'?'太陽半径(倍)':x,x===s.radius.unit)).join('')}</select></div>
+    <div><label>色</label><input id="uvsC" type="color" value="${esc(s.color)}"></div><div></div>
+    <div><label>光の強さ(0〜1)</label><input id="uvsB" type="number" step="0.05" min="0" max="1" value="${s.brightness}"></div><div><label>光の広がり(0〜1)</label><input id="uvsG" type="number" step="0.05" min="0" max="1" value="${s.glow}"></div></div>`,()=>{
+    const f={name:uvV('uvsName').trim(),notes:uvV('uvsNotes'),position:{x:uvNum(uvV('uvs_x'),0),y:uvNum(uvV('uvs_y'),0),z:uvNum(uvV('uvs_z'),0)},radius:{value:uvNum(uvV('uvsR'),1),unit:uvV('uvsRU')},color:uvV('uvsC'),brightness:uvClamp01(uvV('uvsB'),0.8),glow:uvClamp01(uvV('uvsG'),0.5)};
+    if(!f.name) throw new Error('名前を入力してください'); if(!(f.radius.value>=0)) throw new Error('大きさは、0以上の数にしてください');
+    if(!starId){ const st=uvAddStar(f); if(!st) return false; UV.sel=st.id; U3.key=''; return; }
+    if(!uvMutate('恒星を編集',(uu)=>{ const t=uvStar(uu,starId); Object.assign(t,uvNormStar(Object.assign({},t,f))); })) return false; });
+}
+/* 惑星の追加(既存の世界を入れる / 新しい世界を作る)と編集 */
+const uvPlanetFields=(p,u)=>`<div class="full"><label>名前</label><input id="uvpName" value="${esc(p.name)}"></div>
+  <div class="full"><label>属する恒星</label><select id="uvpStar">${u.stars.map(s=>uvOpt(s.id,s.name||'(無名)',s.id===p.starId)).join('')}</select></div>
+  <div><label>軌道の半径</label><input id="uvpOR" type="number" step="any" min="0" value="${p.orbit.radius}"></div><div><label>軌道の単位</label><select id="uvpORU">${UV_ORBIT_UNITS.map(x=>uvOpt(x,x,x===p.orbit.radiusUnit)).join('')}</select></div>
+  <div><label>軌道の傾き(度)</label><input id="uvpOT" type="number" step="any" value="${p.orbit.tilt}"></div><div><label>位相(度)</label><input id="uvpOP" type="number" step="any" value="${p.orbit.phase}"></div>
+  <div><label>大きさ(半径)</label><input id="uvpS" type="number" step="any" min="0" value="${p.size.value}"></div><div><label>大きさの単位</label><select id="uvpSU">${UV_PLANET_UNITS.map(x=>uvOpt(x,x,x===p.size.unit)).join('')}</select></div>
+  <div><label>自転周期(空でもよい)</label><input id="uvpRV" type="number" step="any" min="0" value="${p.rotationPeriod.value===null?'':p.rotationPeriod.value}"></div><div><label>単位</label><select id="uvpRU">${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===p.rotationPeriod.unit)).join('')}</select></div>
+  <div><label>公転周期(空でもよい)</label><input id="uvpPV" type="number" step="any" min="0" value="${p.orbitalPeriod.value===null?'':p.orbitalPeriod.value}"></div><div><label>単位</label><select id="uvpPU">${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===p.orbitalPeriod.unit)).join('')}</select></div>
+  <div><label>表面</label><select id="uvpSM">${uvOpt('map','世界の地図を貼る',p.surface.mode==='map')}${uvOpt('color','単色',p.surface.mode==='color')}</select></div><div><label>表面の色(単色のとき)</label><input id="uvpSC" type="color" value="${esc(p.surface.color)}"></div>
+  <div class="full"><label>メモ</label><textarea id="uvpNotes" rows="2">${esc(p.notes)}</textarea></div>`;
+function uvReadPlanetFields(){
+  const f={name:uvV('uvpName').trim(),notes:uvV('uvpNotes'),starId:uvV('uvpStar'),orbit:{radius:uvNum(uvV('uvpOR'),1),radiusUnit:uvV('uvpORU'),tilt:uvNum(uvV('uvpOT'),0),phase:uvNum(uvV('uvpOP'),0)},size:{value:uvNum(uvV('uvpS'),1),unit:uvV('uvpSU')},
+    rotationPeriod:{value:uvNum(uvV('uvpRV'),null),unit:uvV('uvpRU')},orbitalPeriod:{value:uvNum(uvV('uvpPV'),null),unit:uvV('uvpPU')},surface:{mode:uvV('uvpSM'),color:uvV('uvpSC')}};
+  if(!f.name) throw new Error('名前を入力してください'); if(!f.starId) throw new Error('属する恒星を選んでください'); if(!(f.orbit.radius>=0)||!(f.size.value>=0)) throw new Error('半径・大きさは、0以上の数にしてください'); return f;
+}
+function uvPlanetForm(planetId){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); if(!u) return;
+  if(planetId){ const p=uvPlanet(u,planetId); if(!p) return;
+    uvFormOpen('惑星を編集',`<div class="formgrid">${uvPlanetFields(p,u)}</div>`,()=>{ const f=uvReadPlanetFields();
+      if(!uvMutate('惑星を編集',(uu)=>{ const t=uvPlanet(uu,planetId); Object.assign(t,uvNormPlanet(Object.assign({},t,f,{id:t.id,conversion:t.conversion}))); })) return false; U3.key=''; });
+    return; }
+  if(!u.stars.length){ toast('先に「＋恒星」で恒星を追加してください(惑星は、恒星の周りを回ります)','err'); return; }
+  if(uvCount(u)>=UV_MAX){ toast('恒星と惑星の合計が上限('+UV_MAX+' 個)に達しています。これ以上は追加できません','err'); return; }
+  const base=uvNormPlanet({starId:u.stars[0].id});
+  uvFormOpen('惑星を追加',`<div class="formgrid">${uvPlanetFields(base,u)}</div>`,()=>{ const f=uvReadPlanetFields(); const pl=uvAddPlanet(f); if(!pl) return false; UV.sel=pl.id; U3.key=''; toast('惑星「'+pl.name+'」を追加しました'); },'追加');
+}
+function uvPlanetDeleteConfirm(planetId){
+  const u=uvCur(); const p=uvPlanet(u,planetId); if(!p) return; if(!uvCan()){ uvDeny(); return; }
+  confirmDelete('惑星「'+p.name+'」を削除します(軌道・換算などの設定が失われます。取り消し(Undo)で戻せます)。',()=>{ uvRemovePlanet(planetId); U3.key=''; uvRefresh(); });
+}
+function uvStarDeleteConfirm(starId){
+  const u=uvCur(); const s=uvStar(u,starId); if(!s) return; if(!uvCan()){ uvDeny(); return; }
+  const n=u.planets.filter(p=>p.starId===starId).length; if(n){ toast('この恒星には惑星が '+n+' 個あります。先に惑星を削除してください','err'); return; }
+  confirmDelete('恒星「'+s.name+'」を削除します。',()=>{ if(uvRemoveStar(starId)){ if(UV.sel===starId) UV.sel=''; if(UV.ref===starId) UV.ref=''; U3.key=''; } });
+}
+/* 簡略化の区切り(利用者が変えられる。既定: 近い 0.001光年 / 中くらい 10光年 / まとめる範囲 8px) */
+function uvLodForm(){
+  const l=UV.lod;
+  openModal('距離による簡略化の設定',`<p class="hint">カメラからの距離で、描き方を切り替えます。近い: 光の広がりと表面の地図まで描く(球)。中くらい: 恒星は光の点、惑星は単色の球。遠い: 点で描き、近い星の集まりは1つの点にまとめます。</p><div class="formgrid">
+    <div><label>「近い」の区切り(光年より近い)</label><input id="uvlN" type="number" step="any" min="0" value="${l.near}"></div><div><label>「中くらい」の区切り(光年より近い)</label><input id="uvlM" type="number" step="any" min="0" value="${l.mid}"></div>
+    <div><label>遠いときに1つにまとめる範囲(px)</label><input id="uvlC" type="number" step="any" min="1" value="${l.cell}"></div></div><p class="hint">既定値: ${UV_LOD_DEF.near} / ${UV_LOD_DEF.mid} 光年 / ${UV_LOD_DEF.cell}px。「俯瞰」では、まとめずに、すべてを見分けられる大きさで描きます。</p>`,
+    [{label:'既定に戻す',onClick:()=>{ UV.lod=Object.assign({},UV_LOD_DEF); uvKvPut('uvlod',UV.lod); U3.dirty=true; closeModal(); }},{label:'キャンセル',onClick:closeModal},{label:'保存',cls:'primary',onClick:()=>{ UV.lod=uvNormLod({near:uvV('uvlN'),mid:uvV('uvlM'),cell:uvV('uvlC')}); uvKvPut('uvlod',UV.lod); U3.dirty=true; closeModal(); }}]);
+}
+/* 換算(宇宙暦 ↔ 惑星の年代)。数値は利用者が入力する。惑星の世界のデータは変わらない */
+function uvConvForm(planetId){
+  const u=uvCur(); const p=uvPlanet(u,planetId); if(!p) return; if(!uvCan()){ uvDeny(); return; }
+  const c=p.conversion; const eu=c?c.epochUniverse:{year:u.calendar.now.year,day:u.calendar.now.day}, ep=c?c.epochPlanet:{year:0,day:1};
+  const dpy=uvDpy(u);
+  uvFormOpen('年代の換算(惑星「'+p.name+'」)',`<p class="hint">宇宙暦の「基準の日」が、この惑星の「対応する日」に当たります。宇宙暦の1日が惑星の何日に当たるか(または宇宙暦の1年が惑星の何年か)を入力します。惑星の1年は${UV_PLANET_DPY}日(平年・閏年なし)として計算します。${dpy===null?'<br><b class="uvwarn">宇宙暦の1年の日数が未設定のため、換算は保存しても計算されません。</b>':''}</p><div class="formgrid">
+    <div class="full"><label><input type="checkbox" id="uvcOff"${c?'':' checked'}> 換算を設定しない(宇宙暦とは連動しない)</label></div>
+    <div><label>基準: 宇宙暦の年</label><input id="uvcUY" type="number" value="${eu.year}"></div><div><label>基準: 宇宙暦の年内の日(1〜)</label><input id="uvcUD" type="number" step="any" value="${eu.day}"></div>
+    <div><label>対応: 惑星の年</label><input id="uvcPY" type="number" value="${ep.year}"></div><div><label>対応: 惑星の年内の日(1〜${UV_PLANET_DPY})</label><input id="uvcPD" type="number" step="any" value="${ep.day}"></div>
+    <div><label>宇宙暦の1日 = 惑星の何日</label><input id="uvcDD" type="number" step="any" min="0" value="${c?c.daysPerUniverseDay:''}"></div>
+    <div><label>宇宙暦の1年 = 惑星の何年</label><input id="uvcYY" type="number" step="any" min="0" value="${c&&c.yearsPerUniverseYear!==null?c.yearsPerUniverseYear:(c?uvFmt(uvYearsPerUY(u,c)||0):'')}"></div>
+    <div class="full"><p class="hint">どちらか一方を入力すれば、もう一方は自動で入ります(宇宙暦の1年の日数が入力済みのとき)。両方入力したときは、「1日 = 何日」を使います。端数は、表示のときだけ四捨五入します(内部は小数のまま)。</p></div></div>`,()=>{
+    const off=document.getElementById('uvcOff').checked; let conv=null;
+    if(!off){ let dd=uvNum(uvV('uvcDD'),null); const yy=uvNum(uvV('uvcYY'),null);
+      if(!(dd>0)&&yy>0&&dpy!==null) dd=yy*UV_PLANET_DPY/dpy;
+      if(!(dd>0)) throw new Error('「宇宙暦の1日 = 惑星の何日」(または1年 = 何年)を、0より大きい数で入力してください');
+      const ed=uvNum(uvV('uvcUD'),NaN), pd=uvNum(uvV('uvcPD'),NaN); if(!Number.isFinite(ed)||!Number.isFinite(pd)) throw new Error('基準の日を入力してください');
+      conv={epochUniverse:{year:Math.round(uvNum(uvV('uvcUY'),0)),day:ed},epochPlanet:{year:Math.round(uvNum(uvV('uvcPY'),0)),day:pd},daysPerUniverseDay:dd,yearsPerUniverseYear:(dpy!==null?dd*dpy/UV_PLANET_DPY:(yy>0?yy:null))}; }
+    if(!uvMutate('換算を設定',(uu)=>{ uvPlanet(uu,planetId).conversion=conv; })) return false; });
+}
+/* ---------- 星図(2D)。3D と同じ物体・同じ位置。恒星をドラッグすると、位置(x,y)が変わり、3D も同じ値になる ---------- */
+function uvNiceStep(target){ const e=Math.pow(10,Math.floor(Math.log10(target))); const m=target/e; return (m<1.5?1:m<3.5?2:m<7.5?5:10)*e; }
+/* 画面・PNG出力の両方で使う。v: {cx,cy,scale}(座標の中心 と 1光年あたりのpx) */
+function uvDraw2D(ctx,W_,H_,v,o){
+  o=o||{}; const u=o.universe||uvCur(); ctx.save(); ctx.clearRect(0,0,W_,H_); ctx.fillStyle='#05070d'; ctx.fillRect(0,0,W_,H_);
+  const st={total:u?uvCount(u):0,drawn:0,labels:0,lines:0}; if(!u){ ctx.restore(); return st; }
+  const sc=v.scale, ox=W_/2-v.cx*sc, oy=H_/2+v.cy*sc;
+  const spos=(s)=>(o.drag&&o.drag.id===s.id)?o.drag:s.position;
+  const S=(pt)=>({x:ox+pt.x*sc,y:oy-pt.y*sc});
+  const step=uvNiceStep(90/sc); ctx.lineWidth=1; ctx.strokeStyle='rgba(120,150,200,.13)'; ctx.fillStyle='rgba(150,175,215,.55)'; ctx.font='11px sans-serif'; ctx.textBaseline='top'; ctx.textAlign='left';
+  const x0=Math.floor((v.cx-W_/2/sc)/step)*step, x1=v.cx+W_/2/sc, y0=Math.floor((v.cy-H_/2/sc)/step)*step, y1=v.cy+H_/2/sc;
+  for(let x=x0;x<=x1;x+=step){ const sx=ox+x*sc; ctx.beginPath(); ctx.moveTo(sx,0); ctx.lineTo(sx,H_); ctx.stroke(); ctx.fillText(uvFmt(Math.round(x/step*1000)/1000*step),sx+3,3); }
+  for(let y=y0;y<=y1;y+=step){ const sy=oy-y*sc; ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(W_,sy); ctx.stroke(); ctx.fillText(uvFmt(Math.round(y/step*1000)/1000*step),3,sy+3); }
+  /* 画面上の位置: 恒星 = その位置。惑星 = 恒星の近くに、位相の向きに少し離して並べる(実際の軌道が画面で大きいときは、そのまま) */
+  const pos={}; const ord={}; u.stars.forEach(s=>{ pos[s.id]=S(spos(s)); });
+  u.planets.forEach(p=>{ const sp=pos[p.starId]; const k=ord[p.starId]=(ord[p.starId]||0)+1; const dr=8+4*(k-1); const s=uvStar(u,p.starId);
+    const real=uvPlanetPos(u,p); const rs=s?{x:real.x-s.position.x,y:real.y-s.position.y}:{x:real.x,y:real.y}; const rpx=Math.hypot(rs.x,rs.y)*sc;
+    if(sp&&rpx<dr){ const ph=p.orbit.phase*Math.PI/180; pos[p.id]={x:sp.x+dr*Math.cos(ph),y:sp.y-dr*Math.sin(ph),disp:true}; } else { const base=s?spos(s):{x:0,y:0}; pos[p.id]=S({x:base.x+rs.x,y:base.y+rs.y}); } });
+  const ref=uvBody(u,o.ref!==undefined?o.ref:UV.ref); const hit=o.hit; if(hit) hit.length=0;
+  if(ref&&o.lines!==false){ const rp=pos[ref.o.id]; const rpos=(ref.kind==='star')?spos(ref.o):uvPosOf(u,ref); ctx.strokeStyle='rgba(255,226,138,.45)'; ctx.fillStyle='rgba(255,226,138,.9)'; ctx.font='11px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='center';
+    const others=[]; u.stars.forEach(s=>{ if(s.id!==ref.o.id) others.push({id:s.id,pos:spos(s)}); }); const lim=250;
+    others.map(t=>({t,q:pos[t.id]})).filter(e=>e.q&&!(e.q.x<-50&&rp.x<-50||e.q.x>W_+50&&rp.x>W_+50||e.q.y<-50&&rp.y<-50||e.q.y>H_+50&&rp.y>H_+50)).slice(0,lim).forEach(e=>{ ctx.beginPath(); ctx.moveTo(rp.x,rp.y); ctx.lineTo(e.q.x,e.q.y); ctx.stroke(); ctx.fillText(uvFmtLy(uvDistPos(rpos,e.t.pos)),(rp.x+e.q.x)/2,(rp.y+e.q.y)/2-7); st.lines++; }); }
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic'; const selId=(o.sel!==undefined?o.sel:UV.sel);
+  const inView=(q)=>!(q.x<-30||q.x>W_+30||q.y<-30||q.y>H_+30);
+  u.stars.forEach(s=>{ const q=pos[s.id]; if(!inView(q)) return; const selp=selId===s.id; const r=Math.max(4,Math.min(14,uvStarRadiusLy(s)*sc))+(selp?2:0); const g=ctx.createRadialGradient(q.x,q.y,0,q.x,q.y,r*(2+s.glow*3)); const c=uvHexRgb(s.color); const rgb=(a)=>'rgba('+Math.round(c[0]*255)+','+Math.round(c[1]*255)+','+Math.round(c[2]*255)+','+a+')';
+    g.addColorStop(0,rgb(Math.min(1,s.brightness+0.2))); g.addColorStop(Math.min(0.95,1/(2+s.glow*3)),rgb(s.brightness)); g.addColorStop(1,rgb(0)); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(q.x,q.y,r*(2+s.glow*3),0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(q.x,q.y,r,0,6.2832); ctx.fillStyle=rgb(1); ctx.fill(); if(selp||(ref&&ref.o.id===s.id)){ ctx.lineWidth=2; ctx.strokeStyle=selp?'#ffe9a8':'#ffe28a'; ctx.beginPath(); ctx.arc(q.x,q.y,r+5,0,6.2832); ctx.stroke(); }
+    if(o.labels!==false){ ctx.fillStyle='#f3ecd0'; ctx.font='12px sans-serif'; ctx.fillText(s.name||'(無名)',q.x+r+6,q.y-r); st.labels++; } st.drawn++; if(hit) hit.push({id:s.id,kind:'star',sx:q.x,sy:q.y,r:r+5}); });
+  u.planets.forEach(p=>{ const q=pos[p.id]; if(!inView(q)) return; const selp=selId===p.id; let col=p.surface.color; if(p.surface.mode==='map'){ const t=uvThumbOf(uvWid()); if(t&&t.avg) col=t.avg; }
+    ctx.beginPath(); ctx.arc(q.x,q.y,selp?5:3.5,0,6.2832); ctx.fillStyle=col; ctx.fill(); if(selp||(ref&&ref.o.id===p.id)){ ctx.lineWidth=2; ctx.strokeStyle=selp?'#ffe9a8':'#ffe28a'; ctx.beginPath(); ctx.arc(q.x,q.y,selp?9:8,0,6.2832); ctx.stroke(); }
+    if(o.labels!==false){ ctx.fillStyle='#cfd8ff'; ctx.font='11px sans-serif'; ctx.fillText(p.name||'(無名)',q.x+7,q.y+12); st.labels++; } st.drawn++; if(hit) hit.push({id:p.id,kind:'planet',sx:q.x,sy:q.y,r:9}); });
+  const bar=uvNiceStep(110/sc), bpx=bar*sc; ctx.strokeStyle='#cfd8ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(14,H_-22); ctx.lineTo(14+bpx,H_-22); ctx.moveTo(14,H_-27); ctx.lineTo(14,H_-17); ctx.moveTo(14+bpx,H_-27); ctx.lineTo(14+bpx,H_-17); ctx.stroke();
+  ctx.fillStyle='#cfd8ff'; ctx.font='12px sans-serif'; ctx.textBaseline='bottom'; ctx.fillText(uvFmt(bar)+' 光年',14,H_-30);
+  ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText('宇宙暦 '+uvDateText(u,u.calendar.now),W_-12,H_-10); ctx.restore(); return st;
+}
+function uvFit2D(u,W_,H_){ if(!u||!uvCount(u)) return {cx:0,cy:0,scale:12}; let a=[1e30,1e30],b=[-1e30,-1e30]; u.stars.forEach(s=>{ const p=s.position; if(p.x<a[0])a[0]=p.x; if(p.x>b[0])b[0]=p.x; if(p.y<a[1])a[1]=p.y; if(p.y>b[1])b[1]=p.y; }); if(!u.stars.length){ a=[0,0]; b=[0,0]; }
+  const w=Math.max(1e-9,b[0]-a[0]), h=Math.max(1e-9,b[1]-a[1]); const sc=Math.min((W_-120)/w,(H_-120)/h); return {cx:(a[0]+b[0])/2,cy:(a[1]+b[1])/2,scale:Math.min(1e7,Math.max(1e-7,(w<1e-8&&h<1e-8)?12:sc))}; }
+function uvV2(){ const u=uvCur(); if(!u) return {cx:0,cy:0,scale:12}; const cam=UV.cam[u.id]||(UV.cam[u.id]={}); if(!cam.v2){ const wrap=document.getElementById('uvWrap'); cam.v2=uvFit2D(u,wrap?wrap.clientWidth:800,wrap?wrap.clientHeight:500); } return cam.v2; }
+function uvSaveCam(){ const u=uvCur(); if(!u) return; clearTimeout(UV._camT); UV._camT=setTimeout(()=>{ uvKvPut('universecam:'+u.id,UV.cam[u.id]); },400); }
+function uvRender2D(){
+  const cv=document.getElementById('uvCanvas'); if(!cv||UV.mode!=='map') return; const wrap=document.getElementById('uvWrap'); const cw=Math.max(1,wrap.clientWidth), ch=Math.max(1,wrap.clientHeight); const dpr=Math.min(2,window.devicePixelRatio||1);
+  if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); cv.style.width=cw+'px'; cv.style.height=ch+'px'; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); UV.stats=uvDraw2D(ctx,cw,ch,uvV2(),{labels:UV.labels,lines:UV.lines,hit:UV.hit,drag:UV.drag}); UV.stats.mode='map';
+}
+let _uvRaf=0; function uvRenderSoon(){ if(_uvRaf) return; _uvRaf=requestAnimationFrame(()=>{ _uvRaf=0; if(UV.mode==='map') uvRender2D(); else if(UV.mode==='3d') uv3dMarkDirty(); }); }
+function uvHitAt(x,y){ let best=null,bd=1e9; UV.hit.forEach(h=>{ const d=Math.hypot(h.sx-x,h.sy-y); if(d<=h.r+3&&d<bd){ bd=d; best=h; } }); return best; }
+function uvScreenToUniverse(x,y){ const v=uvV2(),w=document.getElementById('uvWrap'); return {x:v.cx+(x-w.clientWidth/2)/v.scale,y:v.cy-(y-w.clientHeight/2)/v.scale}; }
+function uvZoom2D(x,y,f){ const v=uvV2(); const before=uvScreenToUniverse(x,y); v.scale=Math.min(1e9,Math.max(1e-7,v.scale*f)); const w=document.getElementById('uvWrap'); v.cx=before.x-(x-w.clientWidth/2)/v.scale; v.cy=before.y+(y-w.clientHeight/2)/v.scale; uvSaveCam(); uvRenderSoon(); }
+/* 選ぶ: 3D で惑星を選んだときは、カメラがその惑星へ寄る */
+function uvSelect(id,o){ UV.sel=id||''; const b=uvBody(uvCur(),UV.sel); if(b&&b.kind==='planet'&&UV.mode==='3d'&&(!o||o.focus!==false)&&U3.inited) uv3dFocus(UV.sel); uvRefresh(); }
+function uvFitCurrent(){ const u=uvCur(); if(!u) return; const wrap=document.getElementById('uvWrap'); const cam=UV.cam[u.id]||(UV.cam[u.id]={}); if(UV.mode==='map'){ cam.v2=uvFit2D(u,wrap.clientWidth,wrap.clientHeight); uvSaveCam(); uvRenderSoon(); } else if(UV.mode==='3d'){ uv3dOverview(); } }
+/* 位置の変更(表・側面のパネル・星図のドラッグで、同じ関数を使う。数値は同じ結果になる) */
+function uvSetPos(id,axis,val){ if(!Number.isFinite(val)) return false; return uvMutate('恒星の位置を変更',(uu)=>{ const s=uvStar(uu,id); s.position[axis]=Math.round(val*1e6)/1e6; }); }
+function uvWireMap(){
+  const cv=document.getElementById('uvCanvas'); if(!cv||cv._uvWired) return; cv._uvWired=true;
+  const ptrs=new Map(); let drag=null, pinch=null; const pos=(e)=>{ const r=cv.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+  cv.addEventListener('pointerdown',(e)=>{ if(UV.mode!=='map') return; cv.setPointerCapture&&cv.setPointerCapture(e.pointerId); const p=pos(e); ptrs.set(e.pointerId,p);
+    if(ptrs.size===1){ const h=uvHitAt(p.x,p.y); drag={x:p.x,y:p.y,sx:p.x,sy:p.y,moved:false,hit:h?h.id:null,star:h&&h.kind==='star'?h.id:null}; if(h){ UV.sel=h.id; } }
+    else if(ptrs.size===2){ const a=[...ptrs.values()]; pinch={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y),cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2}; if(drag){ drag.moved=true; drag.star=null; UV.drag=null; } } });
+  cv.addEventListener('pointermove',(e)=>{ if(!ptrs.has(e.pointerId)) return; const p=pos(e); ptrs.set(e.pointerId,p); const v=uvV2();
+    if(ptrs.size>=2&&pinch){ const a=[...ptrs.values()]; const d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y), cx=(a[0].x+a[1].x)/2, cy=(a[0].y+a[1].y)/2; if(pinch.d>0&&d>0) uvZoom2D(cx,cy,d/pinch.d); v.cx-=(cx-pinch.cx)/v.scale; v.cy+=(cy-pinch.cy)/v.scale; pinch.d=d; pinch.cx=cx; pinch.cy=cy; uvSaveCam(); uvRenderSoon(); return; }
+    if(drag){ if(!drag.moved&&Math.hypot(p.x-drag.sx,p.y-drag.sy)>4) drag.moved=true;
+      if(drag.moved){ if(drag.star&&uvCan()){ const q=uvScreenToUniverse(p.x,p.y); const s=uvStar(uvCur(),drag.star); UV.drag={id:drag.star,x:Math.round(q.x*1e6)/1e6,y:Math.round(q.y*1e6)/1e6,z:s.position.z}; uvRenderSoon(); }
+        else { v.cx-=(p.x-drag.x)/v.scale; v.cy+=(p.y-drag.y)/v.scale; drag.x=p.x; drag.y=p.y; uvSaveCam(); uvRenderSoon(); } } } });
+  const up=(e)=>{ const was=drag; ptrs.delete(e.pointerId); if(ptrs.size<2) pinch=null;
+    if(was&&ptrs.size===0){ if(UV.drag&&was.moved){ const d=UV.drag; UV.drag=null; uvMutate('恒星の位置を変更(星図)',(uu)=>{ const s=uvStar(uu,d.id); s.position.x=d.x; s.position.y=d.y; }); U3.key=''; }
+      else if(!was.moved&&e.type==='pointerup'){ if(!was.hit) UV.sel=''; uvRefresh(); } else uvRefresh(); }
+    if(ptrs.size===0) drag=null; };
+  cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+  cv.addEventListener('wheel',(e)=>{ if(UV.mode!=='map') return; e.preventDefault(); const p=pos(e); uvZoom2D(p.x,p.y,Math.exp(-e.deltaY*0.0015)); },{passive:false});
+}
+
+/* ---------- 3D の宇宙(既存の3D地球儀と同じ部品: ensureThree・WebGLRenderer・OrbitControls) ----------
+   ・位置は光年(倍精度)。描くときは、カメラの位置を原点にした相対座標にして(浮動原点)、
+     視点に近い物体は実際の大きさの球(メッシュ)で、遠い物体は画面上の点(スプライト)で描く
+   ・距離による簡略化(区切りは UV.lod。利用者が変えられる。既定: 近い 0.001光年 / 中くらい 10光年):
+       近い: 光の広がり・表面の地図まで描く(球のメッシュ+光の輪)  中くらい: 恒星は光の点(光の輪つき)、惑星は単色の球
+       遠い: 点で描き、近い星の集まり(UV.lod.cell px 以内)は1つの点にまとめる
+   ・俯瞰: すべての恒星・惑星を、遠くからでも見分けられる大きさ・色で描く(まとめない。恒星の周りの惑星は、画面上で少し離して並べる) */
+const U3={inited:false,failed:false,renderer:null,scene:null,camera:null,rcam:null,controls:null,raf:0,hit:[],stats:{},key:'',n:0,B:null,sig:'',anim:null,focusId:'',back:null,overview:true,fitDist:0,pool:{s:[],p:[]},tex:{},lastMs:0,dirty:true,ptMax:64,thumbV:0,ask:{}};
+const UV_PT_VS='attribute float aSize; attribute float aCore; attribute float aGlow; attribute float aMode; attribute vec3 aColor; varying vec3 vC; varying float vCore; varying float vGlow; varying float vMode; uniform float uRatio; void main(){ vC=aColor; vCore=aCore; vGlow=aGlow; vMode=aMode; gl_PointSize=aSize*uRatio; gl_Position=vec4(position.xy,0.0,1.0); }';
+const UV_STAR_FS='varying vec3 vC; varying float vCore; varying float vGlow; void main(){ vec2 c=gl_PointCoord-0.5; float d=length(c)*2.0; if(d>1.0) discard; float k; if(d<vCore) k=1.0; else { float t=(d-vCore)/max(1.0-vCore,0.001); k=pow(1.0-t,2.0)*vGlow; } gl_FragColor=vec4(vC*k,1.0); }';
+const UV_PLANET_FS='varying vec3 vC; varying float vMode; void main(){ vec2 c=(gl_PointCoord-0.5)*2.0; float d=length(c); if(d>1.0) discard; float sh=1.0; if(vMode>0.5){ vec3 n=vec3(c.x,-c.y,sqrt(max(0.0,1.0-d*d))); sh=0.6+0.4*max(0.0,dot(n,normalize(vec3(-0.5,0.6,0.7)))); } gl_FragColor=vec4(vC*sh,1.0); }';
+const UV_MESH_VS='varying vec3 vN; varying vec2 vUv; void main(){ vN=normalize(normalMatrix*normal); vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }';
+const UV_PLANET_MFS='uniform sampler2D uMap; uniform float uUse; uniform vec3 uColor; uniform vec3 uLight; varying vec3 vN; varying vec2 vUv; void main(){ vec3 base=uColor; if(uUse>0.5) base=texture2D(uMap,vUv).rgb; float l=0.6+0.4*max(0.0,dot(normalize(vN),normalize(uLight))); gl_FragColor=vec4(base*l,1.0); }';
+const UV_STAR_MFS='uniform vec3 uColor; void main(){ gl_FragColor=vec4(uColor,1.0); }';
+const UV_HALO_VS='varying vec2 vP; void main(){ vP=position.xy; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }';
+const UV_HALO_FS='uniform vec3 uColor; uniform float uCore; uniform float uGlow; varying vec2 vP; void main(){ float d=length(vP); if(d>1.0) discard; float k; if(d<uCore) k=1.0; else { float t=(d-uCore)/max(1.0-uCore,0.001); k=pow(1.0-t,2.0)*uGlow; } gl_FragColor=vec4(uColor*k,1.0); }';
+const uvHexRgb=(h)=>{ const n=parseInt(String(h).slice(1),16); return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255]; };
+async function uv3dInit(){
+  if(U3.inited) return true; if(U3.failed) return false;
+  try{
+    const THREE=await ensureThree(); const canvas=document.getElementById('uv3dCanvas');
+    const renderer=new THREE.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true}); renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1)); renderer.setClearColor(0x05070d,1);
+    const scene=new THREE.Scene();
+    const camera=new THREE.PerspectiveCamera(50,1,1e-6,1e9); camera.position.set(0,60,40);
+    const rcam=new THREE.PerspectiveCamera(50,1,1e-3,1e12);
+    const controls=new THREE.OrbitControls(camera,canvas); controls.enabled=false; controls.enableDamping=false; controls.rotateSpeed=0.7; controls.minDistance=1e-14; controls.maxDistance=1e9; controls.zoomSpeed=1.2; controls.screenSpacePanning=true;
+    Object.assign(U3,{inited:true,THREE,renderer,scene,camera,rcam,controls});
+    try{ const gl=renderer.getContext(); const r=gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE); U3.ptMax=Math.max(8,Math.min(96,r&&r[1]?r[1]:64)); }catch(e){}
+    const mkPts=(fs,additive)=>{ const g=new THREE.BufferGeometry(); const m=new THREE.ShaderMaterial({vertexShader:UV_PT_VS,fragmentShader:fs,uniforms:{uRatio:{value:renderer.getPixelRatio()}},depthTest:false,depthWrite:false,transparent:additive,blending:additive?THREE.AdditiveBlending:THREE.NoBlending}); const p=new THREE.Points(g,m); p.frustumCulled=false; p.renderOrder=10; scene.add(p); return p; };
+    U3.ptsS=mkPts(UV_STAR_FS,true); U3.ptsP=mkPts(UV_PLANET_FS,false);
+    U3.sphere=new THREE.SphereGeometry(1,48,32); U3.quad=new THREE.PlaneGeometry(2,2);
+    const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(60*96*6),3)); U3.orbitLines=new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0x8fb0ff,transparent:true,opacity:0.5,depthTest:false})); U3.orbitLines.frustumCulled=false; U3.orbitLines.renderOrder=5; scene.add(U3.orbitLines);
+    const wrap=document.getElementById('uvWrap'); if(window.ResizeObserver) new ResizeObserver(()=>{ uv3dResize(); uvRenderSoon(); }).observe(wrap);
+    const hud=document.createElement('div'); hud.id='uvDragHud'; hud.style.display='none'; wrap.appendChild(hud);
+    const help=document.createElement('div'); help.id='uvHelp'; help.innerHTML='<b>操作</b><br><span>PC:</span> ホイール=拡大・縮小 ／ 何もない所を左長押し+ドラッグ=移動 ／ 右長押し+ドラッグ=回転 ／ 星を左長押し+ドラッグ=星を動かす<br><span>モバイル:</span> ピンチ=拡大・縮小 ／ 1本指を長押し+ドラッグ=移動 ／ 2本指を同じ向きに動かす=回転 ／ 星を1本指で長押し+ドラッグ=星を動かす'; wrap.appendChild(help); uvApplyHelp();
+    uv3dWireInput(canvas);
+    uv3dResize(); return true;
+  }catch(e){ console.error('3D init failed',e); U3.failed=true; toast('3Dを開始できませんでした(WebGLが使えません)。表と星図は使えます','err'); return false; }
+}
+function uv3dPick(x,y){
+  let best=null,bd=1e9; U3.hit.forEach(h=>{ const d=Math.hypot(h.sx-x,h.sy-y); if(d<=h.r+3&&d<bd){ bd=d; best=h; } });
+  if(best&&best.cluster){ uv3dZoomToCluster(best); return; } uvSelect(best?best.id:'');
+}
+function uv3dResize(){ if(!U3.inited) return; const w=document.getElementById('uvWrap'); if(!w) return; const cw=Math.max(1,w.clientWidth), ch=Math.max(1,w.clientHeight); U3.renderer.setSize(cw,ch,false); U3.camera.aspect=cw/ch; U3.camera.updateProjectionMatrix(); U3.rcam.aspect=cw/ch; U3.rcam.updateProjectionMatrix(); U3.dirty=true; }
+function uv3dMarkDirty(){ U3.dirty=true; }
+const uvTri=(p)=>({x:p.x,y:p.z,z:-p.y});   /* 宇宙の座標(x,y,z) → 3D の座標(右=x、上=z、奥=y) */
+/* 物体の一覧(恒星が先、惑星があと)を、描きやすい形にそろえる。宇宙・サムネイルが変わったときだけ作り直す */
+function uv3dSync(){
+  const w_=W(); if(U3.lastW!==w_){ U3.lastW=w_; UV.rev++; }   /* 取り消し・やり直し・世界の切り替えで世界のデータが差し替わったとき、物体の一覧を作り直す */
+  const u=uvCur(); const key=(u?u.id:'')+':'+UV.rev+':'+(u?u.stars.length+'/'+u.planets.length:0)+':'+U3.thumbV; if(key===U3.key) return; U3.key=key;
+  const ns=u?u.stars.length:0, np=u?u.planets.length:0, n=ns+np; U3.n=n;
+  const B={n,ns,id:new Array(n),obj:new Array(n),kind:new Uint8Array(n),X:new Float64Array(n),Y:new Float64Array(n),Z:new Float64Array(n),r:new Float64Array(n),cr:new Float32Array(n),cg:new Float32Array(n),cb:new Float32Array(n),br:new Float32Array(n),gl:new Float32Array(n),par:new Int32Array(n).fill(-1),ph:new Float32Array(n),ord:new Int32Array(n),orR:new Float64Array(n),orT:new Float32Array(n),sidx:{}};
+  const cnt={};
+  for(let i=0;i<ns;i++){ const s=u.stars[i]; const p=uvTri(s.position); B.id[i]=s.id; B.obj[i]=s; B.kind[i]=0; B.X[i]=p.x; B.Y[i]=p.y; B.Z[i]=p.z; B.r[i]=uvStarRadiusLy(s); const c=uvHexRgb(s.color); B.cr[i]=c[0]; B.cg[i]=c[1]; B.cb[i]=c[2]; B.br[i]=s.brightness; B.gl[i]=s.glow; B.sidx[s.id]=i; }
+  for(let k=0;k<np;k++){ const pl=u.planets[k], i=ns+k; const p=uvTri(uvPlanetPos(u,pl)); B.id[i]=pl.id; B.obj[i]=pl; B.kind[i]=1; B.X[i]=p.x; B.Y[i]=p.y; B.Z[i]=p.z; B.r[i]=uvPlanetRadiusLy(pl);
+    let col=pl.surface.color; if(pl.surface.mode==='map'){ const t=uvThumbOf(uvWid()); if(t&&t.avg) col=t.avg; } const c=uvHexRgb(col); B.cr[i]=c[0]; B.cg[i]=c[1]; B.cb[i]=c[2]; B.br[i]=1; B.gl[i]=0;
+    const j=B.sidx[pl.starId]; B.par[i]=j===undefined?-1:j; B.ph[i]=pl.orbit.phase*Math.PI/180; B.ord[i]=cnt[pl.starId]=(cnt[pl.starId]||0)+1; B.ord[i]--; B.orR[i]=uvLy(pl.orbit.radius,pl.orbit.radiusUnit); B.orT[i]=pl.orbit.tilt*Math.PI/180; }
+  U3.B=B; U3.w={SX:new Float32Array(n),SY:new Float32Array(n),DP:new Float64Array(n),RP:new Float32Array(n),DD:new Float64Array(n),VIS:new Uint8Array(n),MESH:new Uint8Array(n)};
+  const mk=(g,cap)=>{ g.setAttribute('position',new U3.THREE.BufferAttribute(new Float32Array(cap*3),3)); g.setAttribute('aSize',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aCore',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aGlow',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aMode',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aColor',new U3.THREE.BufferAttribute(new Float32Array(cap*3),3)); };
+  if(U3.ptsS){ U3.ptsS.geometry.dispose(); U3.ptsS.geometry=new U3.THREE.BufferGeometry(); mk(U3.ptsS.geometry,n+1); U3.ptsP.geometry.dispose(); U3.ptsP.geometry=new U3.THREE.BufferGeometry(); mk(U3.ptsP.geometry,n+1); }
+  U3.dirty=true;
+}
+const _uv3={};
+function uv3dMeshOf(kind,k){
+  const THREE=U3.THREE, pool=U3.pool[kind==='s'?'s':'p']; if(pool[k]) return pool[k];
+  let m;
+  if(kind==='s'){ const mat=new THREE.ShaderMaterial({vertexShader:UV_MESH_VS,fragmentShader:UV_STAR_MFS,uniforms:{uColor:{value:new THREE.Color(1,1,1)}}}); const body=new THREE.Mesh(U3.sphere,mat);
+    const hm=new THREE.ShaderMaterial({vertexShader:UV_HALO_VS,fragmentShader:UV_HALO_FS,uniforms:{uColor:{value:new THREE.Color(1,1,1)},uCore:{value:0.2},uGlow:{value:0.5}},transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}); const halo=new THREE.Mesh(U3.quad,hm); halo.renderOrder=3;
+    body.frustumCulled=false; halo.frustumCulled=false; U3.scene.add(body); U3.scene.add(halo); m={body,halo}; }
+  else { const mat=new THREE.ShaderMaterial({vertexShader:UV_MESH_VS,fragmentShader:UV_PLANET_MFS,uniforms:{uMap:{value:null},uUse:{value:0},uColor:{value:new THREE.Color(1,1,1)},uLight:{value:new THREE.Vector3(0,0,1)}}}); const body=new THREE.Mesh(U3.sphere,mat); body.frustumCulled=false; U3.scene.add(body); m={body}; }
+  pool[k]=m; return m;
+}
+function uv3dTexOf(wid){
+  const t=uvThumbOf(wid); if(!t||!t.canvas) return null; let e=U3.tex[wid]; if(e&&e.rev===t.rev&&e.cv===t.canvas) return e.tex;
+  if(e&&e.tex) e.tex.dispose(); const tex=new U3.THREE.CanvasTexture(t.canvas); tex.needsUpdate=true; U3.tex[wid]={rev:t.rev,cv:t.canvas,tex}; return tex;
+}
+/* 1コマを描く。距離の区切りで、メッシュ/スプライト/まとめた点に分ける */
+function uv3dFrame(){
+  const t0=performance.now(); const u=uvCur(); if(!U3.inited||!u) return; uv3dSync();
+  const {THREE,renderer,scene,camera,rcam,controls}=U3; const B=U3.B, W_=U3.w, n=B.n; const cv=renderer.domElement; const Wd=cv.clientWidth||1, Hd=cv.clientHeight||1;
+  camera.updateMatrixWorld(); const C=camera.position, T=controls.target; const dist=Math.max(1e-15,C.distanceTo(T)); const s=1/dist;
+  if(U3.overview&&U3.fitDist&&dist<U3.fitDist*0.33) U3.overview=false; const ov=U3.overview; const lod=UV.lod;
+  const q=camera.quaternion; const right=(_uv3.r=_uv3.r||new THREE.Vector3()).set(1,0,0).applyQuaternion(q), up=(_uv3.u=_uv3.u||new THREE.Vector3()).set(0,1,0).applyQuaternion(q), back=(_uv3.b=_uv3.b||new THREE.Vector3()).set(0,0,1).applyQuaternion(q);
+  const tanH=Math.tan(camera.fov*Math.PI/360), f=Hd/2/tanH; const {SX,SY,DP,RP,DD,VIS,MESH}=W_; const cx=C.x,cy=C.y,cz=C.z;
+  const cand=[];
+  for(let i=0;i<n;i++){
+    const dx=B.X[i]-cx, dy=B.Y[i]-cy, dz=B.Z[i]-cz; const dp=-(dx*back.x+dy*back.y+dz*back.z); DP[i]=dp; DD[i]=Math.sqrt(dx*dx+dy*dy+dz*dz); VIS[i]=0; MESH[i]=0; if(!(dp>1e-30)) continue;
+    const vx=dx*right.x+dy*right.y+dz*right.z, vy=dx*up.x+dy*up.y+dz*up.z; SX[i]=Wd/2+vx/dp*f; SY[i]=Hd/2-vy/dp*f; RP[i]=B.r[i]*f/dp; VIS[i]=1;
+    if(!ov&&(DD[i]<lod.near||RP[i]>28)&&SX[i]>-Wd&&SX[i]<2*Wd&&SY[i]>-Hd&&SY[i]<2*Hd) cand.push(i);
+  }
+  cand.sort((a,b)=>DD[a]-DD[b]); const meshIdx=cand.slice(0,24); meshIdx.forEach(i=>{ MESH[i]=1; });
+  /* 惑星が恒星のすぐそばに重なるときは、画面上で少し離して並べる(軌道の実際の大きさのほうが大きければ、そのまま) */
+  for(let i=B.ns;i<n;i++){ const j=B.par[i]; if(j<0||!VIS[i]||!VIS[j]||MESH[i]) continue; const off=Math.hypot(SX[i]-SX[j],SY[i]-SY[j]); const dr=(ov?10:7)+4*B.ord[i]; if(off<dr){ SX[i]=SX[j]+dr*Math.cos(B.ph[i]); SY[i]=SY[j]-dr*Math.sin(B.ph[i]); } }
+  const hit=[]; const stats={mode:'3d',total:n,drawn:0,mesh:meshIdx.length,mid:0,far:0,clusters:0,overview:ov,labels:0};
+  const sg=U3.ptsS.geometry, pg=U3.ptsP.geometry; const sa=(g,k)=>g.attributes[k].array; const S={p:sa(sg,'position'),sz:sa(sg,'aSize'),co:sa(sg,'aCore'),gl:sa(sg,'aGlow'),mo:sa(sg,'aMode'),c:sa(sg,'aColor'),n:0}; const P={p:sa(pg,'position'),sz:sa(pg,'aSize'),co:sa(pg,'aCore'),gl:sa(pg,'aGlow'),mo:sa(pg,'aMode'),c:sa(pg,'aColor'),n:0};
+  const pm=U3.ptMax; const meshDisc=meshIdx.map(i=>({x:SX[i],y:SY[i],r:Math.max(2,RP[i]),d:DP[i]}));
+  const put=(T_,sx,sy,size,core,glow,mode,r,g,b)=>{ const k=T_.n++; T_.p[k*3]=sx/Wd*2-1; T_.p[k*3+1]=1-sy/Hd*2; T_.p[k*3+2]=0; T_.sz[k]=size; T_.co[k]=core; T_.gl[k]=glow; T_.mo[k]=mode; T_.c[k*3]=r; T_.c[k*3+1]=g; T_.c[k*3+2]=b; };
+  const hidden=(sx,sy,d)=>{ for(let m=0;m<meshDisc.length;m++){ const o=meshDisc[m]; if(o.d<d&&(sx-o.x)*(sx-o.x)+(sy-o.y)*(sy-o.y)<o.r*o.r) return true; } return false; };
+  const hs=ov?Math.min(1,Math.sqrt(400/Math.max(1,n))):1; /* 俯瞰で数が多いほど光の輪を小さく(重なりと描画負荷を抑える) */
+  const emit=(i,far)=>{
+    const star=B.kind[i]===0; const rp=RP[i]; const mid=!far;
+    if(star){ const bright=B.br[i], gl=B.gl[i]; const core=Math.max(rp,ov?3.5:(mid?2.2:1.6)); const halo=mid||ov?core+(gl*bright*(ov?14:12)+gl*core*1.2)*(ov?hs:1):core+gl*2.5; let size=Math.min(pm,halo*2); const cf=Math.min(1,core/(size/2));
+      put(S,SX[i],SY[i],size,cf,mid||ov?0.2+0.8*gl:0.35*gl,0,B.cr[i]*bright,B.cg[i]*bright,B.cb[i]*bright); hit.push({id:B.id[i],kind:'star',sx:SX[i],sy:SY[i],r:Math.max(8,size/2+2),w:DP[i]}); }
+    else { const core=Math.max(rp,ov?3:(mid?2.4:1.8)); const size=Math.min(pm,core*2); put(P,SX[i],SY[i],size,1,0,mid?1:0,B.cr[i],B.cg[i],B.cb[i]); hit.push({id:B.id[i],kind:'planet',sx:SX[i],sy:SY[i],r:Math.max(7,size/2+2),w:DP[i]}); }
+    stats.drawn++; if(mid) stats.mid++; else stats.far++;
+  };
+  const cell=Math.max(1,lod.cell); const grid=new Map();
+  for(let i=0;i<n;i++){
+    if(!VIS[i]||MESH[i]) continue; const sx=SX[i], sy=SY[i]; if(sx<-40||sx>Wd+40||sy<-40||sy>Hd+40) continue; if(meshDisc.length&&hidden(sx,sy,DP[i])) continue;
+    const far=DD[i]>=lod.mid;
+    if(far&&!ov){ const key=Math.floor((sx+40)/cell)*65536+Math.floor((sy+40)/cell); let g=grid.get(key); if(!g){ g={n:0,sx:0,sy:0,r:0,g:0,b:0,idx:[]}; grid.set(key,g); } g.n++; g.sx+=sx; g.sy+=sy; g.idx.push(i); continue; }
+    emit(i,far);
+  }
+  grid.forEach(g=>{
+    if(g.n===1){ emit(g.idx[0],true); return; }
+    let r=0,gg=0,b=0; g.idx.forEach(i=>{ const br=B.kind[i]===0?B.br[i]:0.7; r+=B.cr[i]*br; gg+=B.cg[i]*br; b+=B.cb[i]*br; }); r/=g.n; gg/=g.n; b/=g.n; const mx=Math.max(r,gg,b,0.001); const sc=Math.min(1,0.9/mx)*1; const core=Math.min(9,2.2+Math.sqrt(g.n)*1.1); const sx=g.sx/g.n, sy=g.sy/g.n;
+    put(S,sx,sy,Math.min(pm,(core+3)*2),core/(core+3),0.5,0,r*sc,gg*sc,b*sc); stats.clusters++; stats.drawn++; stats.far+=g.n;
+    hit.push({id:null,cluster:true,ids:g.idx.slice(0,200).map(i=>B.id[i]),n:g.n,sx,sy,r:Math.max(8,core+3),w:0});
+  });
+  const fill=(g,T_)=>{ g.setDrawRange(0,T_.n); ['position','aSize','aCore','aGlow','aMode','aColor'].forEach(k=>{ g.attributes[k].needsUpdate=true; }); };
+  fill(sg,S); fill(pg,P);
+  /* メッシュ(近い物体): カメラを原点にした相対座標。3D地球儀と同じく、地図(または単色)の球 */
+  rcam.quaternion.copy(q); rcam.position.set(0,0,0); rcam.updateMatrixWorld(); rcam.updateProjectionMatrix();
+  let ks=0,kp=0; const usedS=[],usedP=[];
+  meshIdx.forEach(i=>{
+    const x=(B.X[i]-cx)*s, y=(B.Y[i]-cy)*s, z=(B.Z[i]-cz)*s, rad=B.r[i]*s;
+    if(B.kind[i]===0){ const m=uv3dMeshOf('s',ks++); m.body.visible=true; m.body.position.set(x,y,z); m.body.scale.setScalar(rad); m.body.material.uniforms.uColor.value.setRGB(B.cr[i]*B.br[i],B.cg[i]*B.br[i],B.cb[i]*B.br[i]);
+      const hf=2.2+B.gl[i]*10; m.halo.visible=true; m.halo.position.set(x,y,z); m.halo.quaternion.copy(q); m.halo.scale.setScalar(rad*hf); const hu=m.halo.material.uniforms; hu.uColor.value.setRGB(B.cr[i]*B.br[i],B.cg[i]*B.br[i],B.cb[i]*B.br[i]); hu.uCore.value=1/hf; hu.uGlow.value=0.2+0.8*B.gl[i]; usedS.push(m); }
+    else { const m=uv3dMeshOf('p',kp++); m.body.visible=true; m.body.position.set(x,y,z); m.body.scale.setScalar(rad); const pl=B.obj[i]; const un=m.body.material.uniforms; un.uColor.value.setRGB(B.cr[i],B.cg[i],B.cb[i]);
+      let use=0; if(pl.surface.mode==='map'){ const tx=uv3dTexOf(uvWid()); if(tx){ un.uMap.value=tx; use=1; } else uv3dAskThumb(uvWid()); } un.uUse.value=use;
+      const j=B.par[i]; let lx=-0.5,ly=0.6,lz=0.7; if(j>=0){ const ex=B.X[j]-B.X[i], ey=B.Y[j]-B.Y[i], ez=B.Z[j]-B.Z[i]; const el=Math.hypot(ex,ey,ez)||1; const wx=ex/el, wy=ey/el, wz=ez/el; lx=wx*right.x+wy*right.y+wz*right.z; ly=wx*up.x+wy*up.y+wz*up.z; lz=wx*back.x+wy*back.y+wz*back.z; }
+      un.uLight.value.set(lx,ly,lz); usedP.push(m); }
+  });
+  for(let k=ks;k<U3.pool.s.length;k++){ const m=U3.pool.s[k]; if(m){ m.body.visible=false; m.halo.visible=false; } }
+  for(let k=kp;k<U3.pool.p.length;k++){ const m=U3.pool.p[k]; if(m) m.body.visible=false; }
+  meshIdx.forEach(i=>{ hit.push({id:B.id[i],kind:B.kind[i]===0?'star':'planet',sx:SX[i],sy:SY[i],r:Math.max(10,RP[i]),w:DP[i]}); });
+  /* 軌道の線(惑星の軌道が、画面で十分大きいとき) */
+  { const arr=U3.orbitLines.geometry.attributes.position.array; let m=0; const maxSeg=60;
+    if(UV.orbits){ const sel=UV.sel; const list=[]; for(let i=B.ns;i<n;i++){ const j=B.par[i]; if(j<0||!VIS[j]||DD[j]>lod.mid*0.5+lod.near) continue; const rpx=B.orR[i]*f/DP[j]; if(rpx>3&&rpx<6000) list.push(i); }
+      list.sort((a,b)=>DD[a]-DD[b]); list.slice(0,maxSeg).forEach(i=>{ const j=B.par[i]; const R=B.orR[i], ti=B.orT[i]; const ci=Math.cos(ti), si=Math.sin(ti); const seg=96; let px=0,py=0,pz=0;
+        for(let k=0;k<=seg;k++){ const a=k/seg*6.283185307; const ux=R*Math.cos(a), uy=R*Math.sin(a)*ci, uz=R*Math.sin(a)*si; const X=B.X[j]+ux, Y=B.Y[j]+uz, Z=B.Z[j]-uy; const qx=(X-cx)*s, qy=(Y-cy)*s, qz=(Z-cz)*s;
+          if(k>0&&m<maxSeg*seg){ const o=m*6; arr[o]=px; arr[o+1]=py; arr[o+2]=pz; arr[o+3]=qx; arr[o+4]=qy; arr[o+5]=qz; m++; } px=qx; py=qy; pz=qz; } }); }
+    U3.orbitLines.geometry.setDrawRange(0,m*2); U3.orbitLines.geometry.attributes.position.needsUpdate=true; stats.orbitSegs=m; }
+  U3.hit=hit; U3.stats=stats;
+  /* 名前と選択の輪(DOM) */
+  const box=document.getElementById('uvLabels'); if(box){ const wantHit=UV.labels?hit.filter(h=>!h.cluster).sort((a,b)=>a.w-b.w).slice(0,80):hit.filter(h=>h.id&&h.id===UV.sel); const selHit=hit.find(h=>h.id&&h.id===UV.sel); const want=wantHit.slice(); if(selHit&&!want.includes(selHit)) want.push(selHit);
+    const need=want.length+1; while(box.children.length>need) box.removeChild(box.lastChild); while(box.children.length<need){ const d=document.createElement('div'); d.className='uvlab'; box.appendChild(d); }
+    const ring=box.children[0]; ring.className='uvring'; if(selHit){ ring.style.display='block'; ring.style.transform='translate('+Math.round(selHit.sx-(selHit.r+4))+'px,'+Math.round(selHit.sy-(selHit.r+4))+'px)'; ring.style.width=ring.style.height=Math.round((selHit.r+4)*2)+'px'; } else ring.style.display='none';
+    want.forEach((h,k)=>{ const d=box.children[k+1]; const b=uvBody(u,h.id); const nm=b?(b.o.name||'(無名)'):''; if(d.textContent!==nm) d.textContent=nm; d.style.transform='translate('+Math.round(h.sx+8)+'px,'+Math.round(h.sy-16)+'px)'; d.className='uvlab'+(h.id===UV.sel?' sel':''); }); stats.labels=want.length; }
+  renderer.render(scene,rcam); U3.dirty=false; U3.lastMs=performance.now()-t0; stats.ms=U3.lastMs;
+}
+/* 世界の地図の画像がまだないとき、1度だけ作る(作れたら描き直す) */
+function uv3dAskThumb(wid){
+  if(!wid||U3.ask[wid]) return; U3.ask[wid]=1;
+  setTimeout(async()=>{ try{ await uvEnsureThumb(wid); }catch(e){} U3.thumbV++; U3.ask[wid]=0; U3.dirty=true; if(!uvThumbOf(wid)) U3.ask[wid]=2; },30);
+}
+function uv3dSig(){ const c=U3.camera.position,t=U3.controls.target,q=U3.camera.quaternion; return [c.x,c.y,c.z,t.x,t.y,t.z,q.x,q.y,q.z,q.w,U3.renderer.domElement.clientWidth,U3.renderer.domElement.clientHeight,UV.sel,UV.labels,UV.orbits,UV.lod.near,UV.lod.mid,UV.lod.cell,U3.overview,U3.thumbV].join(','); }
+function uv3dLoop(){
+  U3.raf=0; if(UV.mode!=='3d'||currentView!=='universe'||!U3.inited) return;
+  uv3dAnimStep(); uv3dZoomStep(); const sg=uv3dSig(); if(U3.dirty||sg!==U3.sig){ if(sg!==U3.sig) uv3dCamSave(); uv3dFrame(); U3.sig=uv3dSig(); }
+  U3.raf=requestAnimationFrame(uv3dLoop);
+}
+function uv3dStart(){ if(!U3.raf&&U3.inited) U3.raf=requestAnimationFrame(uv3dLoop); }
+function uv3dPause(){ if(U3.raf) cancelAnimationFrame(U3.raf); U3.raf=0; }
+/* ---------- カメラ: 全体(俯瞰)・惑星へ寄る・戻る ---------- */
+function uv3dBounds(){
+  const u=uvCur(); if(!u) return null; const pts=[]; u.stars.forEach(s=>pts.push(uvTri(s.position))); u.planets.forEach(p=>pts.push(uvTri(uvPlanetPos(u,p)))); if(!pts.length) return null;
+  let a=[1e300,1e300,1e300],b=[-1e300,-1e300,-1e300]; pts.forEach(p=>{ [p.x,p.y,p.z].forEach((v,k)=>{ if(v<a[k]) a[k]=v; if(v>b[k]) b[k]=v; }); });
+  return {c:[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2],R:Math.max(1,Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2])/2)};
+}
+function uv3dFitCamera(){
+  if(!U3.inited) return; const bd=uv3dBounds()||{c:[0,0,0],R:10}; const d=bd.R/Math.tan(U3.camera.fov*Math.PI/360)*1.15;
+  U3.camera.position.set(bd.c[0]+d*0.15,bd.c[1]+d*0.85,bd.c[2]+d*0.5); U3.controls.target.set(bd.c[0],bd.c[1],bd.c[2]); U3.camera.updateProjectionMatrix(); U3.controls.update();
+  U3.fitDist=U3.camera.position.distanceTo(U3.controls.target); U3.overview=true; U3.dirty=true;
+}
+function uv3dOverview(){ U3.anim=null; U3.focusId=''; U3.back=null; uv3dFitCamera(); uvRefresh(); }
+function uv3dCamSave(){ const u=uvCur(); if(!u||!U3.inited) return; const cam=UV.cam[u.id]||(UV.cam[u.id]={}); const p=U3.camera.position, t=U3.controls.target; cam.v3={p:[p.x,p.y,p.z],t:[t.x,t.y,t.z],ov:U3.overview,fd:U3.fitDist}; uvSaveCam(); }
+function uv3dCamLoad(){ const u=uvCur(); if(!u||!U3.inited) return; const cam=UV.cam[u.id]; U3.focusId=''; U3.back=null; U3.anim=null;
+  if(cam&&cam.v3&&cam.v3.p&&cam.v3.t){ U3.camera.position.set(...cam.v3.p); U3.controls.target.set(...cam.v3.t); U3.controls.update(); U3.overview=cam.v3.ov!==false; U3.fitDist=cam.v3.fd||0; if(!U3.fitDist){ const bd=uv3dBounds(); U3.fitDist=bd?bd.R/Math.tan(U3.camera.fov*Math.PI/360)*1.15:0; } U3.dirty=true; } else uv3dFitCamera(); }
+/* 惑星・恒星に寄る(カメラが移動する)。戻るで、寄る前の視点に戻る。opts.instant: すぐに移す */
+function uv3dFocus(id,opts){
+  opts=opts||{}; const u=uvCur(); const b=uvBody(u,id); if(!b||!U3.inited) return false; const THREE=U3.THREE;
+  const pos=uvTri(uvPosOf(u,b)); const R=b.kind==='star'?uvStarRadiusLy(b.o):uvPlanetRadiusLy(b.o); const toD=Math.max(R*4,1e-14);
+  if(!U3.back) U3.back={p:U3.camera.position.clone(),t:U3.controls.target.clone(),ov:U3.overview};
+  const dir=U3.camera.position.clone().sub(U3.controls.target); if(dir.lengthSq()<1e-300||!Number.isFinite(dir.x)) dir.set(0.3,0.5,0.8); dir.normalize();
+  const fromT=U3.controls.target.clone(), toT=new THREE.Vector3(pos.x,pos.y,pos.z); const fromD=Math.max(1e-14,U3.camera.position.distanceTo(fromT));
+  U3.focusId=id; U3.overview=false; UV.sel=id; U3.anim={t0:performance.now(),dur:opts.instant?0:(U3.animMs===undefined?700:U3.animMs),fromT,toT,fromD,toD,dir};
+  uv3dAnimStep(); uvRefresh(); return true;
+}
+function uv3dBack(){
+  if(!U3.inited) return false; const b=U3.back; if(!b){ uv3dOverview(); return true; }
+  const THREE=U3.THREE; const dir=U3.camera.position.clone().sub(U3.controls.target).normalize(); const toDir=b.p.clone().sub(b.t); const toD=Math.max(1e-14,toDir.length()); toDir.normalize();
+  U3.anim={t0:performance.now(),dur:U3.animMs===undefined?700:U3.animMs,fromT:U3.controls.target.clone(),toT:b.t.clone(),fromD:Math.max(1e-14,U3.camera.position.distanceTo(U3.controls.target)),toD,dir,toDir,restoreOv:b.ov};
+  U3.focusId=''; U3.back=null; uv3dAnimStep(); uvRefresh(); return true;
+}
+function uv3dAnimStep(){
+  const a=U3.anim; if(!a||!U3.inited) return; const t=a.dur<=0?1:Math.min(1,(performance.now()-a.t0)/a.dur); const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  const T=a.fromT.clone().lerp(a.toT,e); const d=Math.exp(Math.log(a.fromD)+(Math.log(a.toD)-Math.log(a.fromD))*e); const dir=a.toDir?a.dir.clone().lerp(a.toDir,e).normalize():a.dir;
+  U3.controls.target.copy(T); U3.camera.position.copy(T).addScaledVector(dir,d); U3.camera.lookAt(T); U3.controls.update(); U3.dirty=true;
+  if(t>=1){ U3.anim=null; if(a.restoreOv!==undefined) U3.overview=a.restoreOv; uvRefresh(); }
+}
+/* まとめた点を押したら、その集まりが見える位置まで寄る */
+function uv3dZoomToCluster(h){
+  const u=uvCur(); const pts=h.ids.map(id=>uvBody(u,id)).filter(Boolean).map(b=>uvTri(uvPosOf(u,b))); if(!pts.length) return; const c=pts.reduce((a,p)=>({x:a.x+p.x/pts.length,y:a.y+p.y/pts.length,z:a.z+p.z/pts.length}),{x:0,y:0,z:0});
+  let R=0; pts.forEach(p=>{ R=Math.max(R,Math.hypot(p.x-c.x,p.y-c.y,p.z-c.z)); }); R=Math.max(R,1e-6); const THREE=U3.THREE; const dir=U3.camera.position.clone().sub(U3.controls.target).normalize();
+  U3.anim={t0:performance.now(),dur:U3.animMs===undefined?700:U3.animMs,fromT:U3.controls.target.clone(),toT:new THREE.Vector3(c.x,c.y,c.z),fromD:Math.max(1e-14,U3.camera.position.distanceTo(U3.controls.target)),toD:R/Math.tan(U3.camera.fov*Math.PI/360)*1.6,dir}; U3.overview=false; uv3dAnimStep();
+}
+
+/* ---------- 3D の入力(v51)。OrbitControls の入力は使わず(controls.enabled=false)、カメラの位置と注視点(controls.target)を直接動かす ----------
+   判定の順序: ① 押した場所が、星・惑星の上か、何もない場所か → ② 押したボタン(左・右)または指の本数 → ③ 長押し(UV_LONG_MS 以上・UV_MOVE_PX 未満の動き)が確定したら、操作を始める
+   PC    : ホイール=拡大・縮小 / 何もない場所を左長押し+ドラッグ=平行移動 / 右長押し+ドラッグ=回転 / 星・惑星を左長押し+ドラッグ=その星を動かす / 短いクリック=選択
+   タッチ: 2本指のピンチ=拡大・縮小(中心は指の中央) / 1本指の長押し+ドラッグ=平行移動 / 2本指を同じ向きに動かす=回転(PC の右長押しと同じ関数) / 星・惑星を1本指で長押し+ドラッグ=その星を動かす */
+function uv3dBasis(){
+  const {THREE,camera,renderer}=U3; camera.updateMatrixWorld(); const q=camera.quaternion; const cv=renderer.domElement; const Wd=cv.clientWidth||1,Hd=cv.clientHeight||1;
+  return {right:new THREE.Vector3(1,0,0).applyQuaternion(q),up:new THREE.Vector3(0,1,0).applyQuaternion(q),back:new THREE.Vector3(0,0,1).applyQuaternion(q),Wd,Hd,tanH:Math.tan(camera.fov*Math.PI/360)};
+}
+/* 平行移動(画面の dx, dy px 分、注視点の位置で、画面上の同じ量になるように) */
+function uv3dPan(dx,dy){
+  if(!U3.inited) return; U3.anim=null; const b=uv3dBasis(); const {camera,controls}=U3; const dist=Math.max(1e-15,camera.position.distanceTo(controls.target)); const wpp=dist*b.tanH/(b.Hd/2);
+  const m=b.right.clone().multiplyScalar(-dx*wpp).addScaledVector(b.up,dy*wpp); camera.position.add(m); controls.target.add(m); camera.lookAt(controls.target); controls.update(); U3.dirty=true;
+}
+/* 回転(PC の右長押し・タッチの2本指の同じ向きの動きで、同じ結果): 横の動き=左右(世界の上向きを軸)、縦の動き=上下(角度) */
+function uv3dRotate(dx,dy){
+  if(!U3.inited) return; U3.anim=null; const {THREE,camera,controls}=U3; const off=camera.position.clone().sub(controls.target); const r=off.length(); if(!(r>0)) return;
+  let th=Math.atan2(off.x,off.z), ph=Math.acos(Math.max(-1,Math.min(1,off.y/r))); th-=dx*0.006; ph=Math.max(0.01,Math.min(Math.PI-0.01,ph-dy*0.006));
+  off.set(r*Math.sin(ph)*Math.sin(th),r*Math.cos(ph),r*Math.sin(ph)*Math.cos(th)); camera.position.copy(controls.target).add(off); camera.lookAt(controls.target); controls.update(); U3.dirty=true;
+}
+/* 拡大・縮小。f: 距離にかける倍率(<1 で近づく)。px,py を渡すと、その画面上の点が動かないように寄る(ピンチの中心)。なければ画面の中央(注視点)へ */
+function uv3dZoomAt(f,px,py){
+  if(!U3.inited||!(f>0)) return; U3.anim=null; const {THREE,camera,controls}=U3; const dist=camera.position.distanceTo(controls.target);
+  const nd=Math.min(1e9,Math.max(1e-14,dist*f)); const k=nd/dist; let P=controls.target.clone();
+  if(px!==undefined){ const b=uv3dBasis(); const fl=b.Hd/2/b.tanH; const d=b.right.clone().multiplyScalar((px-b.Wd/2)/fl).addScaledVector(b.up,-(py-b.Hd/2)/fl).addScaledVector(b.back,-1); const t=controls.target.clone().sub(camera.position).dot(b.back.clone().negate())/d.dot(b.back.clone().negate()); P=camera.position.clone().addScaledVector(d,t); }
+  const dc=camera.position.clone().sub(P).multiplyScalar(k), dt=controls.target.clone().sub(P).multiplyScalar(k); camera.position.copy(P).add(dc); controls.target.copy(P).add(dt); camera.lookAt(controls.target); controls.update(); U3.dirty=true;
+}
+/* ホイール: 回す量に比例して滑らかに。目標の距離(対数)を動かし、毎コマ、そこへ近づく */
+function uv3dWheel(deltaY,mode){
+  if(!U3.inited) return; const d=deltaY*(mode===1?16:mode===2?400:1); const dist=U3.camera.position.distanceTo(U3.controls.target);
+  const cur=(U3.zoomGoal!==undefined&&U3.zoomGoal!==null)?U3.zoomGoal:Math.log(dist); U3.zoomGoal=Math.min(Math.log(1e9),Math.max(Math.log(1e-14),cur+d*0.0015)); U3.anim=null; U3.dirty=true;
+}
+function uv3dZoomStep(){
+  if(U3.zoomGoal===undefined||U3.zoomGoal===null||!U3.inited) return; const dist=U3.camera.position.distanceTo(U3.controls.target); const cur=Math.log(dist); const diff=U3.zoomGoal-cur;
+  if(Math.abs(diff)<1e-4){ uv3dZoomAt(Math.exp(diff)); U3.zoomGoal=null; return; } uv3dZoomAt(Math.exp(diff*0.3));
+}
+/* 画面の点 → 注視点を通る、画面に平行な面との交点の代わりに、基準の点 P0(THREE 座標)を通る、画面に平行な面との交点 */
+function uv3dPlanePoint(x,y,P0){
+  const b=uv3dBasis(); const {camera}=U3; const fl=b.Hd/2/b.tanH; const d=b.right.clone().multiplyScalar((x-b.Wd/2)/fl).addScaledVector(b.up,-(y-b.Hd/2)/fl).addScaledVector(b.back,-1);
+  const n=b.back; const t=P0.clone().sub(camera.position).dot(n)/d.dot(n); return camera.position.clone().addScaledVector(d,t);
+}
+const uvUni=(p)=>({x:p.x,y:-p.z,z:p.y});   /* 3D の座標 → 宇宙の座標(uvTri の逆) */
+const uvR12=(v)=>Number(Number(v).toPrecision(12));
+
+/* ---------- 星・惑星の移動 ---------- */
+function uv3dBodyBegin(P){
+  const u=uvCur(); const b=uvBody(u,P.hit.id); if(!b) return false; const THREE=U3.THREE;
+  const pos0=uvPosOf(u,b); const t0=uvTri(pos0); const P0=new THREE.Vector3(t0.x,t0.y,t0.z); const grab=uv3dPlanePoint(P.x0,P.y0,P0);
+  const d={id:b.o.id,kind:b.kind,P0,grab,orig:b.kind==='star'?JSON.stringify(b.o.position):JSON.stringify({phase:b.o.orbit.phase,tilt:b.o.orbit.tilt}),pos0,cur:null,changed:false};
+  if(b.kind==='planet'){ const s=uvStar(u,b.o.starId); if(!s) return false; d.star=s.position; d.R=uvLy(b.o.orbit.radius,b.o.orbit.radiusUnit); }
+  UV.bodyDrag=d; U3.drag=d; document.getElementById('uvWrap').classList.add('uvmoving'); return true;
+}
+function uv3dBodyMove(x,y){
+  const d=UV.bodyDrag; if(!d) return; const u=uvCur(); const b=uvBody(u,d.id); if(!b) return; const q=uv3dPlanePoint(x,y,d.P0); const delta=q.clone().sub(d.grab); const np=d.P0.clone().add(delta); const nu=uvUni(np);
+  if(d.kind==='star'){ b.o.position={x:uvR12(nu.x),y:uvR12(nu.y),z:uvR12(nu.z)}; }
+  else { const o=uvOrbitFromDir(b.o,{x:nu.x-d.star.x,y:nu.y-d.star.y,z:nu.z-d.star.z}); if(o){ b.o.orbit.phase=o.phase; b.o.orbit.tilt=o.tilt; } }
+  d.changed=true; UV.rev++; U3.dirty=true; uv3dHud(b,u);
+}
+function uv3dHud(b,u){
+  const h=document.getElementById('uvDragHud'); if(!h) return; const pos=uvPosOf(u,b); const ref=uvBody(u,UV.ref); const st=b.kind==='planet'?uvStar(u,b.o.starId):null;
+  let t=(b.kind==='star'?'★ ':'● ')+(b.o.name||'(無名)')+'<br>x '+uvFmtLy(pos.x)+' / y '+uvFmtLy(pos.y)+' / z '+uvFmtLy(pos.z)+' 光年';
+  if(b.kind==='planet') t+='<br>'+(st?esc(st.name||'(無名)')+' からの距離 '+uvFmtLy(uvDistPos(pos,st.position))+' 光年(軌道の半径は変わりません) ・ 位相 '+b.o.orbit.phase+'° ・ 傾き '+b.o.orbit.tilt+'°':'');
+  if(ref&&ref.o.id!==b.o.id) t+='<br>'+esc(uvBodyName(ref))+' からの距離 '+uvFmtLy(uvDist(u,ref,b))+' 光年';
+  h.innerHTML=t+'<br><span class="uvh2">離すと確定 / Esc で取り消し</span>'; h.style.display='block';
+}
+function uv3dBodyEnd(commit){
+  const d=UV.bodyDrag; if(!d) return false; UV.bodyDrag=null; U3.drag=null; const wrap=document.getElementById('uvWrap'); if(wrap) wrap.classList.remove('uvmoving'); const h=document.getElementById('uvDragHud'); if(h) h.style.display='none';
+  const u=uvCur(); const b=uvBody(u,d.id); if(!b){ UV.rev++; U3.dirty=true; return false; }
+  const fin=d.kind==='star'?JSON.parse(JSON.stringify(b.o.position)):{phase:b.o.orbit.phase,tilt:b.o.orbit.tilt}; const orig=JSON.parse(d.orig);
+  if(d.kind==='star') b.o.position=orig; else { b.o.orbit.phase=orig.phase; b.o.orbit.tilt=orig.tilt; }   /* いったん元に戻す(取り消しの単位を、確定の1回にするため) */
+  UV.rev++; U3.dirty=true; U3.key='';
+  if(!commit||!d.changed){ uvRefresh(); return false; }
+  const ok=uvMutate(d.kind==='star'?'恒星の位置を変更(3D)':'惑星の位置を変更(3D)',(uu)=>{ const t=uvBody(uu,d.id); if(d.kind==='star') t.o.position=fin; else { t.o.orbit.phase=fin.phase; t.o.orbit.tilt=fin.tilt; } });
+  U3.key=''; uvRefresh(); return ok;
+}
+
+/* ---------- ポインタ ---------- */
+function uv3dWireInput(canvas){
+  const ptr=new Map(); let P=null, multi=null; const pos=(e)=>{ const r=canvas.getBoundingClientRect(); return {x:e.clientX-r.left,y:e.clientY-r.top}; };
+  const hitAt=(x,y)=>{ let best=null,bd=1e9; U3.hit.forEach(h=>{ const d=Math.hypot(h.sx-x,h.sy-y); if(d<=h.r+3&&d<bd){ bd=d; best=h; } }); return best; };
+  const clearP=()=>{ if(P&&P.timer) clearTimeout(P.timer); P=null; };
+  const cancelAll=()=>{ if(UV.bodyDrag) uv3dBodyEnd(false); clearP(); };
+  U3.cancelInput=cancelAll;
+  const arm=()=>{ if(!P||P.state!=='wait') return; P.state='armed'; U3.lastLong=performance.now();
+    if(!P.hit||P.hit.cluster){ if(P.btn===0) P.mode='pan'; else if(P.btn===2) P.mode='rot'; else P.state='dead'; }
+    else if(P.btn===0){ if(!uvCan()){ P.mode='denied'; toast('星の位置を動かすには、権限「universe」が必要です(閲覧のみ)','err'); } else P.mode='body'; } else P.state='dead'; };
+  const processMulti=()=>{ if(!multi||ptr.size<2) return; const a=[...ptr.values()].slice(0,2); const s0=multi.start; const dist=(q)=>Math.hypot(q[0].x-q[1].x,q[0].y-q[1].y), midp=(q)=>({x:(q[0].x+q[1].x)/2,y:(q[0].y+q[1].y)/2});
+    if(!multi.mode){ /* 判定: 2本の指の間隔の変化(開く・閉じる)が、中央の動きより大きければピンチ。同じ向きに動かして中央が動けば回転(いったん決めたら、その操作が終わるまで変えない) */
+      const dd=Math.abs(dist(a)-dist(s0)), dm=Math.hypot(midp(a).x-midp(s0).x,midp(a).y-midp(s0).y); if(Math.max(dd,dm)<8) return; multi.mode=dd>dm?'pinch':'rotate'; multi.snap=s0.map(q=>({x:q.x,y:q.y})); }
+    const sn=multi.snap;
+    if(multi.mode==='rotate'){ const m0=midp(sn), m1=midp(a); uv3dRotate(m1.x-m0.x,m1.y-m0.y); U3.lastGesture='rotate'; }
+    else { const d0=dist(sn), d1=dist(a); const m=midp(a); if(d0>0&&d1>0) uv3dZoomAt(d0/d1,m.x,m.y); U3.lastGesture='pinch'; }
+    multi.snap=a.map(q=>({x:q.x,y:q.y})); };
+  canvas.addEventListener('contextmenu',(e)=>{ e.preventDefault(); });
+  canvas.addEventListener('pointerdown',(e)=>{
+    if(UV.mode!=='3d') return; U3.dirty=true; const p=pos(e);
+    try{ canvas.setPointerCapture(e.pointerId); }catch(er){}
+    if(e.pointerType==='touch'){
+      ptr.set(e.pointerId,p);
+      if(ptr.size>=2){ cancelAll(); const a=[...ptr.values()].slice(0,2); if(multi&&multi.raf) cancelAnimationFrame(multi.raf); multi={start:a.map(q=>({x:q.x,y:q.y})),snap:null,mode:''}; return; }
+    } else {
+      if(P&&P.state!=='dead'){ cancelAll(); P={state:'dead',btn:e.button}; return; }   /* 長押しの途中で別のボタンを押した: キャンセル */
+    }
+    const hit=hitAt(p.x,p.y); P={id:e.pointerId,btn:e.pointerType==='touch'?0:e.button,type:e.pointerType,x0:p.x,y0:p.y,x:p.x,y:p.y,t0:performance.now(),hit,state:'wait',mode:'',moved:false};
+    if(e.pointerType!=='touch'&&e.button===2) e.preventDefault();
+    P.timer=setTimeout(arm,UV_LONG_MS);
+  });
+  canvas.addEventListener('pointermove',(e)=>{
+    if(UV.mode!=='3d') return; const p=pos(e);
+    if(e.pointerType==='touch'){ if(!ptr.has(e.pointerId)) return; ptr.set(e.pointerId,p);
+      if(multi&&ptr.size>=2){ if(!multi.raf) multi.raf=requestAnimationFrame(()=>{ if(multi){ multi.raf=0; processMulti(); } }); return; }
+    }
+    if(!P||e.pointerId!==P.id) return; const dx=p.x-P.x, dy=p.y-P.y; P.x=p.x; P.y=p.y; const far=Math.hypot(p.x-P.x0,p.y-P.y0)>=UV_MOVE_PX; if(far) P.moved=true;
+    if(P.state==='wait'){ if(far){ clearP(); P={state:'dead'}; } return; }   /* 長押しになる前に動いた: 何もしない(移動・回転は、長押しのあと) */
+    if(P.state!=='armed') return;
+    if(P.mode==='pan') uv3dPan(dx,dy); else if(P.mode==='rot') uv3dRotate(dx,dy);
+    else if(P.mode==='body'){ if(!UV.bodyDrag){ if(far){ if(!uv3dBodyBegin(P)){ P.mode='denied'; return; } uv3dBodyMove(p.x,p.y); } } else uv3dBodyMove(p.x,p.y); }
+  });
+  const up=(e)=>{
+    if(e.pointerType==='touch'){ ptr.delete(e.pointerId); if(multi){ if(multi.raf){ cancelAnimationFrame(multi.raf); multi.raf=0; processMulti(); } if(ptr.size<2) multi=null; if(!ptr.size) multi=null; return; } }
+    if(!P||(P.id!==undefined&&e.pointerId!==P.id)){ if(P&&P.state==='dead'&&e.pointerType!=='touch'&&e.buttons===0) P=null; return; }
+    const Q=P; P=null; if(Q.timer) clearTimeout(Q.timer);
+    if(Q.state==='dead') return;
+    if(UV.bodyDrag){ if(e.type==='pointercancel') uv3dBodyEnd(false); else uv3dBodyEnd(true); return; }
+    if(e.type==='pointercancel') return;
+    if(Q.btn===0&&!Q.moved){ const p=pos(e); uv3dPick(p.x,p.y); }   /* 短いクリック・短い長押し(動かさなかった) = 選択 */
+  };
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('lostpointercapture',(e)=>{ if(e.pointerType==='touch') ptr.delete(e.pointerId); });
+  canvas.addEventListener('wheel',(e)=>{ if(UV.mode!=='3d') return; e.preventDefault(); uv3dWheel(e.deltaY,e.deltaMode); },{passive:false});
+  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'&&(UV.bodyDrag||(P&&P.state!=='dead'))){ const wasDrag=!!UV.bodyDrag; cancelAll(); P={state:'dead'}; if(wasDrag) toast('位置の移動を取り消しました'); } });
+}
+function uvApplyHelp(){ const h=document.getElementById('uvHelp'); if(h) h.style.display=(UV.help&&UV.mode==='3d')?'block':'none'; }
+
+/* ---------- 出力(星図のPNG・惑星の一覧のWord)。編集者の情報・墓石・キー類は入れない ---------- */
+function uvRenderToCanvas(mode,o){   /* mode: 'view'(いまの視野)| 'all'(全体)。画面と同じ描画関数・同じ見た目 */
+  o=o||{}; const u=uvCur(); const wrap=document.getElementById('uvWrap');
+  if(UV.mode==='3d'&&U3.inited){ let saved=null; if(mode==='all'){ saved={p:U3.camera.position.clone(),t:U3.controls.target.clone(),ov:U3.overview,fd:U3.fitDist}; uv3dFitCamera(); } uv3dFrame(); const src=U3.renderer.domElement; const cv=document.createElement('canvas'); cv.width=src.width; cv.height=src.height; cv.getContext('2d').drawImage(src,0,0);
+    if(saved){ U3.camera.position.copy(saved.p); U3.controls.target.copy(saved.t); U3.overview=saved.ov; U3.fitDist=saved.fd; U3.controls.update(); U3.dirty=true; } return cv; }
+  const cw=o.width||(mode==='all'?1600:Math.max(1,wrap?wrap.clientWidth:800)), ch=o.height||(mode==='all'?1000:Math.max(1,wrap?wrap.clientHeight:500)); const cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+  const v=mode==='all'?uvFit2D(u,cw,ch):Object.assign({},uvV2()); uvDraw2D(cv.getContext('2d'),cw,ch,v,{labels:UV.labels,lines:UV.lines}); return cv;
+}
+async function uvPngBlob(mode){ const cv=uvRenderToCanvas(mode); return await new Promise(res=>cv.toBlob(res,'image/png')); }
+function uvPngDialog(){ const u=uvCur(); if(!u) return; if(UV.mode==='table'){ toast('3Dか星図(2D)を開いてから出力してください','err'); return; }
+  openModal('宇宙の画像をPNGで出力',`<p>${UV.mode==='map'?'星図(2D)':'3D'}を、画面と同じ見た目で出力します。</p><div class="formgrid"><div class="full"><label><input type="radio" name="uvpm" value="view" checked> いまの視野</label></div><div class="full"><label><input type="radio" name="uvpm" value="all"> 全体(すべての恒星・惑星が入る範囲)</label></div></div>`,
+    [{label:'キャンセル',onClick:closeModal},{label:'出力',cls:'primary',onClick:async()=>{ const m=document.querySelector('input[name="uvpm"]:checked').value; closeModal(); const b=await uvPngBlob(m); downloadBlob(b,String(u.name||'universe').replace(/[\\\/:*?"<>|]/g,'_')+'_宇宙.png'); }}]);
+}
+/* 惑星の一覧(表と同じ列。惑星の年代の列を含む)。並べ替え・絞り込みの結果ではなく、すべての惑星を出す */
+async function uvBuildDocx(u){
+  u=u||uvCur(); const JSZip=await ensureJSZip(); const z=new JSZip(); const ref=uvBody(u,UV.ref); const uo=uvOrd(u,u.calendar.now);
+  const cell=(t,w,b)=>`<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${b?'<w:shd w:val="clear" w:color="auto" w:fill="DDE6F5"/>':''}</w:tcPr><w:p><w:r>${b?'<w:rPr><w:b/></w:rPr>':''}<w:t xml:space="preserve">${sdX(t)}</w:t></w:r></w:p></w:tc>`;
+  const cols=[['名前',1500],['恒星',1300],['x(光年)',1000],['y(光年)',1000],['z(光年)',1000],['距離'+(ref?'('+uvBodyName(ref)+'から)':'(基準なし)'),1700],['公転周期',1200],['自転周期',1200],['惑星の現在の年代',2300],['メモ',2400]];
+  const per=(v)=>v.value===null?'':uvFmt(v.value)+' '+v.unit;
+  const head=`<w:tr><w:trPr><w:tblHeader/></w:trPr>${cols.map(c=>cell(c[0],c[1],true)).join('')}</w:tr>`;
+  const rows=u.planets.map(p=>{ const st=uvStar(u,p.starId); const pp=uvPlanetPos(u,p); const row=[p.name,st?st.name:'',uvFmt(pp.x),uvFmt(pp.y),uvFmt(pp.z),ref&&ref.o.id!==p.id?uvFmtLy(uvDistPos(uvPosOf(u,ref),pp))+' 光年':'—',per(p.orbitalPeriod),per(p.rotationPeriod),uvPDateText(p,uvPlanetDate(u,p,uo)),p.notes]; return `<w:tr>${row.map((t,i)=>cell(t,cols[i][1],false)).join('')}</w:tr>`; });
+  const b='<w:tblBorders>'+['top','left','bottom','right','insideH','insideV'].map(k=>`<w:${k} w:val="single" w:sz="4" w:space="0" w:color="888888"/>`).join('')+'</w:tblBorders>';
+  const P=(t,st)=>`<w:p><w:pPr>${st?`<w:pStyle w:val="${st}"/>`:''}</w:pPr><w:r>${st==='Title'?'<w:rPr><w:b/><w:sz w:val="40"/></w:rPr>':''}<w:t xml:space="preserve">${sdX(t)}</w:t></w:r></w:p>`;
+  const body=P(u.name,'Title')+P('宇宙の惑星の一覧 / 宇宙暦: '+uvDateText(u,u.calendar.now)+' / 恒星 '+u.stars.length+' / 惑星 '+u.planets.length+' / 作成日: '+new Date().toLocaleDateString('ja-JP'))+
+    `<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/>${b}</w:tblPr><w:tblGrid>${cols.map(c=>`<w:gridCol w:w="${c[1]}"/>`).join('')}</w:tblGrid>${head}${rows.join('')}</w:tbl><w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>`;
+  z.file('[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  z.file('_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  z.file('word/document.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'</w:body></w:document>');
+  return await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
+
+/* ---------- 画面の操作のつなぎ(イベントは #uvRoot でまとめて受ける) ---------- */
+function uvReadJsonFile(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>{ try{ res(JSON.parse(r.result)); }catch(e){ rej(new Error('JSONとして読めません')); } }; r.onerror=()=>rej(new Error('読み込めません')); r.readAsText(file); }); }
+const uvInfoModal=(title,html)=>openModal(title,html,[{label:'閉じる',onClick:closeModal}]);
+/* 3D へ切り替えて、物体に寄る */
+async function uvFocusBody(id){ UV.sel=id; if(UV.mode!=='3d'){ UV.mode='3d'; uv3dPause(); if(!(await uv3dInit())){ UV.mode='map'; uvRefresh(); return; } uv3dResize(); uv3dCamLoad(); U3.key=''; uvRefresh(); uv3dStart(); } uv3dFocus(id); uv3dStart(); }
+function uvWire(){
+  const root=document.getElementById('uvRoot'); if(!root||root._uvWired) return; root._uvWired=true;
+  root.addEventListener('click',(e)=>{
+    const th=e.target.closest('[data-uvsort]'); if(th){ const k=th.dataset.uvsort; if(UV.sortKey===k) UV.sortDir=-UV.sortDir; else { UV.sortKey=k; UV.sortDir=1; } document.getElementById('uvTableWrap').innerHTML=uvTableHtml(uvCur()); return; }
+    const t=e.target.closest('button'); if(t){ const id=t.id||'';
+      if(t.dataset.uvconv){ uvConvForm(t.dataset.uvconv); return; } if(t.dataset.uvout){ uvPlanetDeleteConfirm(t.dataset.uvout); return; }
+      if(t.dataset.uvedit){ uvPlanetForm(t.dataset.uvedit); return; } if(t.dataset.uvsedit){ uvStarForm(t.dataset.uvsedit); return; } if(t.dataset.uvsdel){ uvStarDeleteConfirm(t.dataset.uvsdel); return; }
+      if(t.dataset.uvfocus){ uvFocusBody(t.dataset.uvfocus); return; }
+      switch(id){
+        case 'uvInfo': uvUniverseForm(); break; case 'uvPngBtn': uvPngDialog(); break; case 'uvDocxBtn': { const u=uvCur(); if(u) uvBuildDocx(u).then(b=>downloadBlob(b,uvSafeName(u.name)+'_惑星の一覧.docx')).catch(er=>toast(er.message||String(er),'err')); break; }
+        case 'uvModeTable': uvSetMode('table'); break; case 'uvModeMap': uvSetMode('map'); break; case 'uvMode3d': uvSetMode('3d'); break; case 'uvModeStars': uvSetMode('stars'); break;
+        case 'uvAddPlanet': uvPlanetForm(null); break; case 'uvAddStar': uvStarForm(null); break;
+        case 'uvNowPrev': uvStepNow(-1); break; case 'uvNowNext': uvStepNow(1); break;
+        case 'uv3Overview': uv3dOverview(); break; case 'uv3Back': uv3dBack(); break; case 'uvLodBtn': uvLodForm(); break;
+      } return; }
+    const tr=e.target.closest('tr[data-uvrow]'); if(tr&&!e.target.closest('input,textarea,select')){ UV.sel=tr.dataset.uvrow; document.querySelectorAll('#uvTable tr.on').forEach(x=>x.classList.remove('on')); tr.classList.add('on'); }
+  });
+  root.addEventListener('change',async(e)=>{
+    const t=e.target; const id=t.id;
+    if(t.dataset&&t.dataset.uvf){ const f=t.dataset.uvf, bid=t.dataset.uvb; const u=uvCur(); const b=uvBody(u,bid); if(!b) return; const o=b.o;
+      if(f==='x'||f==='y'||f==='z'){ if(b.kind!=='star') return; const v=parseFloat(t.value); if(!Number.isFinite(v)){ t.value=o.position[f]; return; } uvSetPos(bid,f,v); U3.key=''; }
+      else if(f==='name'){ uvMutate('名前を変更',(uu)=>{ uvBody(uu,bid).o.name=uvStr(t.value,200); }); }
+      else if(f==='notes'){ uvMutate('メモを変更',(uu)=>{ uvBody(uu,bid).o.notes=uvStr(t.value,8000); }); }
+      else if(b.kind==='planet'&&(f==='ov'||f==='rv')){ const v=t.value===''?null:parseFloat(t.value); if(t.value!==''&&!(v>=0)){ t.value=''; return; } uvMutate('周期を変更',(uu)=>{ uvPlanet(uu,bid)[f==='ov'?'orbitalPeriod':'rotationPeriod'].value=v; }); }
+      else if(b.kind==='planet'&&(f==='ou'||f==='ru')){ uvMutate('周期の単位を変更',(uu)=>{ uvPlanet(uu,bid)[f==='ou'?'orbitalPeriod':'rotationPeriod'].unit=uvUnit(t.value,UV_PERIOD_UNITS,'日'); }); }
+      if(UV.mode!=='table'&&UV.mode!=='stars') uvRefresh(); return; }
+    if(id==='uvHelpChk'){ uvSetHelp(t.checked); return; }
+    if(id==='uvLabelsChk'){ UV.labels=t.checked; uvRefresh(); return; } if(id==='uvLinesChk'){ UV.lines=t.checked; uvRefresh(); return; } if(id==='uvOrbitChk'){ UV.orbits=t.checked; U3.dirty=true; return; }
+    if(id==='uvRef'){ UV.ref=t.value; uvRefresh(); return; } if(id==='uvStep'){ UV.step=t.value; return; }
+    if(id==='uvNowY'||id==='uvNowM'||id==='uvNowD'){ const y=parseInt(uvV('uvNowY'),10)||0; const m=document.getElementById('uvNowM')?(parseInt(uvV('uvNowM'),10)||1):1; const d=parseFloat(uvV('uvNowD'))||1; uvSetNow(y,m,d); return; }
+  });
+  root.addEventListener('input',(e)=>{ if(e.target.id==='uvFilter'){ UV.filter=e.target.value; const pos=e.target.selectionStart; const tw=document.getElementById('uvTableWrap'); tw.innerHTML=uvTableHtml(uvCur()); const f=document.getElementById('uvFilter'); if(f){ f.focus(); try{ f.setSelectionRange(pos,pos); }catch(er){} } } });
+}
+
+/* ---------- AI(権限 universe。読み取りは誰でも、書き込みは提案の承認を経る) ---------- */
+function uvRegisterAI(){
+  const AI=window.AtlasAI; if(!AI||!AI.registerTool||AI._uvDone) return; AI._uvDone=true;
+  try{ AI.registerPermission(UV_PERM,()=>uvCan()?true:'宇宙の編集には、権限「universe」が必要です(現在: '+roleLabel(currentRole)+')'); }catch(e){}
+  const rd={category:'universe',kind:'read',permissions:[],requiresWorld:false};
+  const wr={category:'universe',kind:'write',permissions:[UV_PERM],requiresConfirmation:true,requiresWorld:false};
+  const need=async()=>{ await uvLoad(); const u=uvCur(); if(!u) throw new AI.AiError(AI.ERR.INVALID_REFERENCE,'世界が開かれていません(世界が、そのまま宇宙です)'); return u; };
+  const PL=(u,p)=>{ const d=uvPlanetDate(u,p); return {id:p.id,name:p.name,starId:p.starId,position:uvPlanetPos(u,p),orbit:p.orbit,size:p.size,orbitalPeriod:p.orbitalPeriod,rotationPeriod:p.rotationPeriod,surface:p.surface,planetDate:d?uvPDateText(p,d):'換算なし'}; };
+  AI.registerTool(Object.assign({id:'universe.list_planets',name:'宇宙の惑星の一覧',tags:['宇宙','惑星','universe'],description:'開いている世界の宇宙の惑星を返す(名前で絞り込み可)。惑星の年代は、換算を設定した惑星だけ。',
+    inputSchema:{type:'object',properties:{query:{type:'string'},limit:{type:'integer'}},additionalProperties:false},
+    handler:async(a)=>{ const u=await need(); const q=(a.query||'').toLowerCase(); const l=u.planets.filter(p=>!q||p.name.toLowerCase().includes(q)); return {result:{universe:u.name,calendar:uvDateText(u,u.calendar.now),total:l.length,planets:l.slice(0,Math.min(200,Math.max(1,a.limit||50))).map(p=>PL(u,p))},summary:'惑星 '+l.length+' 件'}; }},rd));
+  AI.registerTool(Object.assign({id:'universe.list_stars',name:'宇宙の恒星の一覧',tags:['宇宙','恒星','universe'],description:'開いている宇宙の恒星を返す(名前で絞り込み可)。',
+    inputSchema:{type:'object',properties:{query:{type:'string'},limit:{type:'integer'}},additionalProperties:false},
+    handler:async(a)=>{ const u=await need(); const q=(a.query||'').toLowerCase(); const l=u.stars.filter(s=>!q||s.name.toLowerCase().includes(q)); return {result:{universe:u.name,total:l.length,stars:l.slice(0,Math.min(200,Math.max(1,a.limit||50))).map(s=>({id:s.id,name:s.name,position:s.position,radius:s.radius,color:s.color,brightness:s.brightness,glow:s.glow}))},summary:'恒星 '+l.length+' 件'}; }},rd));
+  AI.registerTool(Object.assign({id:'universe.distance',name:'恒星・惑星の間の距離',tags:['宇宙','距離','光年','universe'],description:'2つの恒星または惑星の間の距離(光年)を返す。位置から計算する。光の遅れは扱わない。',
+    inputSchema:{type:'object',properties:{a:{type:'string',description:'恒星または惑星のID'},b:{type:'string',description:'恒星または惑星のID'}},required:['a','b'],additionalProperties:false},
+    handler:async(a)=>{ const u=await need(); const p1=uvBody(u,a.a), p2=uvBody(u,a.b); if(!p1||!p2) throw new AI.AiError(AI.ERR.INVALID_REFERENCE,'恒星・惑星が見つかりません'); const d=uvDist(u,p1,p2); return {result:{ly:d},summary:uvBodyName(p1)+' — '+uvBodyName(p2)+': '+uvFmtLy(d)+' 光年'}; }},rd));
+  AI.registerTool(Object.assign({id:'universe.update_planet',name:'惑星を編集',tags:['宇宙','惑星','編集','universe'],description:'惑星の名前・メモ・軌道(半径・傾き・位相)・公転周期・自転周期を変える。世界の中身は変えない。権限 universe が必要。',
+    inputSchema:{type:'object',properties:{id:{type:'string'},name:{type:'string'},notes:{type:'string'},orbitRadius:{type:'number'},orbitTilt:{type:'number'},orbitPhase:{type:'number'},orbitalValue:{type:'number'},orbitalUnit:{type:'string'},rotationValue:{type:'number'},rotationUnit:{type:'string'}},required:['id'],additionalProperties:false},
+    describeCall:(a)=>'惑星を編集: '+a.id,
+    handler:async(a)=>{ const u=await need(); if(!uvCan()) throw new AI.AiError(AI.ERR.PERMISSION_DENIED,'権限「universe」がありません'); if(!uvPlanet(u,a.id)) throw new AI.AiError(AI.ERR.INVALID_REFERENCE,'惑星が見つかりません');
+      uvMutate('惑星を編集(AI)',(uu)=>{ const p=uvPlanet(uu,a.id); if(a.name!==undefined) p.name=uvStr(a.name,200); if(a.notes!==undefined) p.notes=uvStr(a.notes,8000); if(a.orbitRadius!==undefined) p.orbit.radius=Math.max(0,a.orbitRadius); if(a.orbitTilt!==undefined) p.orbit.tilt=a.orbitTilt; if(a.orbitPhase!==undefined) p.orbit.phase=a.orbitPhase;
+        if(a.orbitalValue!==undefined) p.orbitalPeriod.value=a.orbitalValue; if(a.orbitalUnit!==undefined) p.orbitalPeriod.unit=uvUnit(a.orbitalUnit,UV_PERIOD_UNITS,p.orbitalPeriod.unit); if(a.rotationValue!==undefined) p.rotationPeriod.value=a.rotationValue; if(a.rotationUnit!==undefined) p.rotationPeriod.unit=uvUnit(a.rotationUnit,UV_PERIOD_UNITS,p.rotationPeriod.unit); }); return {result:{id:a.id},summary:'惑星を編集しました'}; }},wr));
+  AI.registerTool(Object.assign({id:'universe.update_star',name:'恒星を編集',tags:['宇宙','恒星','編集','universe'],description:'恒星の名前・メモ・位置(光年)・色・光の強さ・光の広がりを変える。権限 universe が必要。',
+    inputSchema:{type:'object',properties:{id:{type:'string'},name:{type:'string'},notes:{type:'string'},x:{type:'number'},y:{type:'number'},z:{type:'number'},color:{type:'string'},brightness:{type:'number'},glow:{type:'number'}},required:['id'],additionalProperties:false},
+    describeCall:(a)=>'恒星を編集: '+a.id,
+    handler:async(a)=>{ const u=await need(); if(!uvCan()) throw new AI.AiError(AI.ERR.PERMISSION_DENIED,'権限「universe」がありません'); if(!uvStar(u,a.id)) throw new AI.AiError(AI.ERR.INVALID_REFERENCE,'恒星が見つかりません');
+      uvMutate('恒星を編集(AI)',(uu)=>{ const s=uvStar(uu,a.id); if(a.name!==undefined) s.name=uvStr(a.name,200); if(a.notes!==undefined) s.notes=uvStr(a.notes,8000); ['x','y','z'].forEach(k=>{ if(a[k]!==undefined) s.position[k]=a[k]; }); if(a.color!==undefined) s.color=uvColor(a.color,s.color); if(a.brightness!==undefined) s.brightness=uvClamp01(a.brightness,s.brightness); if(a.glow!==undefined) s.glow=uvClamp01(a.glow,s.glow); }); return {result:{id:a.id},summary:'恒星を編集しました'}; }},wr));
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',uvRegisterAI); else setTimeout(uvRegisterAI,0);
+
+
 function toast(msg, type){ const el=document.createElement('div'); el.className='toast'; if(type==='err') el.style.borderColor='var(--danger)'; el.textContent=msg; document.getElementById('toastwrap').appendChild(el); setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),320); },type==='err'?4200:2600); }
 function yearLabel(y, world){ const cal = world && world.calendarUnit ? world.calendarUnit : '年'; return `${y}${cal}`; }
 function normalizeTreatyDate(v){
@@ -1718,9 +2803,9 @@ function withTilesUndo(label, fn){
 /* ---------- 筆(ストローク)の記録: 触れたタイルの前後だけを圧縮して保持 ---------- */
 const Stroke = {
   cur:null,
-  begin(label){
+  begin(label, sid){
     if(typeof isViewOnly==='function' && isViewOnly()) return false;
-    const S = curState(); if(!S) return false;
+    const S = sid ? stateById(sid) : curState(); if(!S) return false;   /* v52: 第2引数で、現在の年代以外の地図状態へも書ける(省略時は従来どおり) */
     Store.tilesOf(S.id);
     Stroke.cur = {label, sid:S.id, before:new Map(), touched:new Map()};
     return true;
@@ -2316,6 +3401,7 @@ function createWorld(opts){
     metrics: deepClone(DEFAULT_METRICS), statistics: [],
     assets: [], eras: [], history: [],
     refImages: [],
+    uvStars: [], uvPlanets: [], uvCalendar: uvNormCal(opts.uvCalendar),   /* v51: 世界 = 宇宙(恒星・惑星は、作成後に宇宙の画面で置く) */
     createdAt: Date.now(), updatedAt: Date.now(),
   };
   normalizeTerrainSystem(world);
@@ -2337,6 +3423,18 @@ function fillLayerUniform(world, sid, layer, value){
   Store.resolved.clear();
 }
 
+/* 世界データの正規化の登録簿。機能は、起動時(スクリプトの読み込み時)に1回ずつ登録する。
+   順序は、登録した順ではなく (order, id) で決める(登録の順が変わっても、同じ入力は同じ結果になる)。
+   登録された関数は、既存データの内容を変えず、不足している項目の既定値だけを補う。 */
+const WorldNormalizers=[];
+function registerWorldNormalizer(id,order,fn){
+  if(typeof id!=='string'||!id||typeof fn!=='function') return false;
+  if(WorldNormalizers.some(n=>n.id===id)) return false;   /* 同じ名前は1回だけ */
+  WorldNormalizers.push({id,order:Number(order)||0,fn});
+  WorldNormalizers.sort((a,b)=>(a.order-b.order)||(a.id<b.id?-1:a.id>b.id?1:0));
+  return true;
+}
+function runWorldNormalizers(w){ for(let i=0;i<WorldNormalizers.length;i++) WorldNormalizers[i].fn(w); }
 function normalizeWorld(w){
   if(typeof syncMigrate==='function') syncMigrate(w);   /* 版の移行(登録式・1回だけ) */
   if(!w.id) w.id = uid('world');
@@ -2393,10 +3491,7 @@ function normalizeWorld(w){
   w.mapDisplay = Object.assign({elevation:true, elevMode:'shade'}, (w.mapDisplay && typeof w.mapDisplay==='object') ? w.mapDisplay : {}); w.mapDisplay.elevation = w.mapDisplay.elevation!==false; if(w.mapDisplay.elevMode!=='bands') w.mapDisplay.elevMode='shade';
   { const d=w.mapDisplay; const az=Number(d.lightAz), al=Number(d.lightAlt); d.lightAz=Number.isFinite(az)?((az%360)+360)%360:315; d.lightAlt=Number.isFinite(al)?Math.max(0,Math.min(90,al)):45; d.lightCustom=d.lightCustom===true; d.contour=d.contour===true; if(![16,32,64].includes(Number(d.contourStep))) d.contourStep=32; else d.contourStep=Number(d.contourStep); }
   ['customLayers','regions','nations','cities','events','wars','treaties','relations','people','organizations','statistics','assets','eras','history','areas','worldlines','mapStates','refImages'].forEach(k=>{ if(!Array.isArray(w[k])) w[k]=[]; });
-  diploNormalize(w);   /* 外交・勢力圏の拡張データ(既存JSONに無ければ空で補完。既存データは変更しない) */
-  if(typeof typoNormalize==='function') typoNormalize(w);   /* フォント設定・独自文字(旧データは空で補完。内容は作らない) */
-  tradeNormalize(w);   /* 交易路・資源・指標「交易量」(旧データは空で補完) */
-  cultNormalize(w); p17Normalize(w); atlasPermNormalize(w); dictNormalize(w);   /* 言語・宗教・文化・割り当て・文化の編集権限(旧データは空/既定で補完) */
+  runWorldNormalizers(w);   /* 登録された正規化(外交・フォント・交易・文化・辞書など)を、登録簿の順に呼ぶ。コアは機能の名前を知らない */
   /* 王朝・家系図: 人物データに親子・配偶者・在位期間の項目を追加(既存項目は維持したまま不足分のみ補う) */
   w.people.forEach(p=>{
     if(!('fatherId' in p)) p.fatherId='';
@@ -4503,6 +5598,329 @@ function pasteClip(px0,py0){
   Object.keys(c.layers).forEach(l=>{ R.layers[l].forEach((t,k)=>Bake.dropArr(l,t)); if(l==='elev') R.layers.terrain.forEach(t=>Bake.terrain.delete(t)); });
   Stroke.end(); renderMap(); toast('貼り付けました');
 }
+/* =========================================================
+   v52 年代間コピー: ある年代(地図状態)から、選んだレイヤーだけを別の年代へコピーする
+   ・元の年代は読むだけ。書き込みは先の地図状態だけ(Stroke.begin(名前, 先) → Stroke.tile → Stroke.end)。先が親を継承していても、
+     Stroke.tile が「先だけの複製」を作るので、親・元には波及しない(値のコピーで、元のタイルとは共有しない)。
+   ・ラスター(地形・標高・国家領土・行政区画)はタイルごとに処理し、ベクター(行政区画の境界・線)は先の地図状態の差分(vec)へ書く。
+     全体を1回の取り消しにまとめる(メタ + タイルの合成エントリ)。
+   ・国家 rid は、元と先で「同じ国家」を指す前提(別の国家へ読み替えるコピーは、この版では対象外=仕様)。
+   ・都市・カスタム点は、年代ごとの地図状態には属さない(世界全体の記録。成立・終了の年で存在が決まる)ため、コピーの対象にしない。
+   ========================================================= */
+const YC_ADMIN = ['adminT0','adminT1','adminT2','adminT3','adminT4','adminT5'];
+const YC_GROUPS = {
+  nation:{label:'国家領土', raster:['nation']},
+  terrain:{label:'地形', raster:['terrain']},
+  elev:{label:'標高', raster:['elev']},
+  border:{label:'国境線(行政区画の境界)', raster:YC_ADMIN, vec:'admin'},
+  lines:{label:'線(道路・河川など)', raster:[], vec:'lines'},
+};
+const YC_GROUP_ORDER = ['nation','terrain','elev','border','lines'];
+const YC_MODES = {all:'上書き', overlay:'重ねる'};
+const YC_YIELD_TILES = 24;
+function ycLayerLabel(l){ return (YC_GROUPS[l]&&YC_GROUPS[l].label)||(LAYER_DEF[l]&&LAYER_DEF[l].label)||l; }
+function ycStates(lineId){
+  const w=W(); if(!w) return [];
+  return w.mapStates.filter(s=>!lineId||s.lineId===lineId).sort((a,b)=>(a.year-b.year)||((a.month||1)-(b.month||1))||((a.day||1)-(b.day||1))).map(s=>({id:s.id, year:s.year, lineId:s.lineId, label:stateLabel(s,w)}));
+}
+function ycLimit(){ const L=(window.AtlasAI&&window.AtlasAI.DEFAULT_LIMITS)||{}; return L.maxPixelsTotal||16000000; }
+function ycDescendants(sid){
+  const w=W(); let n=0; const seen=new Set([sid]); let grow=true;
+  while(grow){ grow=false; w.mapStates.forEach(s=>{ if(!seen.has(s.id) && s.parentId && !s.full && seen.has(s.parentId)){ seen.add(s.id); n++; grow=true; } }); }
+  return n;
+}
+function ycNationOf(w, v){ if(v===undefined||v===null||v==='') return null; return w.nations.find(n=>n.id===v)||w.nations.find(n=>n.rid===v)||w.nations.find(n=>n.name===v)||null; }
+/* 設定の検査と、元・先の解決。書き込みはしない。 { ok, ... } または { ok:false, error } */
+function ycPrepare(o){
+  const w=W(); const fail=(m)=>({ok:false, error:m});
+  if(!w) return fail('世界が開かれていません');
+  o=o||{};
+  const S=stateById(o.srcId||currentStateId()); if(!S) return fail('コピー元の年代(地図状態)が見つかりません');
+  const gs=new Set(); const bad=[];
+  (o.layers||[]).forEach(l=>{ if(YC_GROUPS[l]) gs.add(l); else if(l==='admin'||YC_ADMIN.includes(l)) gs.add('border'); else bad.push(l); });
+  if(bad.length) return fail('レイヤーの指定が正しくありません: '+bad.join(', '));
+  const groups=YC_GROUP_ORDER.filter(g=>gs.has(g));
+  if(!groups.length) return fail('コピーするレイヤーを1つ以上選んでください');
+  let layers=[]; groups.forEach(g=>{ layers=layers.concat(YC_GROUPS[g].raster); });
+  let vecs=groups.map(g=>YC_GROUPS[g].vec).filter(Boolean);
+  let mode=o.mode||'all'; if(mode==='skipZero') mode='overlay'; if(!YC_MODES[mode]) return fail('貼り付けの方法が正しくありません: '+mode);
+  /* 地図の寸法: 世界の寸法。年代ごとに寸法(mapWidth/mapHeight)を持つ地図状態があれば、元と先の小さい方に合わせ、はみ出る部分はコピーしない */
+  let D=null, willCreate=null, dstYear;
+  if(o.dstId){ D=stateById(o.dstId); if(!D) return fail('コピー先の年代(地図状態)が見つかりません'); dstYear=D.year; }
+  else if(Number.isFinite(Number(o.dstYear)) && o.dstYear!=='' && o.dstYear!==null){
+    dstYear=Math.floor(Number(o.dstYear)); const lineId=o.dstLineId||S.lineId;
+    if(!w.worldlines.some(l=>l.id===lineId)) return fail('コピー先の世界線が見つかりません');
+    D=w.mapStates.find(s=>s.lineId===lineId && s.year===dstYear && (s.month||1)===1 && (s.day||1)===1)||null;
+    if(!D){
+      if(!o.createIfMissing) return fail(`${yearLabel(dstYear,w)}の地図がありません(「新しく作ってからコピー」を承諾すると、直前の年代を引き継いで作成します)`);
+      const seq=lineSequence(w,lineId); let base=null; seq.forEach(s=>{ if(s.year<dstYear||(s.year===dstYear&&(s.month||1)===1&&(s.day||1)===1)) base=s; });
+      willCreate={year:dstYear, lineId, baseId:base?base.id:null};
+    }
+  } else return fail('コピー先の年代を指定してください');
+  if(D && D.id===S.id) return fail('コピー元とコピー先が同じ年代です。別の年代を選んでください');
+  const sw=Number(S.mapWidth)||w.mapWidth, sh=Number(S.mapHeight)||w.mapHeight, dw=(D&&Number(D.mapWidth))||w.mapWidth, dh=(D&&Number(D.mapHeight))||w.mapHeight;
+  const bounds={w:Math.max(1,Math.min(sw,dw,w.mapWidth)), h:Math.max(1,Math.min(sh,dh,w.mapHeight))};
+  const dim={src:[sw,sh], dst:[dw,dh], differ:(sw!==dw||sh!==dh)};
+  const sc=o.scope||{type:'all'}; const scope={type:sc.type||'all'}; let rect={x0:0,y0:0,x1:bounds.w-1,y1:bounds.h-1};
+  if(scope.type==='rect'){
+    const r=sc.rect||{}; const x0=Math.floor(Math.min(r.x0,r.x1)), x1=Math.floor(Math.max(r.x0,r.x1)), y0=Math.floor(Math.min(r.y0,r.y1)), y1=Math.floor(Math.max(r.y0,r.y1));
+    if(![x0,x1,y0,y1].every(Number.isFinite)) return fail('四角い範囲を指定してください');
+    rect={x0:Math.max(0,x0), y0:Math.max(0,y0), x1:Math.min(bounds.w-1,x1), y1:Math.min(bounds.h-1,y1)};
+    if(rect.x1<rect.x0||rect.y1<rect.y0) return fail('四角い範囲が地図の範囲外です');
+  } else if(scope.type==='nation'){
+    const n=ycNationOf(w, sc.nationId!==undefined?sc.nationId:sc.rid); if(!n) return fail('範囲に指定した国家が見つかりません');
+    scope.rid=n.rid; scope.nationId=n.id; scope.nationName=n.name; vecs=[];
+  } else if(scope.type!=='all') return fail('範囲の種類が正しくありません: '+scope.type);
+  scope.rect=rect;
+  const Rs=resolveState(S.id);
+  let Rt; if(D) Rt=resolveState(D.id); else if(willCreate.baseId) Rt=resolveState(willCreate.baseId); else { Rt={layers:{}, admin:new Map(), lines:new Map()}; LAYER_IDS.forEach(l=>{ Rt.layers[l]=new Map(); }); }
+  const valid={};
+  const natByRid=new Map(w.nations.map(n=>[n.rid,n])); const regByRid=new Map(w.regions.map(r=>[r.rid,r]));
+  valid.nation=(v)=>{ const n=natByRid.get(v); return !n?'missing':(nationIsActive(n,dstYear)?null:'inactive'); };
+  YC_ADMIN.forEach(l=>{ valid[l]=(v)=>{ const r=regByRid.get(v); return !r?'missing':(regionIsActive(r,dstYear)?null:'inactive'); }; });
+  return {ok:true, w, S, D, willCreate, dstYear, Rs, Rt, groups, layers, vecs, scope, rect, bounds, dim, mode, valid, natByRid, regByRid, forceInactive:o.forceInactive!==false};
+}
+/* 1つのタイル(レイヤー×タイル位置)の処理。write=false なら数えるだけ。変更した(する)ピクセル数を返す */
+function ycTile(P, l, key, acc, write){
+  const s=P.Rs.layers[l].get(key)||null, t0=P.Rt.layers[l].get(key)||null;
+  if(s && s===t0) return 0;
+  let mt=null; if(P.scope.type==='nation'){ mt=P.Rs.layers.nation.get(key)||null; if(!mt) return 0; }
+  const tx=key&255, ty=key>>8, r=P.rect; const x0=Math.max(0,r.x0-tx*256), x1=Math.min(255,r.x1-tx*256), y0=Math.max(0,r.y0-ty*256), y1=Math.min(255,r.y1-ty*256); if(x1<x0||y1<y0) return 0;
+  const rid=P.scope.rid, overlay=(P.mode==='overlay'), vf=P.valid[l], force=P.forceInactive, bb=acc.bb; let dst=null, n=0;
+  for(let y=y0;y<=y1;y++){ const row=y<<8;
+    for(let x=x0;x<=x1;x++){ const i=row|x;
+      if(mt && mt[i]!==rid) continue;
+      const sv=s?s[i]:0, tv=t0?t0[i]:0; if(sv===tv) continue;
+      if(overlay && sv===0) continue;
+      if(sv!==0 && vf){ const why=vf(sv); if(why){ const a=(acc.bad[l]||(acc.bad[l]=new Map())); const e=a.get(sv)||{why,count:0,copied:0}; e.count++; if(force) e.copied++; a.set(sv,e); if(!force) continue; } }
+      n++; const gx=tx*256+x, gy=ty*256+y; if(gx<bb.x0)bb.x0=gx; if(gx>bb.x1)bb.x1=gx; if(gy<bb.y0)bb.y0=gy; if(gy>bb.y1)bb.y1=gy;
+      if(write){ if(!dst) dst=Stroke.tile(l,key,true); dst[i]=sv; }
+    } }
+  return n;
+}
+/* 元に、地図の寸法より外側のデータがあるとき、その数(コピーしない部分) */
+function ycOutside(P, l, key, acc){
+  const s=P.Rs.layers[l].get(key); if(!s) return; const tx=key&255, ty=key>>8, bw=P.bounds.w, bh=P.bounds.h;
+  if(tx*256+255<bw && ty*256+255<bh) return; let n=0;
+  for(let y=0;y<256;y++){ const gy=ty*256+y; for(let x=0;x<256;x++){ if((tx*256+x>=bw||gy>=bh) && s[(y<<8)|x]) n++; } }
+  acc.outside+=n;
+}
+function ycTileList(P){
+  const list=[]; const r=P.rect;
+  P.layers.forEach(l=>{
+    const keys=new Set();
+    if(P.scope.type==='nation'){ P.Rs.layers.nation.forEach((t,k)=>keys.add(k)); }
+    else { P.Rs.layers[l].forEach((t,k)=>keys.add(k)); if(P.mode==='all') P.Rt.layers[l].forEach((t,k)=>keys.add(k)); }
+    keys.forEach(k=>{ const tx=k&255, ty=k>>8; if(tx*256>r.x1||tx*256+255<r.x0||ty*256>r.y1||ty*256+255<r.y0) return; list.push([l,k]); });
+  });
+  return list;
+}
+/* ベクター(境界線・線): 先に置く物と、先から外す物を決める。範囲は「全体」、または「物の頂点がすべて四角い範囲の中」 */
+function ycVecPlan(P, coll){
+  const S=P.Rs[coll], T=P.Rt[coll], r=P.rect, whole=(P.scope.type!=='rect');
+  const pts=(o)=> coll==='admin' ? [].concat(...(o.rings||[])) : (o.points||[]);
+  const inside=(o)=>{ if(whole) return true; const p=pts(o); return p.length>0 && p.every(q=>q.x>=r.x0&&q.x<=r.x1+1&&q.y>=r.y0&&q.y<=r.y1+1); };
+  const set=[], remove=[];
+  S.forEach((o,id)=>{ if(!inside(o)) return;
+    if(P.mode==='overlay'){ if(!T.has(id)) set.push(o); }
+    else { const t=T.get(id); if(!t || JSON.stringify(t)!==JSON.stringify(o)) set.push(o); } });
+  if(P.mode==='all') T.forEach((o,id)=>{ if(!S.has(id) && inside(o)) remove.push(id); });
+  return {coll, set, remove, n:set.length+remove.length};
+}
+/* 本体(ジェネレータ)。write=false: 数えるだけ(プレビュー)/ true: 書き込む(Stroke は呼び出し側が開く)。一定タイルごとに進み具合を yield する */
+function* ycGen(P, write){
+  const acc={bad:{}, byLayer:{}, total:0, tiles:0, outside:0, bb:{x0:1e9,y0:1e9,x1:-1,y1:-1}}; P.layers.forEach(l=>{ acc.byLayer[l]=0; });
+  const list=ycTileList(P); const total=list.length;
+  for(let i=0;i<list.length;i++){
+    const n=ycTile(P, list[i][0], list[i][1], acc, write); if(n){ acc.byLayer[list[i][0]]+=n; acc.total+=n; acc.tiles++; }
+    if(!write) ycOutside(P, list[i][0], list[i][1], acc);
+    if((i%YC_YIELD_TILES)===YC_YIELD_TILES-1) yield {done:i+1,total};
+  }
+  return acc;
+}
+function ycDrive(gen){ let r; do{ r=gen.next(); }while(!r.done); return r.value; }
+/* 国家・地域の注意: 先の年代にまだ/もう存在しない国家・地域と、世界に存在しない値(コピーはされる。知らせるだけ) */
+function ycWarnings(P, acc){
+  const out=[];
+  Object.keys(acc.bad).forEach(l=>{ acc.bad[l].forEach((e,v)=>{
+    const isN=(l==='nation'); const o=isN?P.natByRid.get(v):P.regByRid.get(v);
+    out.push({layer:l, rid:v, name:o?o.name:'(不明: rid '+v+')', why:e.why, count:e.count, copied:e.copied});
+  }); });
+  out.sort((a,b)=>b.count-a.count); return out;
+}
+function ycSummarize(P, acc, vp){
+  const byGroup={}; P.groups.forEach(g=>{ byGroup[g]={px:0, set:0, remove:0}; });
+  P.groups.forEach(g=>{ YC_GROUPS[g].raster.forEach(l=>{ byGroup[g].px+=acc.byLayer[l]||0; }); const v=YC_GROUPS[g].vec; if(v&&vp[v]){ byGroup[g].set=vp[v].set.length; byGroup[g].remove=vp[v].remove.length; } });
+  const vecN=Object.values(vp).reduce((n,p)=>n+p.n,0);
+  return {byGroup, vecN, bbox:acc.total?{x0:acc.bb.x0,y0:acc.bb.y0,x1:acc.bb.x1,y1:acc.bb.y1}:null};
+}
+function ycCount(P){
+  const acc=ycDrive(ycGen(P,false)); const vp={}; P.vecs.forEach(c=>{ vp[c]=ycVecPlan(P,c); });
+  return {acc, vp, sum:ycSummarize(P,acc,vp), total:acc.total+Object.values(vp).reduce((n,p)=>n+p.n,0)};
+}
+/* プレビュー: 実行前に、変わる範囲・件数・対象レイヤー・コピー先を返す(何も書かない) */
+function ycPlan(o){
+  const P=ycPrepare(Object.assign({},o,{createIfMissing:true}));   /* プレビューは書き込まない。年代がなければ「新しく作る」前提で数える */ if(!P.ok) return P;
+  const c=ycCount(P); const warns=ycWarnings(P,c.acc); const lim=ycLimit();
+  return {ok:true, changed:c.acc.total, vecChanged:c.sum.vecN, total:c.total, byLayer:c.acc.byLayer, byGroup:c.sum.byGroup, bbox:c.sum.bbox, groups:P.groups, layers:P.layers, mode:P.mode, scope:P.scope,
+    warnings:warns, outside:c.acc.outside, dim:P.dim, dimDiffer:P.dim.differ,
+    src:{id:P.S.id, year:P.S.year, label:stateLabel(P.S,P.w)}, dst:P.D?{id:P.D.id, year:P.D.year, label:stateLabel(P.D,P.w)}:{id:null, year:P.dstYear, label:yearLabel(P.dstYear,P.w)+'(新しく作成)', create:true},
+    descendants:P.D?ycDescendants(P.D.id):0, limit:lim, overLimit:c.acc.total>lim};
+}
+function ycCreateState(wc){
+  const w=W(); const base=wc.baseId?stateById(wc.baseId):null;
+  const c={id:uid('ms'), name:wc.year+'年', year:wc.year, month:1, day:1, lineId:wc.lineId, parentId:base?base.id:null, full:!base, note:'', changes:[], createdAt:Date.now(), vec:emptyVec()};
+  w.mapStates.push(c); if(wc.year<w.startYear) w.startYear=wc.year; if(wc.year>w.endYear) w.endYear=wc.year;
+  Store.tilesOf(c.id); Store.resolved.clear(); return c;
+}
+function ycVecApply(D, plan){
+  if(!D.vec) D.vec=emptyVec(); const c=plan.coll, pr=parentResolved(D);
+  plan.set.forEach(o=>{ D.vec.add[c][o.id]=deepClone(o); D.vec.del[c]=D.vec.del[c].filter(i=>i!==o.id); });
+  plan.remove.forEach(id=>{ delete D.vec.add[c][id]; if(pr && pr[c].has(id) && !D.vec.del[c].includes(id)) D.vec.del[c].push(id); });
+}
+/* 実行本体(ジェネレータ)。1回の操作 = 取り消し1回。戻り値: {ok, changed, noChange, byLayer, warnings, dstId} */
+function* ycExec(o){
+  if(typeof isViewOnly==='function' && isViewOnly()) return {ok:false, error:'閲覧専用のためコピーできません'};
+  if(!roleAllows('地図: 年代間コピー','map')) return {ok:false, error:'現在の権限(「'+roleLabel(currentRole)+'」)では年代間コピーはできません'};
+  let P=ycPrepare(o); if(!P.ok) return P;
+  const pre=ycCount(P);
+  if(pre.total===0) return {ok:true, changed:0, vecChanged:0, noChange:true, byLayer:pre.acc.byLayer, warnings:[], dstId:P.D?P.D.id:null, srcId:P.S.id, created:null};
+  if(pre.acc.total>ycLimit()) return {ok:false, error:`変更が上限(${ycLimit().toLocaleString()}px)を超えています(約${pre.acc.total.toLocaleString()}px)。範囲やレイヤーを減らして、分けて実行してください`};
+  const metaBefore=snapshotMeta(); let created=null;
+  if(P.willCreate){ created=ycCreateState(P.willCreate); P=ycPrepare(Object.assign({},o,{dstId:created.id, dstYear:undefined, createIfMissing:false})); if(!P.ok) return P; }
+  const label=yearLabel(P.S.year,P.w)+'から'+yearLabel(P.D.year,P.w)+'へコピー('+P.groups.map(ycLayerLabel).join('・')+')';
+  const vp={}; P.vecs.forEach(c=>{ vp[c]=ycVecPlan(P,c); }); const vecN=Object.values(vp).reduce((n,p)=>n+p.n,0);
+  let tiles=null, acc={byLayer:{}, total:0, bad:{}};
+  if(P.layers.length){
+    updatePalettes(P.w, P.dstYear);
+    if(!Stroke.begin(label, P.D.id)) return {ok:false, error:'コピー先の地図状態に書き込めませんでした'};
+    try{ acc=yield* ycGen(P,true); } finally { tiles=Stroke.end(); }
+  }
+  Object.values(vp).forEach(p=>ycVecApply(P.D,p));
+  const w=P.w; w.updatedAt=Date.now(); P.D.updatedAt=w.updatedAt;   /* 先の地図状態の記録に更新時刻を残す = 同期の版(_rev・世界の revision)が上がる。変更がないときはここへ来ない */
+  { let ras=null; if(tiles){ ras=History.undo.pop(); History.bytes-=ras.bytes; }
+    History.push({label, kind:'copy', bytes:(ras?ras.bytes:0)+metaBefore.length*2, before:metaBefore, after:null,
+      undo(){ if(ras) ras.undo(); this.after=snapshotMeta(); restoreMeta(this.before); },
+      redo(){ restoreMeta(this.after); if(ras) ras.redo(); } });
+    if(!tiles) logHistory(label);
+    Store.resolved.clear(); }
+  markMeta(); persistDebounced(); scheduleTileSave(); Store.rev++; if(MapView) MapView.stats=null;
+  return {ok:true, changed:acc.total, vecChanged:vecN, noChange:false, byLayer:acc.byLayer, warnings:ycWarnings(P,acc), dstId:P.D.id, srcId:P.S.id, created:created?created.id:null, label};
+}
+function ycRun(o){ return ycDrive(ycExec(o)); }
+/* 画面用: 一定タイルごとに画面へ制御を返しながら実行する */
+async function ycRunAsync(o, onProgress){
+  const g=ycExec(o); const prevBusy=MapView.busy; MapView.busy=true;
+  try{ let r; do{ r=g.next(); if(!r.done){ if(onProgress) onProgress(r.value); await new Promise(res=>setTimeout(res,0)); } }while(!r.done); return r.value; }
+  finally{ MapView.busy=prevBusy; }
+}
+/* ---------- v52 年代間コピーの画面 ---------- */
+function ycCanEdit(){ return !(typeof isViewOnly==='function'&&isViewOnly()) && roleAllows('地図: 年代間コピー','map'); }
+function ycPanelHtml(){
+  const ok=ycCanEdit();
+  return `<div class="lp-sec" id="ycSec"><h5>年代間コピー</h5><div class="lp-note">ある年代の地図から、選んだレイヤーだけを別の年代へコピーします(元の年代は変わりません)。</div>
+    <div class="lp-row wrap"><button class="btn small primary" id="ycOpen" ${ok?'':'disabled title="この権限では地図を編集できません"'}>年代間コピー…</button></div></div>`;
+}
+function ycY(){ const Y=MapView.yc||(MapView.yc={scope:'all', mode:'all', groups:{}, rect:null, dstSel:null, dstLine:null, dstYear:'', plan:null, msg:''}); return Y; }
+function ycOptions(){
+  const Y=ycY(); const o={srcId:Y.srcId, layers:YC_GROUP_ORDER.filter(g=>Y.groups[g]), mode:Y.mode, scope:{type:Y.scope}};
+  if(Y.scope==='rect') o.scope.rect=Y.rect||{};
+  if(Y.dstSel==='__new'){ o.dstYear=Y.dstYear; o.dstLineId=Y.dstLine; } else o.dstId=Y.dstSel;
+  return o;
+}
+function ycLineOptions(sel){ const w=W(); return w.worldlines.map(l=>`<option value="${l.id}" ${l.id===sel?'selected':''}>${esc(l.name)}</option>`).join(''); }
+function ycStateOptions(lineId, sel, skipId, extra){
+  return ycStates(lineId).filter(s=>s.id!==skipId).map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${esc(s.label)}</option>`).join('')+(extra||'');
+}
+function ycOpenModal(){
+  const w=W(); if(!w) return;
+  if(!ycCanEdit()){ toast('現在の権限では年代間コピーはできません','err'); return; }
+  const Y=ycY(); const cur=stateById(currentStateId()); if(!Y.srcId||!stateById(Y.srcId)||Y.fresh!==false) Y.srcId=cur?cur.id:w.mapStates[0].id; Y.fresh=false; Y.plan=null;
+  const S=stateById(Y.srcId);
+  if(Y.dstSel!=='__new' && (!Y.dstSel||!stateById(Y.dstSel)||Y.dstSel===Y.srcId)){
+    const other=ycStates(S.lineId).filter(s=>s.id!==S.id)[0]||ycStates().filter(s=>s.id!==S.id)[0];
+    if(other){ Y.dstSel=other.id; Y.dstLine=other.lineId; } else { Y.dstSel='__new'; Y.dstLine=S.lineId; }
+  }
+  if(Y.dstSel!=='__new') Y.dstLine=stateById(Y.dstSel).lineId; else if(!w.worldlines.some(l=>l.id===Y.dstLine)) Y.dstLine=S.lineId;
+  if(!Y.rect){ const r=MapView.rectSel; Y.rect=r?{x0:r.x0,y0:r.y0,x1:r.x1,y1:r.y1}:{x0:0,y0:0,x1:Math.min(255,w.mapWidth-1),y1:Math.min(255,w.mapHeight-1)}; if(r) Y.scope='rect'; }
+  const chk=(g)=>`<label class="lp-chk"><input type="checkbox" data-ycg="${g}" ${Y.groups[g]?'checked':''}>${esc(YC_GROUPS[g].label)}</label>`;
+  const rad=(name,val,cur,label)=>`<label class="lp-chk"><input type="radio" name="${name}" value="${val}" ${cur===val?'checked':''}>${label}</label>`;
+  const rc=Y.rect;
+  openModal('年代間コピー', `<div id="ycBody">
+    <div class="lp-sec"><h5>1. コピー元(読み取りだけ)</h5><div class="lp-row wrap"><select id="ycSrcLine">${ycLineOptions(S.lineId)}</select><select id="ycSrcState">${ycStateOptions(S.lineId,S.id)}</select></div></div>
+    <div class="lp-sec"><h5>2. コピー先</h5><div class="lp-row wrap"><select id="ycDstLine">${ycLineOptions(Y.dstLine)}</select>
+      <select id="ycDstState">${ycStateOptions(Y.dstLine,Y.dstSel,S.id,`<option value="__new" ${Y.dstSel==='__new'?'selected':''}>(地図がない年代を指定…)</option>`)}</select>
+      <input type="number" id="ycDstYear" step="1" placeholder="年" value="${esc(String(Y.dstYear))}" style="width:90px;${Y.dstSel==='__new'?'':'display:none'}"></div></div>
+    <div class="lp-sec"><h5>3. 範囲</h5>${rad('ycScope','all',Y.scope,'地図全体')}${rad('ycScope','rect',Y.scope,'四角い範囲(座標はピクセル)')}
+      <div class="lp-row wrap" id="ycRectRow" style="${Y.scope==='rect'?'':'display:none'}">x <input type="number" id="ycRx0" value="${rc.x0}" style="width:70px">〜<input type="number" id="ycRx1" value="${rc.x1}" style="width:70px"> y <input type="number" id="ycRy0" value="${rc.y0}" style="width:70px">〜<input type="number" id="ycRy1" value="${rc.y1}" style="width:70px"><button class="btn small" id="ycRectSel" ${MapView.rectSel?'':'disabled'}>範囲選択の範囲を使う</button></div></div>
+    <div class="lp-sec"><h5>4. レイヤー(この選択は、範囲コピーのチェックとは別です)</h5>${YC_GROUP_ORDER.map(chk).join('')}
+      <div class="lp-note">都市・カスタム点は、年代ごとの地図ではなく世界全体の記録のため、コピーの対象にしません。表示の設定(色・スタイル)もコピーしません。</div></div>
+    <div class="lp-sec"><h5>5. 貼り付けの方法</h5>${rad('ycMode','all',Y.mode,'上書き(先の範囲の、選んだレイヤーを元の内容で置き換える)')}${rad('ycMode','overlay',Y.mode,'重ねる(元の内容が空でない部分だけを貼る)')}</div>
+    <div class="lp-sec"><h5>6. プレビュー</h5><div id="ycPreview" class="lp-note">「プレビュー」を押すと、変わる範囲と件数を表示します(確定するまで、先の内容は変わりません)。</div></div></div>`,
+    [{label:'キャンセル', onClick:closeModal},{label:'プレビュー', cls:'', onClick:ycPreviewNow},{label:'コピーする(確定)', cls:'primary', onClick:ycConfirm}]);
+  const foot=document.getElementById('modalFoot').querySelectorAll('button'); foot[1].id='ycPrevBtn'; foot[2].id='ycGoBtn'; foot[2].disabled=true;
+  ycWireModal();
+}
+function ycInvalidate(){ const Y=ycY(); Y.plan=null; const g=document.getElementById('ycGoBtn'); if(g) g.disabled=true; const p=document.getElementById('ycPreview'); if(p) p.textContent='設定が変わりました。「プレビュー」を押して、変わる範囲と件数を確認してください。'; }
+function ycWireModal(){
+  const Y=ycY(), w=W(), $=(id)=>document.getElementById(id);
+  $('ycSrcLine').addEventListener('change',()=>{ const s=ycStates($('ycSrcLine').value)[0]; if(s){ Y.srcId=s.id; Y.fresh=false; if(Y.dstSel===s.id) Y.dstSel=null; ycOpenModal(); } });
+  $('ycSrcState').addEventListener('change',()=>{ Y.srcId=$('ycSrcState').value; if(Y.dstSel===Y.srcId) Y.dstSel=null; ycOpenModal(); });
+  $('ycDstLine').addEventListener('change',()=>{ Y.dstLine=$('ycDstLine').value; const s=ycStates(Y.dstLine).filter(x=>x.id!==Y.srcId)[0]; if(s) Y.dstSel=s.id; else Y.dstSel='__new'; ycOpenModal(); });
+  $('ycDstState').addEventListener('change',()=>{ Y.dstSel=$('ycDstState').value; ycOpenModal(); });
+  $('ycDstYear').addEventListener('input',()=>{ Y.dstYear=$('ycDstYear').value; ycInvalidate(); });
+  document.querySelectorAll('[name=ycScope]').forEach(r=> r.addEventListener('change',()=>{ Y.scope=r.value; $('ycRectRow').style.display=(Y.scope==='rect')?'':'none'; ycInvalidate(); }));
+  document.querySelectorAll('[name=ycMode]').forEach(r=> r.addEventListener('change',()=>{ Y.mode=r.value; ycInvalidate(); }));
+  document.querySelectorAll('[data-ycg]').forEach(c=> c.addEventListener('change',()=>{ Y.groups[c.dataset.ycg]=c.checked; ycInvalidate(); }));
+  ['ycRx0','ycRx1','ycRy0','ycRy1'].forEach(id=> $(id).addEventListener('input',()=>{ Y.rect={x0:Number($('ycRx0').value),x1:Number($('ycRx1').value),y0:Number($('ycRy0').value),y1:Number($('ycRy1').value)}; ycInvalidate(); }));
+  $('ycRectSel').addEventListener('click',()=>{ const r=MapView.rectSel; if(!r) return; Y.rect={x0:r.x0,y0:r.y0,x1:r.x1,y1:r.y1}; ycOpenModal(); });
+  if(Y.msg){ $('ycPreview').textContent=Y.msg; Y.msg=''; }
+}
+function ycPreviewHtml(p){
+  const w=W(); if(!p.ok) return `<div class="lp-note" style="color:var(--danger,#e07a6a)">${esc(p.error)}</div>`;
+  const rows=[]; rows.push(`<div><b>コピー先:</b> ${esc(p.dst.label)}(元: ${esc(p.src.label)})</div>`);
+  rows.push(`<div><b>対象レイヤー:</b> ${p.groups.map(g=>esc(ycLayerLabel(g))).join('・')} / <b>方法:</b> ${esc(YC_MODES[p.mode])} / <b>範囲:</b> ${p.scope.type==='rect'?`四角い範囲 (${p.scope.rect.x0},${p.scope.rect.y0})〜(${p.scope.rect.x1},${p.scope.rect.y1})`:'地図全体'}</div>`);
+  if(p.total===0) rows.push(`<div style="margin:6px 0"><b>変更はありません</b>(元と先の内容が同じです)。確定しても何も変わりません。</div>`);
+  else {
+    rows.push(`<div style="margin:6px 0"><b>変わるピクセル数: ${p.changed.toLocaleString()} px</b>${p.vecChanged?` / 線・境界の変更: ${p.vecChanged} 件`:''}</div>`);
+    if(p.bbox) rows.push(`<div>変わる範囲: x ${p.bbox.x0}〜${p.bbox.x1} / y ${p.bbox.y0}〜${p.bbox.y1}</div>`);
+    p.groups.forEach(g=>{ const b=p.byGroup[g]; const parts=[]; if(YC_GROUPS[g].raster.length) parts.push(b.px.toLocaleString()+' px'); if(YC_GROUPS[g].vec) parts.push(`置く ${b.set} / 外す ${b.remove}`); rows.push(`<div>・${esc(ycLayerLabel(g))}: ${parts.join('、')}</div>`); });
+  }
+  if(p.dst.create) rows.push(`<div style="margin-top:6px">※ ${esc(yearLabel(p.dst.year,w))}の地図はまだありません。確定すると、作ってよいか確認します(直前の年代を引き継いで作成)。</div>`);
+  if(p.dimDiffer) rows.push(`<div style="margin-top:6px;color:var(--warn,#d9a441)">⚠ 元と先で地図の寸法が違います(元 ${p.dim.src[0]}×${p.dim.src[1]} / 先 ${p.dim.dst[0]}×${p.dim.dst[1]})。重ならない部分はコピーしません。</div>`);
+  if(p.outside>0) rows.push(`<div style="margin-top:6px;color:var(--warn,#d9a441)">⚠ 元に、地図の寸法より外側のデータが ${p.outside.toLocaleString()} px あります。その部分はコピーしません。</div>`);
+  if(p.warnings.length){ rows.push(`<div style="margin-top:6px;color:var(--warn,#d9a441)">⚠ コピー先の年代(${esc(yearLabel(p.dst.year,w))})に存在しない国家・地域を含みます(内容はそのままコピーされます):</div>`);
+    p.warnings.slice(0,8).forEach(x=> rows.push(`<div>　・${esc(x.name)}(${x.why==='missing'?'世界に存在しない':'その年代には成立前/終了後'}): ${x.count.toLocaleString()} px</div>`)); }
+  if(p.descendants>0) rows.push(`<div style="margin-top:6px;color:var(--warn,#d9a441)">⚠ コピー先を引き継いでいる年代が ${p.descendants} 個あります。それらの年代にも、コピーした内容が引き継がれます。</div>`);
+  if(p.overLimit) rows.push(`<div style="margin-top:6px;color:var(--danger,#e07a6a)">✖ 変更が上限(${p.limit.toLocaleString()} px)を超えています。範囲かレイヤーを減らして、分けて実行してください。</div>`);
+  return rows.join('');
+}
+function ycPreviewNow(){
+  const Y=ycY(); const p=ycPlan(ycOptions()); Y.plan=p; document.getElementById('ycPreview').innerHTML=ycPreviewHtml(p);
+  document.getElementById('ycGoBtn').disabled=!(p.ok && !p.overLimit);
+}
+function ycConfirm(){
+  const Y=ycY(); if(!Y.plan||!Y.plan.ok||Y.plan.overLimit) return;
+  if(!ycCanEdit()){ toast('現在の権限では年代間コピーはできません','err'); return; }
+  if(Y.plan.dst.create){
+    const w=W(); openModal('地図を作成してコピー', `<p>${esc(yearLabel(Y.plan.dst.year,w))}の地図はまだありません。<b>この年代の地図を新しく作ってからコピーしますか？</b></p><p class="lp-note">直前の年代の地図を引き継いで作成します。「キャンセル」を選ぶと、何も変わりません。</p>`,
+      [{label:'キャンセル', onClick:()=>{ ycOpenModal(); }},{label:'作ってからコピーする', cls:'primary', onClick:()=>ycRunUI(true)}]);
+    return;
+  }
+  ycRunUI(false);
+}
+async function ycRunUI(createOK){
+  const Y=ycY(); closeModal(); const pg=showProgress('年代間コピー中…');
+  let r; try{ r=await ycRunAsync(Object.assign(ycOptions(),{createIfMissing:!!createOK}),(p)=>pg.set(`年代間コピー中… ${p.done}/${p.total}`)); } finally { pg.close(); }
+  if(!r.ok){ toast(r.error,'err'); Y.msg=r.error; ycOpenModal(); return; }
+  if(r.noChange){ toast('変更はありません'); Y.msg='変更はありません(元と先の内容が同じため、何も変えませんでした)。'; ycOpenModal(); return; }
+  renderMap(); try{ renderMapLayerPanel(); }catch(e){} try{ syncTimelineControls(); }catch(e){}
+  const w=W(); const txt=`${r.changed.toLocaleString()}ピクセルをコピーしました`+(r.vecChanged?`(線・境界 ${r.vecChanged} 件を含む)`:'');
+  toast(txt);
+  const warn=r.warnings&&r.warnings.length?`<p class="lp-note">注意: コピー先の年代に存在しない国家・地域を含みます(${r.warnings.slice(0,5).map(x=>esc(x.name)).join('、')})。</p>`:'';
+  openModal('年代間コピー', `<p>${esc(txt)}。</p><p class="lp-note">元に戻すには、Ctrl+Z(1回で全体が戻ります)。</p>${warn}`,
+    [{label:'閉じる', onClick:closeModal},{label:'コピー先の年代へ移動', cls:'primary', onClick:()=>{ closeModal(); viewState(r.dstId); }}]);
+}
 function brushFromClip(){
   const c=MapView.clip; if(!c){ toast('先にコピーしてください','err'); return; }
   const l = c.layers.terrain?'terrain':(c.layers.nation?'nation':null); if(!l){ toast('マスクにできるデータがありません','err'); return; }
@@ -4923,6 +6341,7 @@ let currentView = 'dashboard';
 
 function switchView(name){
   if(currentView==='globe3d' && name!=='globe3d') pauseGlobe3D();
+  if(currentView==='universe' && name!=='universe'){ try{ uv3dPause(); }catch(e){} }
   currentView = name;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el = document.getElementById('view-'+name);
@@ -4935,6 +6354,7 @@ function renderCurrentView(){
     case 'dashboard': renderDashboard(); break;
     case 'map': renderMapUI(); break;
     case 'globe3d': renderGlobe3DView(); break;
+    case 'universe': renderUniverseView(); break;
     case 'nations': renderNationsList(); break;
     case 'regions': renderRegionsList(); break;
     case 'genealogy': renderGenealogy(); break;
@@ -6064,7 +7484,7 @@ function openMetricManageModal(){
 let currentRole = 'admin';
 try{ currentRole = localStorage.getItem('atlaschronicle_role') || 'admin'; }catch(e){ console.warn('role read failed', e); }
 /* 権限識別子: nation=国家・都市 / history=出来事・戦争・条約・人物・組織・外交 / map=地形・領土・地域・地図 */
-const ROLE_PERMS = { admin:null, viewer:[], nation:['nation'], history:['history'], map:['map'] };
+const ROLE_PERMS = { admin:null, viewer:[], nation:['nation','universe'], history:['history','universe'], map:['map','universe'] };
 const PERM_HEAD_RULES = [
   ['nation', /国家|都市/],
   ['history', /出来事|戦争|外交|条約|文書|関係|人物|組織/],
@@ -6378,7 +7798,7 @@ function renderMapLayerPanel(){
       <div class="lp-row wrap"><button class="btn small" id="rsCopy">コピー</button><button class="btn small" id="rsCut">切り取り</button><button class="btn small primary" id="rsPaste" ${MapView.clip?'':'disabled'}>貼り付け</button></div>
       <div class="lp-row wrap"><button class="btn small" id="rsBrush" ${MapView.clip?'':'disabled'}>ブラシにする</button><button class="btn small" id="rsClear">選択解除</button></div>
       <label class="lp-chk"><input type="checkbox" id="pasteSkip" ${MapView.pasteOpts.skipZero?'checked':''}>空白(0)は貼り付けない</label>
-      <div class="lp-note">クリップボード: ${MapView.clip?`${MapView.clip.w}×${MapView.clip.h}px`:'空'}</div></div>`;
+      <div class="lp-note">クリップボード: ${MapView.clip?`${MapView.clip.w}×${MapView.clip.h}px`:'空'}</div></div>${ycPanelHtml()}`;
   }
   else if(LINE_TOOLS.includes(t)){
     const k=LINE_KINDS[t];
@@ -6506,6 +7926,7 @@ function wireLeftPanel(el){
   const rb=$('#rsBrush'); if(rb) rb.addEventListener('click', brushFromClip);
   const rcl=$('#rsClear'); if(rcl) rcl.addEventListener('click',()=>{ MapView.rectSel=null; renderMapLayerPanel(); renderOverlayOnly(); });
   const ps=$('#pasteSkip'); if(ps) ps.addEventListener('change',()=>{ MapView.pasteOpts.skipZero=ps.checked; });
+  const yo=$('#ycOpen'); if(yo) yo.addEventListener('click',()=>{ ycY().fresh=true; ycOpenModal(); });
   const sm=$('#optSmooth'); if(sm) sm.addEventListener('change',()=>{ MapView.lineOpt.smooth=sm.checked; });
   const sn=$('#optSnap'); if(sn) sn.addEventListener('change',()=>{ MapView.lineOpt.snap=sn.checked; });
   const at=$('#admTarget'); if(at) at.addEventListener('change',()=>{ MapView.selectedRegionId=at.value||null; });
@@ -9337,6 +10758,8 @@ function openNewWorldModal(){
     <div><label>暦の単位</label><input id="nwCal" value="年"></div>
     <div><label>初期の地図</label><select id="nwFill"><option value="sea">全面を海にする</option><option value="unset">未設定(何も描かれていない状態)</option></select></div>
     <div class="full"><label>説明</label><textarea id="nwDesc" rows="2"></textarea></div>
+    <div class="full" id="nwUvHead"><label><b>宇宙の設定</b>(この世界が、そのまま宇宙になります。恒星・惑星は、作成後に宇宙の画面で置きます)</label></div>
+    ${uvCalFields(uvNormCal({}),'nwuv')}
     ${typeof syncStorageSelectHtml==='function'?syncStorageSelectHtml():''}
     <div class="full"><label>地図の解像度(ピクセル数。後から変更・キャンバス拡張もできます)</label>
       <select id="nwResPreset">${MAP_RES_PRESETS.map((p,i)=>`<option value="${i}" ${(p.w===DEFAULT_MAP_W&&p.h===DEFAULT_MAP_H)?'selected':''}>${esc(p.label)}</option>`).join('')}<option value="custom">カスタム(幅・高さを自由に指定)…</option></select>
@@ -9355,16 +10778,17 @@ function openNewWorldModal(){
       if(mapWidth<16||mapHeight<16||mapWidth>MAP_MAX_SIDE||mapHeight>MAP_MAX_SIDE||mapWidth*mapHeight > MAP_PX_HARD_CAP){ toast('解像度が範囲外です(最大 16384×16384)','err'); return; }
       const nwS=numOrDefault(document.getElementById('nwStart').value,0), nwE=numOrDefault(document.getElementById('nwEnd').value,1000);
       if(nwS>nwE){ toast('開始年代は終了年代以下にしてください','err'); return; }
+      let uvCal; try{ uvCal=uvReadCal('nwuv'); }catch(e){ toast(e.message||String(e),'err'); return; }
       closeModal(); await persist();
-      const world = createWorld({name, startYear:nwS, endYear:nwE, calendarUnit:document.getElementById('nwCal').value||'年', description:document.getElementById('nwDesc').value, mapWidth, mapHeight, fill:document.getElementById('nwFill').value});
+      const world = createWorld({name, startYear:nwS, endYear:nwE, calendarUnit:document.getElementById('nwCal').value||'年', description:document.getElementById('nwDesc').value, mapWidth, mapHeight, fill:document.getElementById('nwFill').value, uvCalendar:uvCal});
       DB.worlds[world.id] = world; DB.currentWorldId = world.id; Store.worldId=world.id; Store.fullRewrite=true; syncApplyStorageChoice(world.id);
       History.clear(); mapInitialized=false; MapView._neverFit=false; MapView.pinnedStateId=null; MapView.selection=null; MapView.stats=null;
       persist();
       document.getElementById('welcome').classList.add('hidden');
       document.getElementById('app').style.display='flex';
       fullRerender();
-      switchView('dashboard');
-      toast('世界「'+name+'」を作成しました');
+      switchView('universe');   /* v51: 世界の作成と同時に宇宙があるので、作成後は宇宙の画面を開く */
+      toast('世界「'+name+'」を作成しました(宇宙の画面です。恒星・惑星を置いてください)');
     }},
   ]);
   document.getElementById('nwResPreset').addEventListener('change', (e)=>{
@@ -9500,6 +10924,7 @@ function renderEraList(){
 
 async function initApp(){
   const had = await loadDB();
+  try{ await uvBoot(); }catch(e){ console.warn('universe boot',e); }
   initTooltips();
   document.getElementById('worldNewBtn').addEventListener('click', openNewWorldModal);
   document.getElementById('worldSettingsBtn').addEventListener('click', ()=> switchView('settings'));
@@ -9821,6 +11246,8 @@ function tutNewCategories(){
         desc:'「3D地球儀」は、2D地図を球体に貼って立体的に見る画面です。最初に「地理設定」で惑星の大きさや緯度経度の範囲を決め、「3D変換 / 更新」で球体のテクスチャを作ります。回転・ズームで見回せます。選んだ表示スタイルは3D地球儀の球面にも反映されます(スタイルを変えたあとに地球儀を開くと、自動で貼り直されます)。' },
       { title:'3D地球儀の標高・光源・等高線', view:'globe3d', target:tq('#g3dElevExag'), features:[F('3D地球儀の標高の切り替え','さんでぃーちきゅうぎのひょうこうのきりかえ'),F('3D地球儀の光源と等高線','さんでぃーちきゅうぎのこうげんととうこうせん')],
         desc:'「高さ倍率」で、標高の凹凸の強さ(0で平ら)を変えます。地図側の標高(陰影)のオン・オフと、光の方位・高度、等高線の設定は、3D地球儀にも反映されます。2D側の標高データ自体は変わりません。' },
+      { title:'宇宙の3D(長押しで移動・回転)', view:'universe', target:tq('#uvWrap'), features:[F('宇宙の3Dの操作','うちゅうのさんでぃーのそうさ')],
+        desc:'左のナビゲーションの宇宙は、この世界そのものの宇宙です(世界を作ると同時にあります)。恒星・惑星を置いて、3Dで見られます。操作はPCとモバイルで次のとおりです。PC: マウスのホイールで拡大・縮小(回した量に応じて滑らかに変わります)、何もない所を左ボタンで約0.4秒長押ししてそのまま動かすと平行移動、右ボタンで長押しして動かすと回転(この画面では右クリックのメニューは出ません)。モバイル: 2本指のピンチで拡大・縮小、何もない所を1本指で長押ししてそのまま動かすと平行移動、2本指を同じ向きに動かすと回転(縦の動きで角度を上下に、横の動きで左右に変わります。PCの右ボタンの長押しと同じ結果です)。星や惑星の上で長押ししてそのまま動かすと、その星の位置を動かせます(約8px以上動かしたときだけ移動として扱い、離すと確定、Escで取り消し。編集の権限が必要です)。短いクリックは選択です。画面の右下に操作の説明が出ます(宇宙の画面で隠せます)。3D地球儀の操作とは別です。' },
     ]},
   { id:'cultrade', label:'文化・交易・辞書', icon:'📜',
     desc:'言語(系統・語彙・名づくり)・宗教・文化・伝播の記録・交易路・資源・辞書を学びます。サンプル世界に、言語・交易路・辞書の語が入っています。',
@@ -10315,6 +11742,7 @@ const Diplo = {
 function diploBump(mask){ Diplo.rev++; if(mask!==false){ Diplo.maskRev++; Diplo._maskCache.clear(); } if(MapView && MapView.activeLayers) MapView.activeLayers.diploRev=Diplo.rev; }
 
 /* ---------- データ正規化(既存JSONはそのまま。無ければ空の外交拡張を補う) ---------- */
+registerWorldNormalizer('diplo',100,diploNormalize);
 function diploNormalize(w){
   if(!w.diplomacy || typeof w.diplomacy!=='object') w.diplomacy = {};
   const d = w.diplomacy;
@@ -12842,6 +14270,7 @@ const CULT_ENT=[{id:'nation',label:'国家'},{id:'region',label:'地域'},{id:'c
 const cultKind=(id)=>CULT_KINDS.find(k=>k.id===id)||CULT_KINDS[0];
 const CultView={tab:'language'};
 function cultNum(v){ return (v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?'':Number(v); }
+registerWorldNormalizer('culture',400,cultNormalize);
 function cultNormalize(w){
   ['languages','religions','cultures','cultureLinks'].forEach(k=>{ if(!Array.isArray(w[k])) w[k]=[]; });
   CULT_KINDS.forEach(K=>{ w[K.coll]=w[K.coll].filter(o=>o&&typeof o==='object'); w[K.coll].forEach(o=>{
@@ -12995,6 +14424,7 @@ const RES_KINDS=[{id:'鉱物',shape:'diamond',color:'#c8ccd6'},{id:'農産物',s
 const resKind=(k)=>RES_KINDS.find(x=>x.id===k)||RES_KINDS[RES_KINDS.length-1];
 const TradeView={tab:'routes'};
 const TRADE_METRIC={id:'trade_volume',name:'交易量(交易路から算出)',unit:'',derived:true};
+registerWorldNormalizer('trade',300,tradeNormalize);
 function tradeNormalize(w){
   if(!Array.isArray(w.tradeRoutes)) w.tradeRoutes=[]; if(!Array.isArray(w.resources)) w.resources=[];
   w.tradeRoutes=w.tradeRoutes.filter(o=>o&&typeof o==='object'); w.resources=w.resources.filter(o=>o&&typeof o==='object');
@@ -13274,6 +14704,7 @@ function ngSplit(s){ return String(s===undefined||s===null?'':s).split(/[\s,、�
 function ngSyllables(s){ return ngSplit(s).map(x=>x.toUpperCase().replace(/[^CV]/g,'')).filter(Boolean); }
 function ngSeedNum(v){ const s=String(v===undefined||v===null||v===''?'1':v).trim(); if(/^-?\d+$/.test(s)) return (Number(s)>>>0); let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
 function ngRng(seed){ let a=seed>>>0; return function(){ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+registerWorldNormalizer('culture-ext',410,p17Normalize);
 function p17Normalize(w){
   w.languages.forEach(o=>{
     const p=(o.phonology&&typeof o.phonology==='object')?o.phonology:{}; o.phonology={}; NG_KEYS.forEach(k=>{ o.phonology[k]=String(p[k]===undefined||p[k]===null?'':p[k]); }); o.phonology.inherit=p.inherit===true;
@@ -14012,15 +15443,9 @@ syncRegister({name:'organizations'});   syncRegister({name:'metrics'});
 syncRegister({name:'statistics'});      syncRegister({name:'assets'});
 syncRegister({name:'eras'});            syncRegister({name:'refImages'});
 syncRegister({name:'travelModes'});     syncRegister({name:'xrefs'});
-syncRegister({name:'tradeRoutes'});     syncRegister({name:'resources'});
-syncRegister({name:'languages'});       syncRegister({name:'religions'});
-syncRegister({name:'cultures'});        syncRegister({name:'cultureLinks'});
-syncRegister({name:'cultureSpread'});
-syncRegister({name:'diplomacy',          kind:'singleton'});
 syncRegister({name:'geo3d',              kind:'singleton'});
 syncRegister({name:'geoCalc',            kind:'singleton'});
 syncRegister({name:'mapDisplay',         kind:'singleton'});
-syncRegister({name:'genealogyLayout',    kind:'singleton'});
 syncRegister({name:'permExtra',          kind:'singleton'});
 syncRegister({name:'regionTierSettings', kind:'singleton'});
 syncExclude('history','tombstones');     /* 履歴は変更の一覧から作る側。墓石は管理情報 */
@@ -14253,7 +15678,7 @@ async function syncLoadBindings(){ try{ if(SyncAdapters.bindingStore){ const all
 /* 保存先の世界を全部読む(起動時)。ref と etag を付けて返す */
 async function syncLoadAll(adapterId){
   const ad=SyncAdapters.map[adapterId]; const out=[]; if(!ad) return out;
-  const list=await ad.list();
+  const list=(await ad.list()).filter(s=>syncIsWorldDoc(s));
   for(const s of list){ try{ const L=await ad.load(s.ref); out.push({doc:L.doc, ref:s.ref, etag:L.etag, adapterId}); }catch(e){ console.error('[sync] load failed', s.ref, e); } }
   return out;
 }
@@ -14354,7 +15779,12 @@ function syncExportedBy(){ const e=getEditor(); return {id:e.editorId, name:e.di
 const SYNC_FILE_KEYS=['format','formatVersion','exportedAt','exportedBy','world','tiles','readOnly'];
 /* 送信方式のしきい値と既定の上限(1か所)。根拠: 各保存先の公式仕様(分割なしの送信の上限。5MB / 250MB)。名前は添え字だけに使う */
 const SYNC_SEND_LIMITS={ a5MB:5*1024*1024, a50MB:50*1024*1024, b250MB:250*1024*1024, onea50MB:50*1024*1024 };
-function syncWorldOf(doc){ return (doc&&typeof doc==='object'&&doc.format==='atlas-v2'&&doc.world&&typeof doc.world==='object')?doc.world:doc; }
+const SyncDocShapes=[];
+function syncRegisterDocShape(fn){ if(typeof fn==='function'&&!SyncDocShapes.includes(fn)){ SyncDocShapes.push(fn); return true; } return false; }
+function syncWorldOf(doc){
+  if(doc&&typeof doc==='object'&&doc.format==='atlas-v2'&&!doc.world){ for(const f of SyncDocShapes){ let r=null; try{ r=f(doc); }catch(e){ r=null; } if(r&&typeof r==='object') return r; } }
+  return (doc&&typeof doc==='object'&&doc.format==='atlas-v2'&&doc.world&&typeof doc.world==='object')?doc.world:doc;
+}
 /* 大きさの上限: 通信の前に止める。理由(大きさ)を利用者向けの文に入れる */
 function syncSizeErr(bytes,max){
   const mb=(n)=>n>=1048576?(n/1048576).toFixed(1)+' MB':(n/1024).toFixed(1)+' KB';
@@ -14404,12 +15834,14 @@ function syncMetaHtml(coll, id){
 }
 (function(){
   /* 詳細(モーダル/画面)の末尾に「最終更新」を表示するだけ。データは変えない。対象はここに1行足せば増やせる */
-  const OPENERS=[['openNationModal','nations'],['openRegionModal','regions'],['openEventModal','events'],['openWarModal','wars'],['openTreatyModal','treaties'],['openPersonModal','people'],['openOrgModal','organizations'],['openCityModal','cities'],['openTradeRouteModal','tradeRoutes'],['openResourceModal','resources'],['openSpreadModal','cultureSpread']];
-  OPENERS.forEach(([fn,coll])=>{
+  const OPENERS=[['openNationModal','nations'],['openRegionModal','regions'],['openEventModal','events'],['openWarModal','wars'],['openTreatyModal','treaties'],['openPersonModal','people'],['openOrgModal','organizations'],['openCityModal','cities']];
+  const wrapOpener=(fn,coll)=>{
     let orig; try{ orig=eval(fn); }catch(e){ return; } if(typeof orig!=='function') return;
     const wrapped=function(id){ const r=orig.apply(this,arguments); try{ if(typeof id==='string' && id){ const h=syncMetaHtml(coll,id); const b=document.getElementById('modalBody'); if(h && b) b.insertAdjacentHTML('beforeend',h); } }catch(e){} return r; };
     try{ eval(fn+'=wrapped'); }catch(e){}
-  });
+  };
+  OPENERS.forEach(([fn,coll])=>wrapOpener(fn,coll));
+  window.syncRegisterMetaOpener=wrapOpener;   /* 機能が、自分の詳細画面を登録する(コアは、その名前を知らない) */
   if(typeof renderNationDetail==='function'){ const o=renderNationDetail; renderNationDetail=function(id){ const r=o.apply(this,arguments); try{ const el=document.getElementById('view-nationDetail'); const h=syncMetaHtml('nations',id); if(el&&h) el.insertAdjacentHTML('beforeend',h); }catch(e){} return r; }; }
   if(typeof renderDashboard==='function'){ const o=renderDashboard; renderDashboard=function(){ const r=o.apply(this,arguments); try{ const w=W(), el=document.getElementById('dashSub'); if(w&&el) el.textContent+=' ・ 版 '+(Number(w.revision)||0); }catch(e){} return r; }; }
   if(typeof renderSettingsView==='function'){ const o=renderSettingsView; renderSettingsView=function(){
@@ -14427,6 +15859,10 @@ function syncMetaHtml(coll, id){
     return r;
   }; }
 })();
+/* 世界の一覧に出さない文書の登録(宇宙のように、世界ではない文書)。コアは、その種類の名前を知らない */
+const SyncDocFilters=[];
+function syncRegisterDocFilter(fn){ if(typeof fn==='function'&&!SyncDocFilters.includes(fn)){ SyncDocFilters.push(fn); return true; } return false; }
+function syncIsWorldDoc(s){ for(const f of SyncDocFilters){ let r=true; try{ r=f(s); }catch(e){ r=true; } if(r===false) return false; } return true; }
 /* SYNC-CORE-END */
 </script>
 <script>
@@ -14487,7 +15923,7 @@ const SyncIdbAdapter = {
   },
   async create(doc){
     this._need();
-    const text=JSON.stringify(doc), ref=String(doc.id||doc.worldId), etag=String(Number(doc.revision)||0), sum=syncSummaryOf(doc);
+    const text=JSON.stringify(doc), sum=syncSummaryOf(doc), ref=String(sum.worldId), etag=String(sum.revision);
     return this._rw((tx,done,fail)=>{
       const ws=tx.objectStore('worlds'), kv=tx.objectStore('kv'), g=ws.getKey(ref);
       g.onsuccess=()=>{ try{
@@ -14504,7 +15940,7 @@ const SyncIdbAdapter = {
       tx.oncomplete=()=>{
         if(g.result===undefined){ reject(syncErr('NOT_FOUND','世界が見つかりません',false)); return; }
         let doc; try{ doc=JSON.parse(g.result); }catch(e){ reject(syncErr('UNKNOWN','保存されている内容を読み取れません',false,e)); return; }
-        resolve({doc, etag:(k.result!==undefined&&k.result!==null)?String(k.result):String(Number(doc.revision)||0)});
+        resolve({doc, etag:(k.result!==undefined&&k.result!==null)?String(k.result):String(syncSummaryOf(doc).revision)});
       };
       tx.onabort=()=>reject(this._wrap(tx.error||new Error('transaction aborted')));
     });
@@ -14747,6 +16183,32 @@ SyncAdapters.bindingStore = SyncLocalBindings;
 SyncAdapters.configureDrive = function(opts, selectable){ const ad=createDriveAdapter(opts); SyncAdapters.register(ad,{selectable:selectable||(()=>true), label:'Google Drive'}); return ad; };
 SyncAdapters.configureDrive({getAccessToken:(o)=>GAuth.getToken(o)}, ()=>GCfg.status()==='valid');
 /* SYNC-ADAPTERS-END */
+</script>
+<script>
+/* FEATURE-SYNC-BEGIN  機能ごとの同期への登録(登録簿への追加のみ。同期コアは、これらの機能の名前を知らない)。起動時に1回ずつ */
+syncRegister({name:'tradeRoutes'});     syncRegister({name:'resources'});            /* 交易 */
+syncRegister({name:'languages'});       syncRegister({name:'religions'});            /* 文化 */
+syncRegister({name:'cultures'});        syncRegister({name:'cultureLinks'});
+syncRegister({name:'cultureSpread'});
+syncRegister({name:'diplomacy',          kind:'singleton'});                         /* 外交 */
+syncRegister({name:'genealogyLayout',    kind:'singleton'});                         /* 系譜 */
+syncRegisterMetaOpener('openTradeRouteModal','tradeRoutes'); syncRegisterMetaOpener('openResourceModal','resources'); syncRegisterMetaOpener('openSpreadModal','cultureSpread');
+/* 宇宙(v50 の旧文書): atlas-v2 の文書の中の universe の項目。保存先の窓口には、見出し(id=uv:…・名前・版)を渡す。schemaVersion は 3→4(v50)→5(v51: 宇宙は世界の一部) */
+syncRegisterDocShape(function(doc){ return (doc.universe&&typeof doc.universe==='object')?uvDocHeader(doc.universe):null; });
+SyncMigrations[4]=function(doc){ /* 3 → 4: 宇宙の項目(universe)を持てる版。世界1つのデータの形は変えない(何もしない) */ };
+/* v51: 世界 = 宇宙。宇宙は世界のデータの一部(uvCalendar・uvStars・uvPlanets)。同期の登録・正規化・権限は、ほかの機能と同じ登録式 */
+syncRegister({name:'uvStars'}); syncRegister({name:'uvPlanets'}); syncRegister({name:'uvCalendar', kind:'singleton'});
+registerWorldNormalizer('universe',440,uvNormalizeWorld);
+PERM_OF_COLL.uvStars='universe'; PERM_OF_COLL.uvPlanets='universe';
+SyncMigrations[5]=function(doc){ /* 4 → 5: 既存の世界は、そのまま宇宙として扱う(恒星1つ・惑星1つを自動で作る。恒星は原点、宇宙暦は未設定)。すでに宇宙の項目がある世界は触らない。IDは世界のIDから決める(別の端末で移行しても同じ) */
+  if(!doc||typeof doc!=='object'||Array.isArray(doc.uvStars)||Array.isArray(doc.uvPlanets)) return;
+  const nm=String(doc.name||'(無名の世界)'), k=String(doc.id||uid('w'));
+  const st=uvNormStar({id:'st-auto-'+k,name:nm,position:{x:0,y:0,z:0}}); const pl=uvNormPlanet({id:'pl-auto-'+k,name:nm,starId:st.id,surface:{mode:'map'}});
+  doc.uvStars=[st]; doc.uvPlanets=[pl]; doc.uvCalendar=uvNormCal(doc.uvCalendar);
+};
+/* 宇宙のファイル(id が uv: で始まる文書)は、世界の一覧に出さない */
+syncRegisterDocFilter(function(s){ return !UV_ENV_RE.test(String((s&&s.worldId)||'')); });
+/* FEATURE-SYNC-END */
 </script>
 <script>
 /* TYPO-SYNC-BEGIN  フォント設定・独自文字の同期への登録(登録簿への追加のみ。同期コアは、これらの種類を知らない) */
@@ -15591,7 +17053,7 @@ function renderOneDrivePanel(){
   $('odLogout').addEventListener('click',async()=>{ await ODAuth.logout(); refresh(); });
   $('odDelBtn').addEventListener('click',async()=>{ if(!confirm('OneDrive連携の設定(アプリケーション(クライアント)ID)とログインの状態を、この端末から削除します。よろしいですか?')) return; await ODCfg.clear(); toast('設定を削除しました'); renderOneDrivePanel(); });
   $('odListBtn').addEventListener('click',async()=>{ $('odErrBox').innerHTML=''; if(ODAuth.state!=='in'){ toast('先にOneDriveにログインしてください','err'); $('odLogin').focus(); return; }
-    try{ const ad=SyncAdapters.get('onedrive'); const l=await ad.list(); $('odList').innerHTML=(l.length?l.map((s,i)=>`<li style="font-size:12.5px">${esc(s.name)} <button class="btn small od-pick" data-i="${i}">開く</button></li>`).join(''):'<li class="hint" style="font-size:12px;list-style:none">世界のファイルはありません。</li>')+(ad.sharedStatus&&ad.sharedStatus!=='ok'?'<li class="hint" style="font-size:12px;list-style:none">共有された項目の一覧は取得できませんでした。共有リンクから開いてください。</li>':'');
+    try{ const ad=SyncAdapters.get('onedrive'); const l=(await ad.list()).filter(s=>syncIsWorldDoc(s)); $('odList').innerHTML=(l.length?l.map((s,i)=>`<li style="font-size:12.5px">${esc(s.name)} <button class="btn small od-pick" data-i="${i}">開く</button></li>`).join(''):'<li class="hint" style="font-size:12px;list-style:none">世界のファイルはありません。</li>')+(ad.sharedStatus&&ad.sharedStatus!=='ok'?'<li class="hint" style="font-size:12px;list-style:none">共有された項目の一覧は取得できませんでした。共有リンクから開いてください。</li>':'');
       $('odList').querySelectorAll('.od-pick').forEach(b=>b.addEventListener('click',async()=>{ const s=l[Number(b.dataset.i)]; try{ await odOpenWorld(s.ref,s.name); }catch(e){ odShowError(e); } })); }catch(e){ odShowError(e); } });
   $('odOpenLink').addEventListener('click',async()=>{ $('odErrBox').innerHTML=''; if(ODAuth.state!=='in'){ toast('先にOneDriveにログインしてください','err'); $('odLogin').focus(); return; } const u=$('odLink').value.trim(); if(!/^https:\/\//.test(u)){ toast('https:// で始まる共有リンクを貼り付けてください','err'); return; }
     try{ const r=await SyncAdapters.get('onedrive').resolveShare(u); await odOpenWorld(r.ref,r.name); }catch(e){ odShowError(e); } });
@@ -17273,6 +18735,7 @@ function tyEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp
 function tyMB(n){ return (n/1048576).toFixed(n<1048576*10?2:1)+'MB'; }
 
 /* ---------- 世界データの補完(古いデータでもエラーにしない。内容は作らない) ---------- */
+registerWorldNormalizer('typography',200,typoNormalize);
 function typoNormalize(w){
   if(!w||typeof w!=='object') return;
   if(!Array.isArray(w.customGlyphs)) w.customGlyphs=[];
@@ -18277,6 +19740,8 @@ function atlasUnpack(raw){
   const bad=()=>atlasErr('not_a_world','世界のデータが見つかりません');
   if(!raw||typeof raw!=='object'||Array.isArray(raw)) throw bad();
   if(raw.format==='atlas-view-v1'){ if(!raw.world||!Array.isArray(raw.world.nations)) throw bad(); return {kind:'view-v1',world:raw.world,tiles:raw.tiles||null,readOnly:true,legacy:true,formatVersion:1}; }
+  if(raw.format==='atlas-galaxy-v1'||raw.kind==='universe') throw atlasErr('not_a_world',UV_OLD_MSG);
+  if(raw.format===ATLAS_FORMAT&&raw.universe&&typeof raw.universe==='object'&&!raw.world) raw=uvConvertUniverseDoc(raw);
   if(raw.format===ATLAS_FORMAT){
     if(!raw.world||typeof raw.world!=='object'||!Array.isArray(raw.world.nations)) throw bad();
     const v=Number(raw.formatVersion)||0;
@@ -18625,6 +20090,7 @@ async function atlasSaveToDestination(adId){
   }
   /* 新しい世界として保存(コピー)。まず、前回の途中失敗で残った中途半端な世界を整理する */
   let list=await ad.list().catch(e=>{ throw atlasErr(e&&e.code==='AUTH_REQUIRED'?'login_incomplete':'save_failed',(e&&e.userMessage)||(e&&e.message)||'保存先の一覧を取得できません',e&&e.detail); });
+  list=list.filter(s=>syncIsWorldDoc(s));
   let pend=null; try{ if(IDB.ok) pend=await IDB.get('kv','atlas:pending'); }catch(e){}
   if(pend&&pend.adapterId===adId&&pend.worldId===w.id){
     for(const s of list.filter(x=>x.worldId===w.id)){ try{ await ad.remove(s.ref); }catch(e){} }
@@ -18698,6 +20164,7 @@ async function atlasSaveToFlow(){
   }catch(e){ console.error('file menu',e); }
 }; }
 /* 権限 storage の既定: 管理者(常に)と編集者(国家・歴史・地図)。既存の世界にも、最初に読み込んだときに1度だけ入れる */
+registerWorldNormalizer('permissions',420,atlasPermNormalize);
 function atlasPermNormalize(w){
   if(!w||!w.permExtra||typeof w.permExtra!=='object') return;
   if(!w.permExtra.storageSeeded){ ['nation','history','map'].forEach(r=>{ if(!Array.isArray(w.permExtra[r])) w.permExtra[r]=[]; if(!w.permExtra[r].includes('storage')) w.permExtra[r].push('storage'); }); w.permExtra.storageSeeded=true; }
@@ -18853,6 +20320,7 @@ function dictNormEntry(e){
   e.translations=(Array.isArray(e.translations)?e.translations:[]).filter(t=>t&&typeof t==='object'&&t.to).map(t=>({id:t.id?String(t.id):uid('tr'),to:dictStr(t.to),kind:dictStr(t.kind),note:dictStr(t.note)}));
   return e;
 }
+registerWorldNormalizer('dictionary',430,dictNormalize);
 function dictNormalize(w){
   if(!w||typeof w!=='object') return;
   ['dictEntries','dictPos','dictTables'].forEach(k=>{ if(!Array.isArray(w[k])) w[k]=[]; else if(w[k].some(x=>!x||typeof x!=='object'||Array.isArray(x))) w[k]=w[k].filter(x=>x&&typeof x==='object'&&!Array.isArray(x)); });
