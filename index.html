@@ -94,6 +94,8 @@ small.hint{color:var(--text-faint);font-size:11px;display:block;margin-top:4px;}
 #topbar .brand-icon{width:24px;height:24px;flex:0 0 auto;object-fit:contain;margin-right:6px;}
 #topbar .brand-icon.brand-icon-off{display:none;}
 #worldSelect{max-width:160px;}
+body.uvsub .navitem[data-view="universe"]{display:none}
+.uvwy{color:#7fd69a;font-size:12px}.uvwn{color:var(--text-dim);font-size:12px}
 #topbar .yearbox{display:flex;align-items:center;gap:4px;font-family:var(--font-mono);}
 #topbar .yearbox input{width:88px;font-family:var(--font-mono);text-align:center;}
 #topbar .spacer{flex:1;}
@@ -698,7 +700,7 @@ select.uvc{max-width:70px;}
 <div id="app" style="display:none;">
   <div id="topbar">
     <div class="brand"><img class="brand-icon" src="atlas_icon.png?v=1" alt="" width="24" height="24">架空世界管理ツール</div>
-    <select id="worldSelect" title="世界を切り替える" data-tip="世界を切り替える|保存されている別の架空世界に表示を切り替えます"></select>
+    <select id="worldSelect" title="世界を切り替える" data-tip="世界を切り替える|保存されている別の架空世界に表示を切り替えます"></select><button class="btn small" id="uvBackBtn" style="display:none" title="この世界を持つ宇宙の画面に戻ります">◀ 宇宙に戻る</button>
     <button class="icon-btn" id="worldNewBtn" data-tip="新しい世界を作る|地図・国家・歴史などをすべて新規に持つ、別の架空世界を作成します">＋</button>
     <button class="icon-btn" id="worldSettingsBtn" data-tip="世界設定|世界名・年代範囲・地形タイプ・時代区分・権限・バックアップなどを設定します">⚙</button>
     <div class="yearbox">
@@ -1332,7 +1334,7 @@ const UV_PERIOD_UNITS=['時間','日','年'];
 const UV_DEF={ star:{radius:{value:1,unit:'太陽半径'},color:'#ffe9b0',brightness:0.8,glow:0.5},
   planet:{radius:1,radiusUnit:'AU',tilt:0,phase:0,size:{value:1,unit:'地球半径'},color:'#5f8fd0'} };
 const UV_LOD_DEF={near:0.001,mid:10,cell:8};   /* 簡略化の区切り(光年)と、遠いときにまとめる範囲(px) */
-const UV={ mem:{}, cam:{}, mode:'3d', sel:'', ref:'', sortKey:'name', sortDir:1, filter:'', lines:true, labels:true, stats:{}, hit:[], drag:null, lod:Object.assign({},UV_LOD_DEF), thumbs:{}, hop:false, step:'1y', orbits:true, rev:0, help:true, guide:null, bodyDrag:null };
+const UV={ migNotes:[], migT:0, busy:false, purged:false, back:null, mem:{}, cam:{}, mode:'3d', sel:'', ref:'', sortKey:'name', sortDir:1, filter:'', lines:true, labels:true, stats:{}, hit:[], drag:null, lod:Object.assign({},UV_LOD_DEF), thumbs:{}, hop:false, step:'1y', orbits:true, rev:0, help:true, guide:null, bodyDrag:null };
 
 /* ---------- 値の整え ---------- */
 const uvNum=(v,d)=>{ if(v===''||v===null||v===undefined) return d; const n=Number(v); return Number.isFinite(n)?n:d; };
@@ -1358,13 +1360,24 @@ function uvNormStar(s){
 }
 function uvNormPlanet(p){
   p=(p&&typeof p==='object'&&!Array.isArray(p))?Object.assign({},p):{}; delete p.position; delete p.world; delete p.tiles;
-  p.id=p.id?String(p.id):uid('pl'); p.name=uvStr(p.name,200); p.notes=uvStr(p.notes,8000); p.starId=uvStr(p.starId,200); delete p.worldId; delete p.ownWorld;
+  p.id=p.id?String(p.id):uid('pl'); p.name=uvStr(p.name,200); p.notes=uvStr(p.notes,8000); p.starId=uvStr(p.starId,200); p.worldId=uvStr(p.worldId,200); delete p.ownWorld;
   const o=(p.orbit&&typeof p.orbit==='object')?p.orbit:{};
   p.orbit={radius:Math.max(0,uvNum(o.radius,UV_DEF.planet.radius)),radiusUnit:uvUnit(o.radiusUnit,UV_ORBIT_UNITS,UV_DEF.planet.radiusUnit),tilt:uvNum(o.tilt,0),phase:uvNum(o.phase,0),angleUnit:'度'};
   p.size=uvVal(p.size,UV_PLANET_UNITS,UV_DEF.planet.size.value,UV_DEF.planet.size.unit);
   p.rotationPeriod=uvPeriod(p.rotationPeriod,'時間'); p.orbitalPeriod=uvPeriod(p.orbitalPeriod,'日');
   const sf=(p.surface&&typeof p.surface==='object')?p.surface:{}; p.surface={mode:(sf.mode==='map'||sf.mode==='color')?sf.mode:'color',color:uvColor(sf.color,UV_DEF.planet.color)};
   p.conversion=uvNormConv(p.conversion); uvMeta(p); return p;
+}
+const UV_MOON_SIZE_UNITS=['km','地球半径','木星半径'];
+function uvNormMoon(m){
+  m=(m&&typeof m==='object'&&!Array.isArray(m))?Object.assign({},m):{}; delete m.position; delete m.world; delete m.tiles; delete m.ownWorld; delete m.starId; m.worldId=uvStr(m.worldId,200);
+  m.id=m.id?String(m.id):uid('mn'); m.name=uvStr(m.name,200); m.notes=uvStr(m.notes,8000); m.planetId=uvStr(m.planetId,200);
+  const o=(m.orbit&&typeof m.orbit==='object')?m.orbit:{};
+  m.orbit={radius:Math.max(0,uvNum(o.radius,0.01)),radiusUnit:uvUnit(o.radiusUnit,UV_ORBIT_UNITS,'AU'),tilt:uvNum(o.tilt,0),phase:uvNum(o.phase,0),angleUnit:'度'};
+  m.size=uvVal(m.size,UV_MOON_SIZE_UNITS,1000,'km');
+  m.rotationPeriod=uvPeriod(m.rotationPeriod,'時間'); m.orbitalPeriod=uvPeriod(m.orbitalPeriod,'日');
+  const sf=(m.surface&&typeof m.surface==='object')?m.surface:{}; m.surface={mode:(sf.mode==='map'||sf.mode==='color')?sf.mode:'color',color:uvColor(sf.color,'#b8b8b8')};
+  m.conversion=uvNormConv(m.conversion); uvMeta(m); return m;
 }
 function uvNormCal(c){
   c=(c&&typeof c==='object'&&!Array.isArray(c))?c:{}; const pos=(v)=>{ const n=uvNum(v,null); return (n!==null&&n>0)?n:null; };
@@ -1384,28 +1397,41 @@ function uvNormalizeWorld(w){
   if(!w||typeof w!=='object') return;
   const ss=new Set(); w.uvStars=(Array.isArray(w.uvStars)?w.uvStars:[]).map(uvNormStar).filter(s=>{ if(ss.has(s.id)) return false; ss.add(s.id); return true; });
   const seen=new Set(); w.uvPlanets=(Array.isArray(w.uvPlanets)?w.uvPlanets:[]).map(uvNormPlanet).filter(p=>{ if(seen.has(p.id)) return false; seen.add(p.id); return true; });
+  const pids=new Set(w.uvPlanets.map(p=>p.id)); const ms=new Set();
+  w.uvMoons=(Array.isArray(w.uvMoons)?w.uvMoons:[]).map(uvNormMoon).filter(m=>{ if(ms.has(m.id)||!pids.has(m.planetId)) return false; ms.add(m.id); return true; });   /* v54: 衛星。属する惑星がないものは、残さない */
   w.uvCalendar=uvNormCal(w.uvCalendar);
+  w.uvOwner=uvNormOwner(w.uvOwner);   /* v55: 宇宙の中の世界の印(持ち主の宇宙・天体)。通常の世界は空 */
 }
+/* v55: 惑星・衛星の世界。世界の持ち主の印 uvOwner = {universe:宇宙(入れ物の世界)のID, body:天体のID, kind:'planet'|'moon', origin:'new'(新しく作った)|'moved'(既存の世界を移した)} */
+function uvNormOwner(o){ o=(o&&typeof o==='object'&&!Array.isArray(o))?o:{}; const k=(o.kind==='planet'||o.kind==='moon')?o.kind:''; const g=(o.origin==='moved')?'moved':((o.origin==='new')?'new':''); const un=uvStr(o.universe,200); return {universe:un,body:un?uvStr(o.body,200):'',kind:un?k:'',origin:un?g:''}; }
+const worldHidden=(w)=>!!(w&&w.uvOwner&&w.uvOwner.universe);
+function uvFirstVisibleWid(){ const ids=Object.keys(DB.worlds); return ids.find(id=>!worldHidden(DB.worlds[id]))||ids[0]||null; }
+function uvBodyWid(o){ const id=o&&o.worldId; return (id&&DB.worlds[id]&&worldHidden(DB.worlds[id]))?id:''; }
+const uvSurfText=(o)=>o.surface.mode==='map'?(uvBodyWid(o)?'この天体の世界の地図':'地図(世界がないため、単色で表示)'):'単色 '+esc(o.surface.color);
+const uvWorldDd=(o)=>{ const id=uvBodyWid(o); return id?'あり(「'+esc(DB.worlds[id].name||'(無名)')+'」)':'なし'; };
+const uvWorldBtns=(o,dis)=>uvBodyWid(o)?`<button class="btn small primary" data-uvopen="${esc(o.id)}">世界を開く</button><button class="btn small" data-uvdetw="${esc(o.id)}"${dis}>世界を外す</button>`:`<button class="btn small" data-uvmkw="${esc(o.id)}"${dis}>世界を作る</button><button class="btn small" data-uvmvw="${esc(o.id)}"${dis}>既存の世界を移す</button>`;
 /* 世界の宇宙の項目を、宇宙(v50 の形: calendar / stars / planets)の内容で置き換える。惑星の worldId は外す */
 function uvApplyUniverse(w,raw,keepWorldId){
   let r=raw; if(!Array.isArray(r.stars)) r=uvFromLegacy(r);
   w.uvCalendar=uvNormCal(r.calendar); w.uvStars=(Array.isArray(r.stars)?r.stars:[]).map(uvNormStar);
-  w.uvPlanets=(Array.isArray(r.planets)?r.planets:[]).map(p=>{ const q=uvNormPlanet(Object.assign({},p,(p&&p.worldId&&p.worldId!==keepWorldId)?{surface:Object.assign({},p.surface,{mode:'color'})}:{}));  return q; });
-  uvNormalizeWorld(w); return w;
+  w.uvPlanets=(Array.isArray(r.planets)?r.planets:[]).map(p=>{ const q=uvNormPlanet(Object.assign({},p,{worldId:''},(p&&p.surface&&p.surface.mode==='map')?{surface:Object.assign({},p.surface,{mode:'color'})}:{}));  return q; });
+  w.uvMoons=(Array.isArray(r.moons)?r.moons:[]); uvNormalizeWorld(w); return w;
 }
 /* 世界 = 宇宙。いま開いている世界の宇宙を、v50 までの「宇宙」と同じ形の窓口(getter)で見せる。恒星・惑星の配列は世界のものそのもの */
 const UVU={}; Object.defineProperties(UVU,{
   id:{get:()=>{ const w=W(); return w?'world:'+w.id:''; }}, name:{get:()=>{ const w=W(); return w?w.name:''; }},
-  calendar:{get:()=>W().uvCalendar,set:(v)=>{ W().uvCalendar=v; }}, stars:{get:()=>W().uvStars,set:(v)=>{ W().uvStars=v; }}, planets:{get:()=>W().uvPlanets,set:(v)=>{ W().uvPlanets=v; }},
+  calendar:{get:()=>W().uvCalendar,set:(v)=>{ W().uvCalendar=v; }}, stars:{get:()=>W().uvStars,set:(v)=>{ W().uvStars=v; }}, planets:{get:()=>W().uvPlanets,set:(v)=>{ W().uvPlanets=v; }}, moons:{get:()=>{ const w=W(); return w.uvMoons||(w.uvMoons=[]); },set:(v)=>{ W().uvMoons=v; }},
   revision:{get:()=>{ const w=W(); return w?(Number(w.revision)||0):0; }} });
 function uvCur(){ const w=(typeof W==='function')?W():null; return (w&&Array.isArray(w.uvStars))?UVU:null; }
 const uvWid=()=>{ const w=W(); return w?w.id:''; };
 const uvStar=(u,id)=>u&&u.stars.find(s=>s.id===id)||null;
 function uvPlanet(u,id){ return u&&u.planets.find(p=>p.id===id)||null; }
+function uvMoon(u,id){ return u&&u.moons&&u.moons.find(m=>m.id===id)||null; }
+const uvMoonsOf=(u,pid)=>(u&&u.moons?u.moons:[]).filter(m=>m.planetId===pid);
 /* 恒星か惑星か(id から) */
-function uvBody(u,id){ if(!u||!id) return null; const s=uvStar(u,id); if(s) return {kind:'star',o:s}; const p=uvPlanet(u,id); return p?{kind:'planet',o:p}:null; }
-const uvCount=(u)=>u.stars.length+u.planets.length;
-function uvCapCheck(u,add){ if(uvCount(u)+add>UV_MAX) throw new Error('恒星と惑星の合計は、最大 '+UV_MAX+' 個までです(いま '+uvCount(u)+' 個)。これ以上は追加できません'); }
+function uvBody(u,id){ if(!u||!id) return null; const s=uvStar(u,id); if(s) return {kind:'star',o:s}; const p=uvPlanet(u,id); if(p) return {kind:'planet',o:p}; const m=uvMoon(u,id); return m?{kind:'moon',o:m}:null; }
+const uvCount=(u)=>u.stars.length+u.planets.length+(u.moons?u.moons.length:0);   /* v54: 恒星・惑星・衛星の合計 */
+function uvCapCheck(u,add){ if(uvCount(u)+add>UV_MAX) throw new Error('恒星・惑星・衛星の合計は、最大 '+UV_MAX+' 個までです(いま '+uvCount(u)+' 個)。これ以上は追加できません'); }
 /* 長さの換算 */
 const uvKm=(v,unit)=>v*(UV_KM[unit]||1);
 const uvLy=(v,unit)=>uvKm(v,unit)/UV_KM['光年'];
@@ -1416,7 +1442,12 @@ function uvPlanetPos(u,p){
   const s=uvStar(u,p.starId); const b=s?s.position:{x:0,y:0,z:0}; const R=uvLy(p.orbit.radius,p.orbit.radiusUnit); const ph=p.orbit.phase*Math.PI/180, ti=p.orbit.tilt*Math.PI/180;
   return {x:b.x+R*Math.cos(ph),y:b.y+R*Math.sin(ph)*Math.cos(ti),z:b.z+R*Math.sin(ph)*Math.sin(ti)};
 }
-function uvPosOf(u,b){ return b.kind==='star'?b.o.position:uvPlanetPos(u,b.o); }
+/* 衛星の位置(光年) = 惑星の位置 + 惑星を中心にした軌道(惑星と同じ式)。保存せず、いつも計算で出す */
+function uvMoonPos(u,m){
+  const pl=uvPlanet(u,m.planetId); const b=pl?uvPlanetPos(u,pl):{x:0,y:0,z:0}; const R=uvLy(m.orbit.radius,m.orbit.radiusUnit); const ph=m.orbit.phase*Math.PI/180, ti=m.orbit.tilt*Math.PI/180;
+  return {x:b.x+R*Math.cos(ph),y:b.y+R*Math.sin(ph)*Math.cos(ti),z:b.z+R*Math.sin(ph)*Math.sin(ti)};
+}
+function uvPosOf(u,b){ return b.kind==='star'?b.o.position:(b.kind==='moon'?uvMoonPos(u,b.o):uvPlanetPos(u,b.o)); }
 /* 距離(光年)。位置から計算する。光の遅れは扱わない */
 function uvDistPos(a,b){ const dx=a.x-b.x, dy=a.y-b.y, dz=a.z-b.z; return Math.sqrt(dx*dx+dy*dy+dz*dz); }
 function uvDist(u,a,b){ return uvDistPos(uvPosOf(u,a),uvPosOf(u,b)); }
@@ -1425,7 +1456,7 @@ function uvFmt(v){ if(!Number.isFinite(v)) return ''; const a=Math.abs(v); if(a>
 function uvFmtLy(v){ if(!Number.isFinite(v)) return ''; if(v===0) return '0'; if(Math.abs(v)>=0.01) return uvFmt(v); return Number(v.toPrecision(4)).toExponential(3).replace(/\.?0+e/,'e'); }
 function uvCan(){ try{ if(typeof isViewOnly==='function'&&isViewOnly()) return false; return roleHasPerm(UV_PERM); }catch(e){ return false; } }
 function uvDeny(){ toast('現在の権限(「'+roleLabel(currentRole)+'」)では、宇宙は編集できません(権限: universe)','err'); }
-function uvWorldOf(p){ return (p&&p.surface&&p.surface.mode==='map')?(W()||null):null; }   /* 表面「世界の地図」= この世界の地図 */
+function uvWorldOf(p){ const id=uvBodyWid(p); return (p&&p.surface&&p.surface.mode==='map'&&id)?DB.worlds[id]:null; }   /* v55: 表面「地図」= その天体自身の世界の地図(世界がなければ単色) */
 
 /* ---------- 宇宙暦と換算(閏年は扱わない。年の長さは一定) ---------- */
 const uvDpy=(u)=>{ const d=u&&u.calendar&&u.calendar.daysPerYear; return (typeof d==='number'&&d>0)?d:null; };
@@ -1462,6 +1493,11 @@ async function uvBoot(){
   try{ const h=await uvKvGet('uvhelp'); if(h===false) UV.help=false; }catch(e){}
   try{ await uvLegacyMigrate(); }catch(e){ console.error('universe legacy migrate',e); }
 }
+function uvShowMigNotice(){
+  const n=UV.migNotes.splice(0); if(!n.length) return; if(!document.getElementById('app')||document.getElementById('app').style.display==='none'){ UV.migNotes=n.concat(UV.migNotes); UV.migT=setTimeout(()=>{ try{ uvShowMigNotice(); }catch(e){} },2000); return; }
+  const lines=n.map(x=>'<li>世界「'+esc(x.world)+'」: '+x.items.map(i=>i.kind+'「'+esc(i.name)+'」').join('、')+'</li>').join('');
+  openModal('宇宙の天体の表面が変わりました',`<p>この版から、惑星・衛星の表面の「地図」は、<b>その天体自身の世界の地図</b>になりました(これまでは、いま開いている世界の地図でした)。</p><p>これまで「地図」を貼っていた次の天体は、まだ世界を持たないため、<b>単色の表示に変わりました</b>:</p><ul>${lines}</ul><p class="hint">天体を選んで「世界を作る」または「既存の世界を移す」で世界を持たせると、その世界の地図が貼られます。この案内は、一度だけ表示されます。</p>`,[{label:'OK',cls:'primary',onClick:closeModal}]);
+}
 async function uvSetHelp(on){ UV.help=!!on; await uvKvPut('uvhelp',UV.help); uvApplyHelp(); }
 /* 開いている世界のカメラ(端末内)を読む。世界を切り替えたときも呼ぶ */
 async function uvLoad(){ const u=uvCur(); if(!u) return; if(UV.cam[u.id]===undefined){ UV.cam[u.id]=null; try{ UV.cam[u.id]=(await uvKvGet('universecam:'+u.id))||null; }catch(e){} } UV.loaded=true; }
@@ -1470,8 +1506,8 @@ async function uvLoad(){ const u=uvCur(); if(!u) return; if(UV.cam[u.id]===undef
 function uvMutate(label,fn,u){
   u=u||uvCur(); if(!u){ toast('世界がありません','err'); return false; }
   if(!uvCan()){ uvDeny(); return false; }
-  const w=W(); const snap=JSON.stringify([w.uvCalendar,w.uvStars,w.uvPlanets]);
-  const ok=mutate('宇宙: '+label,()=>{ try{ fn(u); }catch(e){ const b=JSON.parse(snap); w.uvCalendar=b[0]; w.uvStars=b[1]; w.uvPlanets=b[2]; throw e; } },UV_PERM);
+  const w=W(); const snap=JSON.stringify([w.uvCalendar,w.uvStars,w.uvPlanets,w.uvMoons]);
+  const ok=mutate('宇宙: '+label,()=>{ try{ fn(u); }catch(e){ const b=JSON.parse(snap); w.uvCalendar=b[0]; w.uvStars=b[1]; w.uvPlanets=b[2]; w.uvMoons=b[3]; throw e; } },UV_PERM);
   if(ok){ UV.rev++; uvRefresh(); }
   return ok;
 }
@@ -1491,9 +1527,151 @@ function uvAddPlanet(fields,u){
   if(!uvStar(u,fields&&fields.starId)){ toast('属する恒星を選んでください(恒星がないときは、先に恒星を追加してください)','err'); return null; }
   const pl=uvNormPlanet(Object.assign({},fields,{id:undefined})); const ok=uvMutate('惑星を追加',(uu)=>{ uu.planets.push(pl); },u); return ok?pl:null;
 }
+/* ===== v55: 惑星・衛星の世界 ===== */
+const uvwNewFields=(pre,name)=>`<div class="full"><label>世界名</label><input id="${pre}Name" value="${esc(name||'')}"></div>
+  <div><label>開始年代</label><input type="number" id="${pre}S" value="0"></div><div><label>終了年代</label><input type="number" id="${pre}E" value="1000"></div>
+  <div><label>暦の単位</label><input id="${pre}Cal" value="年"></div>
+  <div><label>初期の地図</label><select id="${pre}Fill"><option value="sea">全面を海にする</option><option value="unset">未設定(何も描かれていない状態)</option></select></div>
+  <div class="full"><label>説明</label><textarea id="${pre}Desc" rows="2"></textarea></div>
+  <div class="full"><label class="lp-chk"><input type="checkbox" id="${pre}Wrap" checked>左右の端をつなげる(横方向に無限に続く地図)</label></div>
+  <div class="full"><label>地図の解像度</label><select id="${pre}Res">${MAP_RES_PRESETS.map((p,i)=>`<option value="${i}" ${(p.w===DEFAULT_MAP_W&&p.h===DEFAULT_MAP_H)?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>`;
+function uvReadWorldOpts(pre){
+  const name=uvV(pre+'Name').trim(); if(!name) throw new Error('世界名を入力してください');
+  const s=numOrDefault(uvV(pre+'S'),0), e=numOrDefault(uvV(pre+'E'),1000); if(s>e) throw new Error('開始年代は終了年代以下にしてください');
+  const p=MAP_RES_PRESETS[Number(uvV(pre+'Res'))]||MAP_RES_PRESETS[0];
+  return {name,startYear:s,endYear:e,calendarUnit:uvV(pre+'Cal')||'年',description:uvV(pre+'Desc'),fill:uvV(pre+'Fill'),wrapX:!!document.getElementById(pre+'Wrap').checked,mapWidth:p.w,mapHeight:p.h};
+}
+/* 移せる世界: 通常の一覧にある、閲覧専用でない世界。宇宙の入れ物(天体の世界を持つ世界)・いま開いている宇宙は移せない */
+function uvMovableWorlds(){ const cur=W()&&W().id; return Object.values(DB.worlds).filter(w=>w.id!==cur&&!worldHidden(w)&&!w.readOnly&&!(w.uvPlanets||[]).concat(w.uvMoons||[]).some(p=>p&&p.worldId&&DB.worlds[p.worldId])); }
+const uvWorldChoiceBlock=(allowNone)=>`<div class="full"><label><b>この天体の世界</b></label><select id="uvwMode" onchange="uvwToggle()"><option value="new">新しく作る(宇宙の中だけにある世界)</option><option value="move">既存の世界を移す(通常の一覧から、宇宙の中へ移動します)</option>${allowNone?'<option value="none">世界なし(あとから作る・移す)</option>':''}</select></div>
+  <div id="uvwNewBox" class="formgrid" style="grid-column:1/-1">${uvwNewFields('uvw','')}</div>
+  <div id="uvwMoveBox" class="full" style="display:none"><label>移す世界</label><select id="uvwPick">${uvMovableWorlds().map(w=>uvOpt(w.id,w.name||'(無名)',false)).join('')||'<option value="">(移せる世界がありません)</option>'}</select></div>`;
+function uvwToggle(){ const m=uvV('uvwMode'); const a=document.getElementById('uvwNewBox'), b=document.getElementById('uvwMoveBox'); if(a) a.style.display=m==='new'?'':'none'; if(b) b.style.display=m==='move'?'':'none'; }
+function uvReadWorldChoice(bodyName){
+  const mode=uvV('uvwMode'); if(mode==='new'){ const nm=document.getElementById('uvwName'); if(nm&&!nm.value.trim()) nm.value=bodyName||''; return {mode,opts:uvReadWorldOpts('uvw')}; }
+  if(mode==='move'){ const wid=uvV('uvwPick'); if(!wid||!DB.worlds[wid]) throw new Error('移せる世界がありません。「新しく作る」を選んでください'); return {mode,wid}; }
+  return {mode:'none'};
+}
+function uvAfterBodyAdd(bodyId,ch){
+  setTimeout(async()=>{ try{ if(ch.mode==='new'){ const r=await uvCreateBodyWorld(bodyId,ch.opts); if(r) toast('世界「'+r.name+'」を作りました(宇宙の中だけにあります)'); } else if(ch.mode==='move') uvMoveConfirm(bodyId,ch.wid); }catch(e){ console.error(e); toast('世界の作成に失敗しました: '+(e.message||e),'err'); } },30);
+}
+function uvConfirmModal(title,html,okLabel,onOk,danger){ openModal(title,html,[{label:'キャンセル',onClick:closeModal},{label:okLabel,cls:danger?'danger':'primary',onClick:()=>{ closeModal(); onOk(); }}]); }
+/* 世界を新しく作る(宇宙の中だけに存在)。天体の表面は、その世界の地図にする */
+async function uvCreateBodyWorld(bodyId,opts){
+  const u=uvCur(); const b=u&&uvBody(u,bodyId); if(!b) return null; if(!uvCan()){ uvDeny(); return null; }
+  if(uvBodyWid(b.o)){ toast('この天体は、すでに世界を持っています','err'); return null; }
+  const cid=W().id; const kind=b.kind; UV.busy=true; let sub=null;
+  try{
+    await persist();
+    sub=createWorld(Object.assign({},opts,{name:(opts&&opts.name)||b.o.name||'名もなき世界'}));
+    sub.uvOwner=uvNormOwner({universe:cid,body:bodyId,kind,origin:'new'}); if(typeof syncBaseline==='function') syncBaseline(sub);
+    try{ const bd=SyncAdapters.bindings[cid]; if(bd&&bd.adapterId&&bd.adapterId!==SyncAdapters.defaultId&&SyncAdapters.map[bd.adapterId]) syncBindWorld(sub.id,bd.adapterId); }catch(e){ console.warn(e); }   /* 新しい世界は、宇宙の入れ物と同じ保存先に作る */
+    DB.worlds[sub.id]=sub; DB.currentWorldId=sub.id; Store.worldId=sub.id; Store.fullRewrite=true; DB.metaDirty.add(sub.id); History.clear();
+    await persist(); try{ await uvStoreThumb(sub.id); }catch(e){ console.warn(e); }
+    await switchWorld(cid);
+    const ok=uvMutate('天体の世界を作る',(uu)=>{ const t=uvBody(uu,bodyId).o; t.worldId=sub.id; t.surface=Object.assign({},t.surface,{mode:'map'}); },uvCur());
+    if(!ok){ delete DB.worlds[sub.id]; await deleteWorldStorage(sub.id); return null; }
+    U3.key=''; U3.dirty=true; uvRefresh(); return sub;
+  } finally { UV.busy=false; }
+}
+/* 既存の世界を、天体の世界として宇宙の中へ移す(通常の一覧から消える) */
+async function uvMoveWorldIn(bodyId,wid){
+  const u=uvCur(); const b=u&&uvBody(u,bodyId); const src=DB.worlds[wid]; if(!b||!src) return false; if(!uvCan()){ uvDeny(); return false; }
+  if(uvBodyWid(b.o)){ toast('この天体は、すでに世界を持っています','err'); return false; }
+  if(worldHidden(src)||src.readOnly||wid===W().id){ toast('この世界は移せません','err'); return false; }
+  const cid=W().id; const kind=b.kind; UV.busy=true;
+  try{
+    await persist(); await switchWorld(wid);
+    const ok1=mutate('世界を宇宙の天体の世界にする',()=>{ W().uvOwner=uvNormOwner({universe:cid,body:bodyId,kind,origin:'moved'}); },UV_PERM);
+    if(!ok1){ await switchWorld(cid); return false; }
+    try{ await uvStoreThumb(wid); }catch(e){ console.warn(e); }
+    await switchWorld(cid);
+    const ok=uvMutate('天体に世界を移す',(uu)=>{ const t=uvBody(uu,bodyId).o; t.worldId=wid; t.surface=Object.assign({},t.surface,{mode:'map'}); },uvCur());
+    if(!ok){ await switchWorld(wid); mutate('世界を一覧へ戻す',()=>{ W().uvOwner=uvNormOwner(null); },UV_PERM); await switchWorld(cid); return false; }
+    U3.key=''; U3.dirty=true; uvRefresh(); return true;
+  } finally { UV.busy=false; }
+}
+/* 天体から世界を外す。mode: 'return'(既存の世界を移した場合: 通常の一覧へ戻す) / 'delete'(世界を削除する。取り消し(Undo)できるあいだは、世界は残る。世界を切り替えるか再読み込みすると、実際に削除される) */
+async function uvDetachBodyWorld(bodyId,mode){
+  const u=uvCur(); const b=u&&uvBody(u,bodyId); if(!b) return false; if(!uvCan()){ uvDeny(); return false; }
+  const wid=uvBodyWid(b.o); if(!wid){ toast('この天体には世界がありません','err'); return false; }
+  const sub=DB.worlds[wid]; const cid=W().id; if(mode==='return'&&sub.uvOwner.origin!=='moved') mode='delete'; UV.busy=true;
+  try{
+    if(mode==='return'){
+      await persist(); await switchWorld(wid);
+      if(!mutate('世界を宇宙から外して、一覧へ戻す',()=>{ W().uvOwner=uvNormOwner(null); },UV_PERM)){ await switchWorld(cid); return false; }
+      await switchWorld(cid);
+    } else UV.del=(UV.del||new Set()).add(wid);
+    const ok=uvMutate(mode==='return'?'天体の世界を外す(一覧へ戻す)':'天体の世界を削除',(uu)=>{ const t=uvBody(uu,bodyId).o; t.worldId=''; t.surface=Object.assign({},t.surface,{mode:'color'}); },uvCur());
+    U3.key=''; U3.dirty=true; uvRefresh(); return ok;
+  } finally { UV.busy=false; }
+}
+/* 持ち主のいない宇宙の中の世界を片づける(世界を切り替えたとき・起動時。この時点で取り消し(Undo)は効かなくなる)。新しく作った世界・削除を選んだ世界は削除、既存の世界を移したものは通常の一覧へ戻す */
+async function uvPurgeOrphans(){
+  if(UV.busy) return; const out=[];
+  for(const id of Object.keys(DB.worlds)){ const w=DB.worlds[id]; if(!worldHidden(w)||id===DB.currentWorldId) continue;
+    const c=DB.worlds[w.uvOwner.universe]; const refd=!!c&&(c.uvPlanets||[]).concat(c.uvMoons||[]).some(p=>p&&p.worldId===id); if(refd) continue;
+    if(w.uvOwner.origin==='moved'&&!(UV.del&&UV.del.has(id))&&c){ w.uvOwner=uvNormOwner(null); DB.metaDirty.add(id); out.push({id,act:'return'}); }
+    else { delete DB.worlds[id]; await deleteWorldStorage(id); out.push({id,act:'delete'}); } }
+  if(out.length){ try{ await persist(); }catch(e){} populateWorldSelect(); }
+  return out;
+}
+/* 天体の世界を開く(通常の世界の画面)。「宇宙に戻る」で宇宙へ戻る */
+async function uvOpenBodyWorld(bodyId){
+  const u=uvCur(); const b=u&&uvBody(u,bodyId); const wid=b&&uvBodyWid(b.o); if(!wid){ toast('この天体には世界がありません','err'); return false; }
+  UV.back={universe:W().id,body:bodyId}; await switchWorld(wid); if(currentView==='universe') switchView('map'); return true;
+}
+async function uvBackToUniverse(){
+  const w=W(); if(!w||!worldHidden(w)) return false; const o=w.uvOwner; if(!DB.worlds[o.universe]){ toast('この世界を持つ宇宙が見つかりません','err'); return false; }
+  try{ await uvStoreThumb(w.id); }catch(e){ console.warn(e); }
+  await switchWorld(o.universe); UV.sel=o.body; switchView('universe'); return true;
+}
+function uvOnWorldShown(){
+  const w=W(); const hid=worldHidden(w); try{ document.body.classList.toggle('uvsub',hid); }catch(e){}
+  const bt=document.getElementById('uvBackBtn'); if(bt){ bt.style.display=hid?'':'none'; if(hid&&DB.worlds[w.uvOwner.universe]) bt.textContent='◀ 宇宙に戻る(「'+(DB.worlds[w.uvOwner.universe].name||'(無名)')+'」)'; }
+  if(hid&&currentView==='universe') switchView('map');
+  if(!UV.purged&&Object.keys(DB.worlds).length){ UV.purged=true; setTimeout(()=>{ uvPurgeOrphans().catch(e=>console.warn(e)); },600); }
+}
+function uvOnWorldSwitched(){ if(!UV.busy) uvPurgeOrphans().catch(e=>console.warn(e)); }
+document.addEventListener('click',(e)=>{ const b=e.target&&e.target.closest&&e.target.closest('#uvBackBtn'); if(b) uvBackToUniverse(); });
+/* 操作の画面 */
+function uvMakeWorldForm(bodyId){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); const b=u&&uvBody(u,bodyId); if(!b) return;
+  uvFormOpen('世界を作る('+(b.kind==='moon'?'衛星':'惑星')+'「'+(b.o.name||'(無名)')+'」)',`<p class="hint">宇宙の中だけにある世界を、新しく作ります(通常の世界の一覧には出ません)。地図・年表・国家などの中身は、作ったあとに「世界を開く」で作ります。</p><div class="formgrid">${uvwNewFields('uvw',b.o.name)}</div>`,()=>{ const opts=uvReadWorldOpts('uvw'); uvAfterBodyAdd(bodyId,{mode:'new',opts}); },'作る');
+}
+function uvMoveWorldForm(bodyId){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); const b=u&&uvBody(u,bodyId); if(!b) return; const ws=uvMovableWorlds();
+  if(!ws.length){ toast('移せる世界がありません(通常の一覧にある、閲覧専用でない世界が対象です)','err'); return; }
+  uvFormOpen('既存の世界を移す('+(b.kind==='moon'?'衛星':'惑星')+'「'+(b.o.name||'(無名)')+'」)',`<div class="formgrid"><div class="full"><label>移す世界</label><select id="uvwPick">${ws.map(w=>uvOpt(w.id,w.name||'(無名)',false)).join('')}</select></div></div>`,()=>{ const wid=uvV('uvwPick'); if(!wid) throw new Error('世界を選んでください'); setTimeout(()=>uvMoveConfirm(bodyId,wid),30); },'次へ(確認)');
+}
+function uvMoveConfirm(bodyId,wid){
+  const u=uvCur(); const b=u&&uvBody(u,bodyId); const w=DB.worlds[wid]; if(!b||!w) return;
+  uvConfirmModal('世界を移す(確認)',`<p>世界「<b>${esc(w.name||'(無名)')}</b>」を、${b.kind==='moon'?'衛星':'惑星'}「<b>${esc(b.o.name||'(無名)')}</b>」の世界として、宇宙の中へ移します。</p><p>この世界は、<b>通常の世界の一覧から消え</b>、宇宙の中だけで開けるようになります(あとで「世界を外す」で、一覧へ戻せます)。</p><p class="hint">移す前に、世界を書き出しておく(設定の「JSONを書き出す」)か、バックアップを作ることをおすすめします。</p>`,'移す',async()=>{ try{ const ok=await uvMoveWorldIn(bodyId,wid); if(ok) toast('世界「'+w.name+'」を、「'+b.o.name+'」の世界にしました'); }catch(e){ console.error(e); toast('移せませんでした: '+(e.message||e),'err'); } });
+}
+function uvDetachWorldForm(bodyId){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); const b=u&&uvBody(u,bodyId); if(!b) return; const wid=uvBodyWid(b.o); if(!wid) return; const w=DB.worlds[wid]; const mv=w.uvOwner.origin==='moved';
+  openModal('世界を外す',`<p>${b.kind==='moon'?'衛星':'惑星'}「<b>${esc(b.o.name||'(無名)')}</b>」の世界「<b>${esc(w.name||'(無名)')}</b>」を外します。外すと、この天体の表面は単色になります。</p>
+    ${mv?`<div class="full"><label><input type="radio" name="uvdw" value="return" checked> 通常の世界の一覧に戻す(世界の内容は残ります)</label></div><div class="full"><label><input type="radio" name="uvdw" value="delete"> 世界を削除する(<b>1件</b>: 「${esc(w.name||'(無名)')}」。取り消し(Undo)で戻せます)</label></div>`:`<p>この世界は、この宇宙の中で新しく作った世界なので、外すと<b>世界が削除されます(1件: 「${esc(w.name||'(無名)')}」)</b>。取り消し(Undo)で戻せます。</p>`}`,
+    [{label:'キャンセル',onClick:closeModal},{label:mv?'外す':'削除して外す',cls:mv?'primary':'danger',onClick:async()=>{ const r=document.querySelector('input[name="uvdw"]:checked'); const mode=mv&&r?r.value:'delete'; closeModal(); try{ const ok=await uvDetachBodyWorld(bodyId,mode); if(ok) toast(mode==='return'?'世界を通常の一覧に戻しました':'世界を外しました(削除。取り消しで戻せます)'); }catch(e){ console.error(e); toast('外せませんでした: '+(e.message||e),'err'); } }}]);
+}
 function uvRemovePlanet(planetId){
   const u=uvCur(); const p=uvPlanet(u,planetId); if(!p) return false;
-  const ok=uvMutate('惑星を削除',(uu)=>{ uu.planets=uu.planets.filter(x=>x.id!==planetId); },u); if(ok){ if(UV.sel===planetId) UV.sel=''; if(UV.ref===planetId) UV.ref=''; } return ok;
+  const mids=uvMoonsOf(u,planetId).map(m=>m.id);   /* 惑星を外すと、その衛星も一緒に外れる(1回の操作・1回の取り消し) */
+  const ok=uvMutate('惑星を削除',(uu)=>{ uu.planets=uu.planets.filter(x=>x.id!==planetId); uu.moons=uu.moons.filter(m=>m.planetId!==planetId); },u); if(ok){ if(UV.sel===planetId||mids.includes(UV.sel)) UV.sel=''; if(UV.ref===planetId||mids.includes(UV.ref)) UV.ref=''; } return ok;
+}
+function uvAddMoon(fields,u){
+  u=u||uvCur(); if(!u) return null; try{ uvCapCheck(u,1); }catch(e){ toast(e.message,'err'); return null; }
+  if(!uvPlanet(u,fields&&fields.planetId)){ toast('属する惑星を選んでください(惑星がないときは、先に惑星を追加してください)','err'); return null; }
+  const mn=uvNormMoon(Object.assign({},fields,{id:undefined})); const ok=uvMutate('衛星を追加',(uu)=>{ uu.moons.push(mn); },u); return ok?mn:null;
+}
+function uvRemoveMoon(moonId){
+  const u=uvCur(); const m=uvMoon(u,moonId); if(!m) return false;
+  const ok=uvMutate('衛星を削除',(uu)=>{ uu.moons=uu.moons.filter(x=>x.id!==moonId); },u); if(ok){ if(UV.sel===moonId) UV.sel=''; if(UV.ref===moonId) UV.ref=''; } return ok;
+}
+/* 衛星を、惑星の中心から見た位置(宇宙の座標の差 rel)へ動かす: 半径(衛星の単位)・傾き・位相を求める */
+function uvMoonOrbitFromRel(m,rel){
+  const L=Math.hypot(rel.x,rel.y,rel.z); if(!(L>0)) return null; const o=uvOrbitFromDir(m,rel); if(!o) return null; const f1=uvLy(1,m.orbit.radiusUnit); if(!(f1>0)) return null;
+  return {radius:Number(Number(L/f1).toPrecision(12)),phase:o.phase,tilt:o.tilt};
 }
 
 /* ---------- 位置の変更(星図・表・3D のドラッグで同じ関数を使う) ---------- */
@@ -1515,6 +1693,24 @@ async function uvWorldDoc(wid){
   if(IDB.ok) await IDB.cursor('tiles',wid+'|',(k,v)=>{ const p=k.split('|'); if(p.length!==4||!v||!v.d) return; const sid=p[1],layer=p[2]; (tiles[sid]||(tiles[sid]={}));(tiles[sid][layer]||(tiles[sid][layer]={}))[p[3]]={k:v.k,b:bytesToB64(new Uint8Array(v.d.buffer,v.d.byteOffset,v.d.byteLength))}; });
   return JSON.parse(JSON.stringify(syncExportDoc(w,tiles)));
 }
+/* 宇宙全体を1つのファイルにする: 宇宙の入れ物の書き出しに、すべての天体の世界(world と tiles)を uvWorlds として含める */
+async function uvBundleWorlds(w){
+  const ids=(w.uvPlanets||[]).concat(w.uvMoons||[]).map(p=>p&&p.worldId).filter(id=>id&&DB.worlds[id]&&worldHidden(DB.worlds[id])); if(!ids.length) return null; const out={};
+  for(const id of ids){ const d=await uvWorldDoc(id); if(d) out[id]={world:d.world,tiles:d.tiles||{}}; }
+  return out;
+}
+async function uvImportBundle(cw,bundle){
+  const map={}; const cid=cw.id; UV.busy=true;
+  try{
+    for(const oid of Object.keys(bundle)){ const e=bundle[oid]; if(!e||!e.world||typeof e.world!=='object') continue; const sub=e.world; const nid=(!sub.id||DB.worlds[sub.id]||sub.id===oid&&DB.worlds[oid])?uid('world'):sub.id; sub.id=nid; map[oid]=nid;
+      normalizeWorld(sub); sub.uvOwner=uvNormOwner(Object.assign({},sub.uvOwner,{universe:cid})); delete sub.readOnly; Store.reset(nid); const n=atlasLoadTiles(e.tiles||{}); if(n) await nextFrame();
+      areaMigrate(sub); syncBaseline(sub); DB.worlds[nid]=sub; DB.currentWorldId=nid; Store.worldId=nid; Store.fullRewrite=true; DB.metaDirty.add(nid); await persist(); try{ await uvStoreThumb(nid); }catch(e2){ console.warn(e2); } }
+    DB.currentWorldId=cid; Store.worldId=cid; await Store.loadWorld(cid); History.clear();
+    const fix=(arr)=>(arr||[]).forEach(p=>{ if(p&&p.worldId){ if(map[p.worldId]) { p.worldId=map[p.worldId]; if(DB.worlds[p.worldId]) DB.worlds[p.worldId].uvOwner.body=p.id; } } });
+    fix(cw.uvPlanets); fix(cw.uvMoons); Object.values(map).forEach(id=>{ const s=DB.worlds[id]; const b=(cw.uvPlanets||[]).concat(cw.uvMoons||[]).find(p=>p.worldId===id); if(s&&b) s.uvOwner=uvNormOwner(Object.assign({},s.uvOwner,{body:b.id})); });
+    DB.metaDirty.add(cid); await persist();
+  } finally { UV.busy=false; }
+}
 async function uvLegacyMigrate(){
   const st=await uvKvGet('uvlegacy51'); if(st&&st.done) return;
   const ids=(await uvKvGet('universes'))||[]; const raws=[];
@@ -1525,7 +1721,6 @@ async function uvLegacyMigrate(){
   if(w&&!w.readOnly){ uvApplyUniverse(w,r0,w.id); syncBaseline(w); DB.metaDirty.add(w.id); try{ await saveAll(); }catch(e){} }
   const pending=raws.slice(1).map(r=>({id:r.id,name:r.name||'(無名の宇宙)',planets:(r.planets||[]).length}));
   await uvKvPut('uvlegacy51',{done:true,first:r0.id,firstWorld:w?w.id:'',pending});
-  if(pending.length) setTimeout(()=>{ try{ uvShowLegacyGuide(); }catch(e){} },800);
 }
 /* 残りの宇宙(別のファイルとして書き出す)の、世界のファイルを作る: その宇宙の最初の世界の一式 + 宇宙の内容 */
 async function uvLegacyExportDoc(id){
@@ -1585,7 +1780,7 @@ async function uvLoadThumbFromKv(wid){
 }
 /* いま開いている世界の地図の画像を、最新にする(開いていない世界は対象外) */
 async function uvEnsureThumb(wid){
-  const w=W(); if(!w||w.id!==wid) return null; let t=await uvLoadThumbFromKv(wid); if(t&&t.rev===(Number(w.revision)||0)) return t;
+  const w=W(); if(!w||w.id!==wid) return wid?await uvLoadThumbFromKv(wid):null; let t=await uvLoadThumbFromKv(wid); if(t&&t.rev===(Number(w.revision)||0)) return t;
   if(UV.hop) return t; UV.hop=true; try{ return await uvStoreThumb(wid); }catch(e){ console.warn('universe thumb',e); return t; } finally{ UV.hop=false; }
 }
 
@@ -1595,7 +1790,7 @@ const uvV=(id)=>{ const e=document.getElementById(id); return e?e.value:''; };
 const uvBodyName=(b)=>b?(b.o.name||'(無名)'):'';
 function uvBarHtml(u){
   const can=uvCan(), dis=can?'':' disabled title="権限「universe」がないため編集できません"';
-  const refOpts='<option value="">(基準なし)</option>'+(u?u.stars.map(s=>uvOpt(s.id,'★ '+(s.name||'(無名)'),s.id===UV.ref)).join('')+u.planets.map(p=>uvOpt(p.id,'● '+(p.name||'(無名)'),p.id===UV.ref)).join(''):'');
+  const refOpts='<option value="">(基準なし)</option>'+(u?u.stars.map(s=>uvOpt(s.id,'★ '+(s.name||'(無名)'),s.id===UV.ref)).join('')+u.planets.map(p=>uvOpt(p.id,'● '+(p.name||'(無名)'),p.id===UV.ref)).join('')+(u.moons||[]).map(p=>uvOpt(p.id,'◦ '+(p.name||'(無名)'),p.id===UV.ref)).join(''):'');
   const ok=u&&uvDpy(u)!==null, mo=u&&ok&&uvMonthsOk(u); const now=u?u.calendar.now:{year:0,day:1};
   let nowIn;
   if(!u) nowIn='';
@@ -1611,7 +1806,7 @@ function uvBarHtml(u){
     <span class="uvsep"></span>${b('uvMode3d','3D','3d')}${b('uvModeMap','星図(2D)','map')}${b('uvModeTable','惑星の一覧','table')}${b('uvModeStars','恒星の一覧','stars')}
     <span class="uvsep"></span>
     <button class="btn small primary" id="uvAddStar"${u&&can&&!full?'':' disabled'}>＋恒星</button><button class="btn small primary" id="uvAddPlanet"${u&&can&&!full?'':' disabled'} data-tip="惑星を追加|恒星の周りを回る惑星を追加します">＋惑星</button>
-    ${u?`<span class="uvsum">恒星 ${u.stars.length} ・ 惑星 ${u.planets.length} ・ 合計 ${uvCount(u)} / ${UV_MAX}</span>`:''}
+    ${u?`<span class="uvsum">恒星 ${u.stars.length} ・ 惑星 ${u.planets.length} ・ 衛星 ${(u.moons||[]).length} ・ 合計 ${uvCount(u)} / ${UV_MAX}</span>`:''}
   </div>
   <div class="uvrow">
     <span class="uvl">宇宙暦</span><b id="uvNowText">${u?esc(uvDateText(u,now)):''}</b>${nowIn}
@@ -1624,11 +1819,14 @@ function uvBarHtml(u){
 /* 惑星の表の行: 並べ替えと絞り込みを通したもの */
 function uvRows(u){
   const f=(UV.filter||'').trim().toLowerCase(); const ref=uvBody(u,UV.ref); const uo=uvOrd(u,u.calendar.now);
-  let rows=u.planets.map(p=>{ const st=uvStar(u,p.starId); const pos=uvPlanetPos(u,p); return {p,st,pos,dist:ref&&ref.o.id!==p.id?uvDistPos(uvPosOf(u,ref),pos):null,date:uvPlanetDate(u,p,uo),w:null}; });
-  if(f) rows=rows.filter(r=>(r.p.name+' '+(r.st?r.st.name:'')+' '+r.p.notes).toLowerCase().includes(f));
+  let rows=u.planets.map(p=>{ const st=uvStar(u,p.starId); const pos=uvPlanetPos(u,p); return {p,st,pos,moon:false,dist:ref&&ref.o.id!==p.id?uvDistPos(uvPosOf(u,ref),pos):null,date:uvPlanetDate(u,p,uo),w:null}; });
+  let mrows=(u.moons||[]).map(m=>{ const pl=uvPlanet(u,m.planetId); const pos=uvMoonPos(u,m); return {p:m,st:pl,pos,moon:true,dist:ref&&ref.o.id!==m.id?uvDistPos(uvPosOf(u,ref),pos):null,date:uvPlanetDate(u,m,uo),w:null}; });
+  if(f){ const tx=(r)=>(r.p.name+' '+(r.st?r.st.name:'')+' '+r.p.notes).toLowerCase().includes(f); const pOk=new Set(rows.filter(tx).map(r=>r.p.id)); const mOk=new Set(mrows.filter(tx).map(r=>r.p.planetId));
+    rows=rows.filter(r=>pOk.has(r.p.id)||mOk.has(r.p.id)); mrows=mrows.filter(r=>tx(r)||pOk.has(r.p.planetId)); }
   const k=UV.sortKey, dir=UV.sortDir; const val=(r)=>({name:r.p.name,star:r.st?r.st.name:'',x:r.pos.x,y:r.pos.y,z:r.pos.z,dist:r.dist===null?Infinity:r.dist,orbit:r.p.orbitalPeriod.value===null?Infinity:r.p.orbitalPeriod.value,rot:r.p.rotationPeriod.value===null?Infinity:r.p.rotationPeriod.value,date:r.date?uvPOrd(r.date):Infinity,notes:r.p.notes})[k];
-  rows.sort((a,b)=>{ const x=val(a),y=val(b); const c=(typeof x==='string'||typeof y==='string')?String(x).localeCompare(String(y),'ja'):(x-y); return ((c||a.p.id.localeCompare(b.p.id)))*dir; });
-  return rows;
+  const cmp=(a,b)=>{ const x=val(a),y=val(b); const c=(typeof x==='string'||typeof y==='string')?String(x).localeCompare(String(y),'ja'):(x-y); return ((c||a.p.id.localeCompare(b.p.id)))*dir; };
+  rows.sort(cmp); const out=[]; rows.forEach(r=>{ out.push(r); mrows.filter(m=>m.p.planetId===r.p.id).sort(cmp).forEach(m=>out.push(m)); });   /* 衛星は、その惑星の行の下(並べ替えは、惑星どうし・衛星どうしで行う) */
+  return out;
 }
 const uvTh=(k,t)=>`<th data-uvsort="${k}" class="${UV.sortKey===k?'on':''}" role="button" tabindex="0">${t}${UV.sortKey===k?(UV.sortDir>0?' ▲':' ▼'):''}</th>`;
 function uvPerCell(p,key,dis){ const o=key==='o'?p.orbitalPeriod:p.rotationPeriod; return `<input class="uvc w60" data-uvb="${esc(p.id)}" data-uvf="${key}v" type="number" step="any" value="${o.value===null?'':o.value}"${dis}><select class="uvc" data-uvb="${esc(p.id)}" data-uvf="${key}u"${dis}>${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===o.unit)).join('')}</select>`; }
@@ -1637,16 +1835,17 @@ function uvTableHtml(u){
   if(UV.mode==='stars') return uvStarTableHtml(u);
   const can=uvCan(), dis=can?'':' disabled'; const rows=uvRows(u);
   const body=rows.map(r=>{ const p=r.p;
-    return `<tr class="${p.id===UV.sel?'on':''}" data-uvrow="${esc(p.id)}"><td><input class="uvc w120" data-uvb="${esc(p.id)}" data-uvf="name" value="${esc(p.name)}"${dis}></td>
-      <td>${r.st?esc(r.st.name||'(無名)'):'<span class="uvwarn">恒星なし</span>'}</td>
+    return `<tr class="${p.id===UV.sel?'on':''}${r.moon?' uvmoon':''}" data-uvrow="${esc(p.id)}"${r.moon?' data-uvmoonof="'+esc(p.planetId)+'"':''}><td${r.moon?' style="padding-left:20px"':''}>${r.moon?'<small class="uvmtag">└ 衛星 </small>':''}<input class="uvc w120" data-uvb="${esc(p.id)}" data-uvf="name" value="${esc(p.name)}"${dis}></td>
+      <td>${r.moon?(r.st?'● '+esc(r.st.name||'(無名)'):'<span class="uvwarn">惑星なし</span>'):(r.st?esc(r.st.name||'(無名)'):'<span class="uvwarn">恒星なし</span>')}</td>
       ${['x','y','z'].map(a=>`<td data-uvpos="${esc(p.id)}:${a}">${uvFmtLy(r.pos[a])}</td>`).join('')}
       <td data-uvdist="${esc(p.id)}">${r.dist===null?'—':uvFmtLy(r.dist)+' 光年'}</td><td>${uvPerCell(p,'o',dis)}</td><td>${uvPerCell(p,'r',dis)}</td>
       <td data-uvdate="${esc(p.id)}">${esc(uvPDateText(p,r.date))}<div class="uvbtns"><button class="btn small" data-uvconv="${esc(p.id)}"${dis}>換算</button></div></td>
+      <td data-uvworld="${esc(p.id)}">${uvBodyWid(p)?'<span class="uvwy">世界あり</span> <button class="btn small" data-uvopen="'+esc(p.id)+'">世界を開く</button>':'<span class="uvwn">世界なし</span>'}</td>
       <td><textarea class="uvc w140" rows="1" data-uvb="${esc(p.id)}" data-uvf="notes"${dis}>${esc(p.notes)}</textarea></td>
-      <td><div class="uvbtns"><button class="btn small" data-uvedit="${esc(p.id)}"${dis}>編集</button><button class="btn small" data-uvfocus="${esc(p.id)}">3Dで見る</button><button class="btn small danger" data-uvout="${esc(p.id)}"${dis}>削除</button></div></td></tr>`; }).join('');
+      <td><div class="uvbtns"><button class="btn small" data-uvedit="${esc(p.id)}"${dis}>編集</button>${r.moon?'':`<button class="btn small" data-uvaddmoon="${esc(p.id)}"${dis}>＋衛星</button>`}<button class="btn small" data-uvfocus="${esc(p.id)}">3Dで見る</button><button class="btn small danger" data-uvout="${esc(p.id)}"${dis}>削除</button></div></td></tr>`; }).join('');
   const ref=uvBody(u,UV.ref);
-  return `<div class="uvfilter"><input id="uvFilter" class="lp-search" type="search" placeholder="惑星・恒星を検索…" value="${esc(UV.filter||'')}"><span class="uvsum">惑星 ${u.planets.length}${UV.filter?'(表示 '+rows.length+')':''} ・ 版 ${u.revision}${ref?' ・ 距離の基準: '+esc(uvBodyName(ref)):''}</span></div>
-  <div class="uvtablewrap"><table class="uvtable" id="uvTable"><thead><tr>${uvTh('name','名前')}${uvTh('star','恒星')}${uvTh('x','x(光年)')}${uvTh('y','y(光年)')}${uvTh('z','z(光年)')}${uvTh('dist','距離(基準から)')}${uvTh('orbit','公転周期')}${uvTh('rot','自転周期')}${uvTh('date','惑星の現在の年代')}${uvTh('notes','メモ')}<th></th></tr></thead><tbody>${body||'<tr><td colspan="11" class="empty" style="padding:14px">惑星がありません。「＋惑星」で追加します</td></tr>'}</tbody></table></div>`;
+  return `<div class="uvfilter"><input id="uvFilter" class="lp-search" type="search" placeholder="惑星・恒星を検索…" value="${esc(UV.filter||'')}"><span class="uvsum">惑星 ${u.planets.length} ・ 衛星 ${(u.moons||[]).length}${UV.filter?'(表示 '+rows.length+')':''} ・ 版 ${u.revision}${ref?' ・ 距離の基準: '+esc(uvBodyName(ref)):''}</span></div>
+  <div class="uvtablewrap"><table class="uvtable" id="uvTable"><thead><tr>${uvTh('name','名前')}${uvTh('star','恒星')}${uvTh('x','x(光年)')}${uvTh('y','y(光年)')}${uvTh('z','z(光年)')}${uvTh('dist','距離(基準から)')}${uvTh('orbit','公転周期')}${uvTh('rot','自転周期')}${uvTh('date','惑星の現在の年代')}<th>世界</th>${uvTh('notes','メモ')}<th></th></tr></thead><tbody>${body||'<tr><td colspan="12" class="empty" style="padding:14px">惑星がありません。「＋惑星」で追加します</td></tr>'}</tbody></table></div>`;
 }
 function uvStarTableHtml(u){
   const can=uvCan(), dis=can?'':' disabled'; const ref=uvBody(u,UV.ref); const f=(UV.filter||'').trim().toLowerCase();
@@ -1669,16 +1868,25 @@ function uvSideHtml(u){
     return `<div class="uvdetail"><h4>★ ${esc(o.name||'(無名)')}</h4><dl><dt>大きさ</dt><dd>${o.radius.value} ${esc(o.radius.unit)}</dd><dt>色</dt><dd><span class="uvsw" style="background:${esc(o.color)}"></span> ${esc(o.color)}</dd><dt>光の強さ</dt><dd>${o.brightness}</dd><dt>光の広がり</dt><dd>${o.glow}</dd><dt>惑星</dt><dd>${np.length ? np.map(p=>esc(p.name||'(無名)')).join('、') : 'なし'}</dd></dl>
       <div class="formgrid" style="margin-top:6px">${['x','y','z'].map(a=>`<div><label>${a}(光年)</label><input class="uvc" data-uvb="${esc(o.id)}" data-uvf="${a}" type="number" step="any" value="${o.position[a]}"${dis}></div>`).join('')}</div>${distHtml}
       <div class="uvbtns"><button class="btn small primary" data-uvfocus="${esc(o.id)}">寄って見る</button><button class="btn small" data-uvsedit="${esc(o.id)}"${dis}>編集</button><button class="btn small danger" data-uvsdel="${esc(o.id)}"${dis}>削除</button></div></div>`; }
+  if(b.kind==='moon') return uvMoonSideHtml(u,o,dis,distHtml);
   const st=uvStar(u,o.starId); const d=uvPlanetDate(u,o); const pos=uvPlanetPos(u,o);
   return `<div class="uvdetail"><h4>● ${esc(o.name||'(無名)')}</h4><dl><dt>恒星</dt><dd>${st?esc(st.name||'(無名)'):'なし'}</dd><dt>惑星の年代</dt><dd>${esc(uvPDateText(o,d))}</dd>
     <dt>軌道</dt><dd>半径 ${o.orbit.radius} ${esc(o.orbit.radiusUnit)} ・ 傾き ${o.orbit.tilt}° ・ 位相 ${o.orbit.phase}°</dd><dt>大きさ</dt><dd>${o.size.value} ${esc(o.size.unit)}</dd>
-    <dt>表面</dt><dd>${o.surface.mode==='map'?'この世界の地図':'単色 '+esc(o.surface.color)}</dd><dt>位置(光年)</dt><dd>${uvFmtLy(pos.x)}, ${uvFmtLy(pos.y)}, ${uvFmtLy(pos.z)}</dd></dl>${distHtml}
-    <div class="uvbtns"><button class="btn small primary" data-uvfocus="${esc(o.id)}">寄って見る</button><button class="btn small" data-uvedit="${esc(o.id)}"${dis}>編集</button><button class="btn small" data-uvconv="${esc(o.id)}"${dis}>換算</button><button class="btn small danger" data-uvout="${esc(o.id)}"${dis}>削除</button></div></div>`;
+    <dt>表面</dt><dd>${uvSurfText(o)}</dd><dt>世界</dt><dd>${uvWorldDd(o)}</dd><dt>衛星</dt><dd>${uvMoonsOf(u,o.id).length?uvMoonsOf(u,o.id).map(m=>esc(m.name||'(無名)')).join('、'):'なし'}</dd><dt>位置(光年)</dt><dd>${uvFmtLy(pos.x)}, ${uvFmtLy(pos.y)}, ${uvFmtLy(pos.z)}</dd></dl>${distHtml}
+    <div class="uvbtns"><button class="btn small primary" data-uvfocus="${esc(o.id)}">寄って見る</button><button class="btn small" data-uvedit="${esc(o.id)}"${dis}>編集</button><button class="btn small" data-uvaddmoon="${esc(o.id)}"${dis}>衛星を追加</button><button class="btn small" data-uvconv="${esc(o.id)}"${dis}>換算</button>${uvWorldBtns(o,dis)}<button class="btn small danger" data-uvout="${esc(o.id)}"${dis}>削除</button></div></div>`;
+}
+function uvMoonSideHtml(u,o,dis,distHtml){
+  const pl=uvPlanet(u,o.planetId); const d=uvPlanetDate(u,o); const pos=uvMoonPos(u,o);
+  return `<div class="uvdetail"><h4>◦ ${esc(o.name||'(無名)')}</h4><dl><dt>惑星</dt><dd>${pl?esc(pl.name||'(無名)'):'なし'}</dd><dt>衛星の年代</dt><dd>${esc(uvPDateText(o,d))}</dd>
+    <dt>軌道</dt><dd>惑星の周り: 半径 ${o.orbit.radius} ${esc(o.orbit.radiusUnit)} ・ 傾き ${o.orbit.tilt}° ・ 位相 ${o.orbit.phase}°</dd><dt>大きさ</dt><dd>${o.size.value} ${esc(o.size.unit)}</dd>
+    <dt>自転周期</dt><dd>${o.rotationPeriod.value===null?'—':o.rotationPeriod.value+' '+esc(o.rotationPeriod.unit)}</dd><dt>公転周期</dt><dd>${o.orbitalPeriod.value===null?'—':o.orbitalPeriod.value+' '+esc(o.orbitalPeriod.unit)}</dd>
+    <dt>表面</dt><dd>${uvSurfText(o)}</dd><dt>世界</dt><dd>${uvWorldDd(o)}</dd><dt>位置(光年)</dt><dd>${uvFmtLy(pos.x)}, ${uvFmtLy(pos.y)}, ${uvFmtLy(pos.z)}</dd></dl>${distHtml}
+    <div class="uvbtns"><button class="btn small primary" data-uvfocus="${esc(o.id)}">寄って見る</button><button class="btn small" data-uvedit="${esc(o.id)}"${dis}>編集</button><button class="btn small" data-uvconv="${esc(o.id)}"${dis}>換算</button>${uvWorldBtns(o,dis)}<button class="btn small danger" data-uvout="${esc(o.id)}"${dis}>削除</button></div></div>`;
 }
 function uvRefresh(){
   const root=document.getElementById('uvRoot'); if(!root||currentView!=='universe') return; const u=uvCur();
   const bar=document.getElementById('uvBar');
-  if(bar){ const key=JSON.stringify([W()?W().id+'|'+W().name:'',UV.mode,UV.help,UV.labels,UV.lines,UV.orbits,UV.ref,uvCan(),!!u,u?u.stars.map(p=>p.id+p.name).join(',')+'/'+u.planets.map(p=>p.id+p.name).join(','):'',u?JSON.stringify(Object.assign({},u.calendar,{now:0})):'',UV.step,U3.focusId,u?uvCount(u):0]);
+  if(bar){ const key=JSON.stringify([W()?W().id+'|'+W().name:'',UV.mode,UV.help,UV.labels,UV.lines,UV.orbits,UV.ref,uvCan(),!!u,u?u.stars.map(p=>p.id+p.name).join(',')+'/'+u.planets.map(p=>p.id+p.name).join(',')+'/'+(u.moons||[]).map(p=>p.id+p.name).join(','):'',u?JSON.stringify(Object.assign({},u.calendar,{now:0})):'',UV.step,U3.focusId,u?uvCount(u):0]);
     if(bar._k!==key){ bar.innerHTML=uvBarHtml(u); bar._k=key; } else if(u) uvPatchNow(u); }
   const isTable=UV.mode==='table'||UV.mode==='stars';
   const tw=document.getElementById('uvTableWrap'), mw=document.getElementById('uvMapWrap'); tw.style.display=isTable?'block':'none'; mw.style.display=isTable?'none':'flex';
@@ -1693,7 +1901,7 @@ function uvPatchNow(u){ if(uvDpy(u)===null) return; const now=u.calendar.now; co
   set('uvNowY',now.year); if(uvMonthsOk(u)){ const dm=u.calendar.daysPerMonth; const m=Math.floor((now.day-1)/dm)+1; set('uvNowM',m); set('uvNowD',Math.round(now.day-(m-1)*dm)); } else set('uvNowD',Math.round(now.day)); }
 /* 入力中の表では、距離・年代の欄だけを、その場で更新する(入力欄を差し替えない) */
 function uvPatchTable(){ const u=uvCur(); if(!u) return; const ref=uvBody(u,UV.ref); const uo=uvOrd(u,u.calendar.now);
-  u.planets.forEach(p=>{ const pos=uvPlanetPos(u,p); const d=document.querySelector('[data-uvdist="'+p.id+'"]'); if(d) d.textContent=(ref&&ref.o.id!==p.id)?uvFmtLy(uvDistPos(uvPosOf(u,ref),pos))+' 光年':'—'; const t=document.querySelector('[data-uvdate="'+p.id+'"]'); if(t&&t.firstChild) t.firstChild.textContent=uvPDateText(p,uvPlanetDate(u,p,uo)); ['x','y','z'].forEach(a=>{ const c=document.querySelector('[data-uvpos="'+p.id+':'+a+'"]'); if(c) c.textContent=uvFmtLy(pos[a]); }); });
+  u.planets.concat(u.moons||[]).forEach(p=>{ const pos=p.planetId?uvMoonPos(u,p):uvPlanetPos(u,p); const d=document.querySelector('[data-uvdist="'+p.id+'"]'); if(d) d.textContent=(ref&&ref.o.id!==p.id)?uvFmtLy(uvDistPos(uvPosOf(u,ref),pos))+' 光年':'—'; const t=document.querySelector('[data-uvdate="'+p.id+'"]'); if(t&&t.firstChild) t.firstChild.textContent=uvPDateText(p,uvPlanetDate(u,p,uo)); ['x','y','z'].forEach(a=>{ const c=document.querySelector('[data-uvpos="'+p.id+':'+a+'"]'); if(c) c.textContent=uvFmtLy(pos[a]); }); });
   u.stars.forEach(s=>{ const d=document.querySelector('[data-uvdist="'+s.id+'"]'); if(d) d.textContent=(ref&&ref.o.id!==s.id)?uvFmtLy(uvDistPos(uvPosOf(u,ref),s.position))+' 光年':'—'; }); }
 async function renderUniverseView(){
   if(UV.hop) return;
@@ -1763,7 +1971,7 @@ const uvPlanetFields=(p,u)=>`<div class="full"><label>名前</label><input id="u
   <div><label>大きさ(半径)</label><input id="uvpS" type="number" step="any" min="0" value="${p.size.value}"></div><div><label>大きさの単位</label><select id="uvpSU">${UV_PLANET_UNITS.map(x=>uvOpt(x,x,x===p.size.unit)).join('')}</select></div>
   <div><label>自転周期(空でもよい)</label><input id="uvpRV" type="number" step="any" min="0" value="${p.rotationPeriod.value===null?'':p.rotationPeriod.value}"></div><div><label>単位</label><select id="uvpRU">${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===p.rotationPeriod.unit)).join('')}</select></div>
   <div><label>公転周期(空でもよい)</label><input id="uvpPV" type="number" step="any" min="0" value="${p.orbitalPeriod.value===null?'':p.orbitalPeriod.value}"></div><div><label>単位</label><select id="uvpPU">${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===p.orbitalPeriod.unit)).join('')}</select></div>
-  <div><label>表面</label><select id="uvpSM">${uvOpt('map','世界の地図を貼る',p.surface.mode==='map')}${uvOpt('color','単色',p.surface.mode==='color')}</select></div><div><label>表面の色(単色のとき)</label><input id="uvpSC" type="color" value="${esc(p.surface.color)}"></div>
+  <div><label>表面</label><select id="uvpSM">${uvBodyWid(p)?uvOpt('map','この天体の世界の地図を貼る',p.surface.mode==='map'):''}${uvOpt('color','単色',p.surface.mode==='color'||!uvBodyWid(p))}</select></div><div><label>表面の色(単色のとき)</label><input id="uvpSC" type="color" value="${esc(p.surface.color)}"></div>
   <div class="full"><label>メモ</label><textarea id="uvpNotes" rows="2">${esc(p.notes)}</textarea></div>`;
 function uvReadPlanetFields(){
   const f={name:uvV('uvpName').trim(),notes:uvV('uvpNotes'),starId:uvV('uvpStar'),orbit:{radius:uvNum(uvV('uvpOR'),1),radiusUnit:uvV('uvpORU'),tilt:uvNum(uvV('uvpOT'),0),phase:uvNum(uvV('uvpOP'),0)},size:{value:uvNum(uvV('uvpS'),1),unit:uvV('uvpSU')},
@@ -1772,6 +1980,7 @@ function uvReadPlanetFields(){
 }
 function uvPlanetForm(planetId){
   if(!uvCan()){ uvDeny(); return; } const u=uvCur(); if(!u) return;
+  if(planetId&&uvMoon(u,planetId)){ uvMoonForm(null,planetId); return; }
   if(planetId){ const p=uvPlanet(u,planetId); if(!p) return;
     uvFormOpen('惑星を編集',`<div class="formgrid">${uvPlanetFields(p,u)}</div>`,()=>{ const f=uvReadPlanetFields();
       if(!uvMutate('惑星を編集',(uu)=>{ const t=uvPlanet(uu,planetId); Object.assign(t,uvNormPlanet(Object.assign({},t,f,{id:t.id,conversion:t.conversion}))); })) return false; U3.key=''; });
@@ -1779,11 +1988,50 @@ function uvPlanetForm(planetId){
   if(!u.stars.length){ toast('先に「＋恒星」で恒星を追加してください(惑星は、恒星の周りを回ります)','err'); return; }
   if(uvCount(u)>=UV_MAX){ toast('恒星と惑星の合計が上限('+UV_MAX+' 個)に達しています。これ以上は追加できません','err'); return; }
   const base=uvNormPlanet({starId:u.stars[0].id});
-  uvFormOpen('惑星を追加',`<div class="formgrid">${uvPlanetFields(base,u)}</div>`,()=>{ const f=uvReadPlanetFields(); const pl=uvAddPlanet(f); if(!pl) return false; UV.sel=pl.id; U3.key=''; toast('惑星「'+pl.name+'」を追加しました'); },'追加');
+  uvFormOpen('惑星を追加',`<div class="formgrid">${uvPlanetFields(base,u)}${uvWorldChoiceBlock(false)}</div>`,()=>{ const f=uvReadPlanetFields(); const ch=uvReadWorldChoice(f.name); const pl=uvAddPlanet(f); if(!pl) return false; UV.sel=pl.id; U3.key=''; toast('惑星「'+pl.name+'」を追加しました'); uvAfterBodyAdd(pl.id,ch); },'追加');
 }
 function uvPlanetDeleteConfirm(planetId){
-  const u=uvCur(); const p=uvPlanet(u,planetId); if(!p) return; if(!uvCan()){ uvDeny(); return; }
-  confirmDelete('惑星「'+p.name+'」を削除します(軌道・換算などの設定が失われます。取り消し(Undo)で戻せます)。',()=>{ uvRemovePlanet(planetId); U3.key=''; uvRefresh(); });
+  const u=uvCur(); const mo=uvMoon(u,planetId); const p0=mo?null:uvPlanet(u,planetId); const own=mo||p0; if(!own) return; if(!uvCan()){ uvDeny(); return; }
+  const ms=mo?[]:uvMoonsOf(u,planetId); const bodies=[{o:own,kind:mo?'moon':'planet'}].concat(ms.map(m=>({o:m,kind:'moon'}))); const ws=bodies.filter(x=>uvBodyWid(x.o));
+  const after=()=>{ U3.key=''; uvRefresh(); };
+  const msg=mo?'衛星「'+mo.name+'」を削除します(軌道・換算などの設定が失われます。取り消し(Undo)で戻せます)。':'惑星「'+p0.name+'」を削除します(軌道・換算などの設定が失われます。取り消し(Undo)で戻せます)。'+(ms.length?'\nこの惑星の衛星 '+ms.length+' 個(「'+ms.map(m=>m.name||'(無名)').join('」「')+'」)も、一緒に外れます(衛星の軌道・換算などの設定も失われます)。':'');
+  if(!ws.length){ confirmDelete(msg+'\n天体の世界はありません(世界の内容は変わりません)。',()=>{ if(mo) uvRemoveMoon(planetId); else uvRemovePlanet(planetId); after(); }); return; }
+  /* 世界を持つ天体: 世界の扱い(一覧へ戻す/削除)を選ばせる。新しく作った世界は、削除のみ */
+  const rowHtml=ws.map((x,i)=>{ const w=DB.worlds[uvBodyWid(x.o)]; const mv=w.uvOwner.origin==='moved'; return `<div class="full uvdelrow" data-uvdelb="${esc(x.o.id)}"><b>${esc(x.o.name||'(無名)')}</b>(${x.kind==='moon'?'衛星':'惑星'})の世界「<b>${esc(w.name||'(無名)')}</b>」: `+(mv?`<select class="uvdelsel"><option value="return" selected>通常の世界の一覧に戻す</option><option value="delete">削除する</option></select>`:`<span>新しく作った世界のため、削除されます</span><input type="hidden" class="uvdelsel" value="delete">`)+`</div>`; }).join('');
+  openModal('天体を外す(世界の扱い)',`<p>${esc(msg).split('\n').join('<br>')}</p><p>世界を持つ天体: <b>${ws.length}件</b>。それぞれの世界の扱いを選んでください。</p>${rowHtml}<p class="hint">削除を選んだ世界は、取り消し(Undo)できるあいだは残り、世界を切り替えるか再読み込みすると、実際に削除されます。</p>`,
+    [{label:'キャンセル',onClick:closeModal},{label:'外す',cls:'danger',onClick:async()=>{
+      const sel={}; document.querySelectorAll('.uvdelrow').forEach(r=>{ const e=r.querySelector('.uvdelsel'); sel[r.dataset.uvdelb]=e?e.value:'delete'; });
+      const dels=ws.filter(x=>sel[x.o.id]!=='return'); const names=dels.map(x=>'「'+DB.worlds[uvBodyWid(x.o)].name+'」');
+      closeModal();
+      const go=async()=>{ try{ for(const x of ws){ if(sel[x.o.id]==='return'){ const ok=await uvDetachBodyWorld(x.o.id,'return'); if(!ok) throw new Error('世界を一覧へ戻せませんでした'); } else { UV.del=(UV.del||new Set()).add(uvBodyWid(x.o)); } }
+          if(mo) uvRemoveMoon(planetId); else uvRemovePlanet(planetId); after(); toast('外しました'+(dels.length?'(世界の削除 '+dels.length+'件)':'')); }catch(e){ console.error(e); toast(e.message||String(e),'err'); } };
+      if(dels.length) uvConfirmModal('世界の削除の確認','<p>次の世界を削除します(<b>'+dels.length+'件</b>): '+names.map(esc).join('、')+'</p><p class="hint">取り消し(Undo)で戻せます。世界を切り替えるか再読み込みすると、完全に削除されます。</p>','削除して外す',go,true); else go(); }}]);
+}
+/* 衛星の追加・編集。planetId: 追加するとき、属する惑星 / moonId: 編集する衛星 */
+const uvMoonFields=(m,u)=>`<div class="full"><label>名前</label><input id="uvmName" value="${esc(m.name)}"></div>
+  <div class="full"><label>属する惑星</label><select id="uvmPl">${u.planets.map(p=>uvOpt(p.id,p.name||'(無名)',p.id===m.planetId)).join('')}</select></div>
+  <div><label>軌道の半径(惑星の中心から)</label><input id="uvmOR" type="number" step="any" min="0" value="${m.orbit.radius}"></div><div><label>軌道の単位</label><select id="uvmORU">${UV_ORBIT_UNITS.map(x=>uvOpt(x,x,x===m.orbit.radiusUnit)).join('')}</select></div>
+  <div><label>軌道の傾き(度)</label><input id="uvmOT" type="number" step="any" value="${m.orbit.tilt}"></div><div><label>位相(度)</label><input id="uvmOP" type="number" step="any" value="${m.orbit.phase}"></div>
+  <div><label>大きさ(半径)</label><input id="uvmS" type="number" step="any" min="0" value="${m.size.value}"></div><div><label>大きさの単位</label><select id="uvmSU">${UV_MOON_SIZE_UNITS.map(x=>uvOpt(x,x,x===m.size.unit)).join('')}</select></div>
+  <div><label>自転周期(空でもよい)</label><input id="uvmRV" type="number" step="any" min="0" value="${m.rotationPeriod.value===null?'':m.rotationPeriod.value}"></div><div><label>単位</label><select id="uvmRU">${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===m.rotationPeriod.unit)).join('')}</select></div>
+  <div><label>公転周期(空でもよい)</label><input id="uvmPV" type="number" step="any" min="0" value="${m.orbitalPeriod.value===null?'':m.orbitalPeriod.value}"></div><div><label>単位</label><select id="uvmPU">${UV_PERIOD_UNITS.map(x=>uvOpt(x,x,x===m.orbitalPeriod.unit)).join('')}</select></div>
+  <div><label>表面</label><select id="uvmSM">${uvBodyWid(m)?uvOpt('map','この天体の世界の地図を貼る',m.surface.mode==='map'):''}${uvOpt('color','単色',m.surface.mode==='color'||!uvBodyWid(m))}</select></div><div><label>表面の色(単色のとき)</label><input id="uvmSC" type="color" value="${esc(m.surface.color)}"></div>
+  <div class="full"><label>メモ</label><textarea id="uvmNotes" rows="2">${esc(m.notes)}</textarea></div>`;
+function uvReadMoonFields(){
+  const f={name:uvV('uvmName').trim(),notes:uvV('uvmNotes'),planetId:uvV('uvmPl'),orbit:{radius:uvNum(uvV('uvmOR'),0.01),radiusUnit:uvV('uvmORU'),tilt:uvNum(uvV('uvmOT'),0),phase:uvNum(uvV('uvmOP'),0)},size:{value:uvNum(uvV('uvmS'),1000),unit:uvV('uvmSU')},
+    rotationPeriod:{value:uvNum(uvV('uvmRV'),null),unit:uvV('uvmRU')},orbitalPeriod:{value:uvNum(uvV('uvmPV'),null),unit:uvV('uvmPU')},surface:{mode:uvV('uvmSM'),color:uvV('uvmSC')}};
+  if(!f.name) throw new Error('名前を入力してください'); if(!f.planetId) throw new Error('属する惑星を選んでください'); if(!(f.orbit.radius>=0)||!(f.size.value>=0)) throw new Error('半径・大きさは、0以上の数にしてください'); return f;
+}
+function uvMoonForm(planetId,moonId){
+  if(!uvCan()){ uvDeny(); return; } const u=uvCur(); if(!u) return;
+  if(moonId){ const m=uvMoon(u,moonId); if(!m) return;
+    uvFormOpen('衛星を編集',`<div class="formgrid">${uvMoonFields(m,u)}</div>`,()=>{ const f=uvReadMoonFields();
+      if(!uvMutate('衛星を編集',(uu)=>{ const t=uvMoon(uu,moonId); Object.assign(t,uvNormMoon(Object.assign({},t,f,{id:t.id,conversion:t.conversion}))); })) return false; U3.key=''; });
+    return; }
+  if(!u.planets.length){ toast('先に「＋惑星」で惑星を追加してください(衛星は、惑星の周りを回ります)','err'); return; }
+  if(uvCount(u)>=UV_MAX){ toast('恒星・惑星・衛星の合計が上限('+UV_MAX+' 個)に達しています。これ以上は追加できません','err'); return; }
+  const base=uvNormMoon({planetId:planetId||u.planets[0].id});
+  uvFormOpen('衛星を追加',`<div class="formgrid">${uvMoonFields(base,u)}${uvWorldChoiceBlock(true)}</div>`,()=>{ const f=uvReadMoonFields(); const ch=uvReadWorldChoice(f.name); const mn=uvAddMoon(f); if(!mn) return false; UV.sel=mn.id; U3.key=''; toast('衛星「'+mn.name+'」を追加しました'); uvAfterBodyAdd(mn.id,ch); },'追加');
 }
 function uvStarDeleteConfirm(starId){
   const u=uvCur(); const s=uvStar(u,starId); if(!s) return; if(!uvCan()){ uvDeny(); return; }
@@ -1800,10 +2048,10 @@ function uvLodForm(){
 }
 /* 換算(宇宙暦 ↔ 惑星の年代)。数値は利用者が入力する。惑星の世界のデータは変わらない */
 function uvConvForm(planetId){
-  const u=uvCur(); const p=uvPlanet(u,planetId); if(!p) return; if(!uvCan()){ uvDeny(); return; }
+  const u=uvCur(); const p=uvPlanet(u,planetId)||uvMoon(u,planetId); if(!p) return; if(!uvCan()){ uvDeny(); return; }
   const c=p.conversion; const eu=c?c.epochUniverse:{year:u.calendar.now.year,day:u.calendar.now.day}, ep=c?c.epochPlanet:{year:0,day:1};
   const dpy=uvDpy(u);
-  uvFormOpen('年代の換算(惑星「'+p.name+'」)',`<p class="hint">宇宙暦の「基準の日」が、この惑星の「対応する日」に当たります。宇宙暦の1日が惑星の何日に当たるか(または宇宙暦の1年が惑星の何年か)を入力します。惑星の1年は${UV_PLANET_DPY}日(平年・閏年なし)として計算します。${dpy===null?'<br><b class="uvwarn">宇宙暦の1年の日数が未設定のため、換算は保存しても計算されません。</b>':''}</p><div class="formgrid">
+  uvFormOpen('年代の換算('+(p.planetId?'衛星':'惑星')+'「'+p.name+'」)',`<p class="hint">宇宙暦の「基準の日」が、この惑星の「対応する日」に当たります。宇宙暦の1日が惑星の何日に当たるか(または宇宙暦の1年が惑星の何年か)を入力します。惑星の1年は${UV_PLANET_DPY}日(平年・閏年なし)として計算します。${dpy===null?'<br><b class="uvwarn">宇宙暦の1年の日数が未設定のため、換算は保存しても計算されません。</b>':''}</p><div class="formgrid">
     <div class="full"><label><input type="checkbox" id="uvcOff"${c?'':' checked'}> 換算を設定しない(宇宙暦とは連動しない)</label></div>
     <div><label>基準: 宇宙暦の年</label><input id="uvcUY" type="number" value="${eu.year}"></div><div><label>基準: 宇宙暦の年内の日(1〜)</label><input id="uvcUD" type="number" step="any" value="${eu.day}"></div>
     <div><label>対応: 惑星の年</label><input id="uvcPY" type="number" value="${ep.year}"></div><div><label>対応: 惑星の年内の日(1〜${UV_PLANET_DPY})</label><input id="uvcPD" type="number" step="any" value="${ep.day}"></div>
@@ -1816,7 +2064,7 @@ function uvConvForm(planetId){
       if(!(dd>0)) throw new Error('「宇宙暦の1日 = 惑星の何日」(または1年 = 何年)を、0より大きい数で入力してください');
       const ed=uvNum(uvV('uvcUD'),NaN), pd=uvNum(uvV('uvcPD'),NaN); if(!Number.isFinite(ed)||!Number.isFinite(pd)) throw new Error('基準の日を入力してください');
       conv={epochUniverse:{year:Math.round(uvNum(uvV('uvcUY'),0)),day:ed},epochPlanet:{year:Math.round(uvNum(uvV('uvcPY'),0)),day:pd},daysPerUniverseDay:dd,yearsPerUniverseYear:(dpy!==null?dd*dpy/UV_PLANET_DPY:(yy>0?yy:null))}; }
-    if(!uvMutate('換算を設定',(uu)=>{ uvPlanet(uu,planetId).conversion=conv; })) return false; });
+    if(!uvMutate('換算を設定',(uu)=>{ (uvPlanet(uu,planetId)||uvMoon(uu,planetId)).conversion=conv; })) return false; });
 }
 /* ---------- 星図(2D)。3D と同じ物体・同じ位置。恒星をドラッグすると、位置(x,y)が変わり、3D も同じ値になる ---------- */
 function uvNiceStep(target){ const e=Math.pow(10,Math.floor(Math.log10(target))); const m=target/e; return (m<1.5?1:m<3.5?2:m<7.5?5:10)*e; }
@@ -1837,7 +2085,7 @@ function uvDraw2D(ctx,W_,H_,v,o){
     const real=uvPlanetPos(u,p); const rs=s?{x:real.x-s.position.x,y:real.y-s.position.y}:{x:real.x,y:real.y}; const rpx=Math.hypot(rs.x,rs.y)*sc;
     if(sp&&rpx<dr){ const ph=p.orbit.phase*Math.PI/180; pos[p.id]={x:sp.x+dr*Math.cos(ph),y:sp.y-dr*Math.sin(ph),disp:true}; } else { const base=s?spos(s):{x:0,y:0}; pos[p.id]=S({x:base.x+rs.x,y:base.y+rs.y}); } });
   const ref=uvBody(u,o.ref!==undefined?o.ref:UV.ref); const hit=o.hit; if(hit) hit.length=0;
-  if(ref&&o.lines!==false){ const rp=pos[ref.o.id]; const rpos=(ref.kind==='star')?spos(ref.o):uvPosOf(u,ref); ctx.strokeStyle='rgba(255,226,138,.45)'; ctx.fillStyle='rgba(255,226,138,.9)'; ctx.font='11px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='center';
+  if(ref&&o.lines!==false&&pos[ref.o.id]){ const rp=pos[ref.o.id]; const rpos=(ref.kind==='star')?spos(ref.o):uvPosOf(u,ref); ctx.strokeStyle='rgba(255,226,138,.45)'; ctx.fillStyle='rgba(255,226,138,.9)'; ctx.font='11px sans-serif'; ctx.textBaseline='middle'; ctx.textAlign='center';
     const others=[]; u.stars.forEach(s=>{ if(s.id!==ref.o.id) others.push({id:s.id,pos:spos(s)}); }); const lim=250;
     others.map(t=>({t,q:pos[t.id]})).filter(e=>e.q&&!(e.q.x<-50&&rp.x<-50||e.q.x>W_+50&&rp.x>W_+50||e.q.y<-50&&rp.y<-50||e.q.y>H_+50&&rp.y>H_+50)).slice(0,lim).forEach(e=>{ ctx.beginPath(); ctx.moveTo(rp.x,rp.y); ctx.lineTo(e.q.x,e.q.y); ctx.stroke(); ctx.fillText(uvFmtLy(uvDistPos(rpos,e.t.pos)),(rp.x+e.q.x)/2,(rp.y+e.q.y)/2-7); st.lines++; }); }
   ctx.textAlign='left'; ctx.textBaseline='alphabetic'; const selId=(o.sel!==undefined?o.sel:UV.sel);
@@ -1846,7 +2094,7 @@ function uvDraw2D(ctx,W_,H_,v,o){
     g.addColorStop(0,rgb(Math.min(1,s.brightness+0.2))); g.addColorStop(Math.min(0.95,1/(2+s.glow*3)),rgb(s.brightness)); g.addColorStop(1,rgb(0)); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(q.x,q.y,r*(2+s.glow*3),0,6.2832); ctx.fill();
     ctx.beginPath(); ctx.arc(q.x,q.y,r,0,6.2832); ctx.fillStyle=rgb(1); ctx.fill(); if(selp||(ref&&ref.o.id===s.id)){ ctx.lineWidth=2; ctx.strokeStyle=selp?'#ffe9a8':'#ffe28a'; ctx.beginPath(); ctx.arc(q.x,q.y,r+5,0,6.2832); ctx.stroke(); }
     if(o.labels!==false){ ctx.fillStyle='#f3ecd0'; ctx.font='12px sans-serif'; ctx.fillText(s.name||'(無名)',q.x+r+6,q.y-r); st.labels++; } st.drawn++; if(hit) hit.push({id:s.id,kind:'star',sx:q.x,sy:q.y,r:r+5}); });
-  u.planets.forEach(p=>{ const q=pos[p.id]; if(!inView(q)) return; const selp=selId===p.id; let col=p.surface.color; if(p.surface.mode==='map'){ const t=uvThumbOf(uvWid()); if(t&&t.avg) col=t.avg; }
+  u.planets.forEach(p=>{ const q=pos[p.id]; if(!inView(q)) return; const selp=selId===p.id; let col=p.surface.color; if(p.surface.mode==='map'&&uvBodyWid(p)){ const t=uvThumbOf(uvBodyWid(p)); if(t&&t.avg) col=t.avg; }
     ctx.beginPath(); ctx.arc(q.x,q.y,selp?5:3.5,0,6.2832); ctx.fillStyle=col; ctx.fill(); if(selp||(ref&&ref.o.id===p.id)){ ctx.lineWidth=2; ctx.strokeStyle=selp?'#ffe9a8':'#ffe28a'; ctx.beginPath(); ctx.arc(q.x,q.y,selp?9:8,0,6.2832); ctx.stroke(); }
     if(o.labels!==false){ ctx.fillStyle='#cfd8ff'; ctx.font='11px sans-serif'; ctx.fillText(p.name||'(無名)',q.x+7,q.y+12); st.labels++; } st.drawn++; if(hit) hit.push({id:p.id,kind:'planet',sx:q.x,sy:q.y,r:9}); });
   const bar=uvNiceStep(110/sc), bpx=bar*sc; ctx.strokeStyle='#cfd8ff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(14,H_-22); ctx.lineTo(14+bpx,H_-22); ctx.moveTo(14,H_-27); ctx.lineTo(14,H_-17); ctx.moveTo(14+bpx,H_-27); ctx.lineTo(14+bpx,H_-17); ctx.stroke();
@@ -1867,7 +2115,7 @@ function uvHitAt(x,y){ let best=null,bd=1e9; UV.hit.forEach(h=>{ const d=Math.hy
 function uvScreenToUniverse(x,y){ const v=uvV2(),w=document.getElementById('uvWrap'); return {x:v.cx+(x-w.clientWidth/2)/v.scale,y:v.cy-(y-w.clientHeight/2)/v.scale}; }
 function uvZoom2D(x,y,f){ const v=uvV2(); const before=uvScreenToUniverse(x,y); v.scale=Math.min(1e9,Math.max(1e-7,v.scale*f)); const w=document.getElementById('uvWrap'); v.cx=before.x-(x-w.clientWidth/2)/v.scale; v.cy=before.y+(y-w.clientHeight/2)/v.scale; uvSaveCam(); uvRenderSoon(); }
 /* 選ぶ: 3D で惑星を選んだときは、カメラがその惑星へ寄る */
-function uvSelect(id,o){ UV.sel=id||''; const b=uvBody(uvCur(),UV.sel); if(b&&b.kind==='planet'&&UV.mode==='3d'&&(!o||o.focus!==false)&&U3.inited) uv3dFocus(UV.sel); uvRefresh(); }
+function uvSelect(id,o){ UV.sel=id||''; const b=uvBody(uvCur(),UV.sel); if(b&&(b.kind==='planet'||b.kind==='moon')&&UV.mode==='3d'&&(!o||o.focus!==false)&&U3.inited) uv3dFocus(UV.sel); uvRefresh(); }
 function uvFitCurrent(){ const u=uvCur(); if(!u) return; const wrap=document.getElementById('uvWrap'); const cam=UV.cam[u.id]||(UV.cam[u.id]={}); if(UV.mode==='map'){ cam.v2=uvFit2D(u,wrap.clientWidth,wrap.clientHeight); uvSaveCam(); uvRenderSoon(); } else if(UV.mode==='3d'){ uv3dOverview(); } }
 /* 位置の変更(表・側面のパネル・星図のドラッグで、同じ関数を使う。数値は同じ結果になる) */
 function uvSetPos(id,axis,val){ if(!Number.isFinite(val)) return false; return uvMutate('恒星の位置を変更',(uu)=>{ const s=uvStar(uu,id); s.position[axis]=Math.round(val*1e6)/1e6; }); }
@@ -1939,14 +2187,17 @@ const uvTri=(p)=>({x:p.x,y:p.z,z:-p.y});   /* 宇宙の座標(x,y,z) → 3D の�
 /* 物体の一覧(恒星が先、惑星があと)を、描きやすい形にそろえる。宇宙・サムネイルが変わったときだけ作り直す */
 function uv3dSync(){
   const w_=W(); if(U3.lastW!==w_){ U3.lastW=w_; UV.rev++; }   /* 取り消し・やり直し・世界の切り替えで世界のデータが差し替わったとき、物体の一覧を作り直す */
-  const u=uvCur(); const key=(u?u.id:'')+':'+UV.rev+':'+(u?u.stars.length+'/'+u.planets.length:0)+':'+U3.thumbV; if(key===U3.key) return; U3.key=key;
-  const ns=u?u.stars.length:0, np=u?u.planets.length:0, n=ns+np; U3.n=n;
+  const u=uvCur(); const key=(u?u.id:'')+':'+UV.rev+':'+(u?u.stars.length+'/'+u.planets.length+'/'+(u.moons||[]).length:0)+':'+U3.thumbV; if(key===U3.key) return; U3.key=key;
+  const ns=u?u.stars.length:0, np=u?u.planets.length:0, nm=u&&u.moons?u.moons.length:0, n=ns+np+nm; U3.n=n;
   const B={n,ns,id:new Array(n),obj:new Array(n),kind:new Uint8Array(n),X:new Float64Array(n),Y:new Float64Array(n),Z:new Float64Array(n),r:new Float64Array(n),cr:new Float32Array(n),cg:new Float32Array(n),cb:new Float32Array(n),br:new Float32Array(n),gl:new Float32Array(n),par:new Int32Array(n).fill(-1),ph:new Float32Array(n),ord:new Int32Array(n),orR:new Float64Array(n),orT:new Float32Array(n),sidx:{}};
   const cnt={};
   for(let i=0;i<ns;i++){ const s=u.stars[i]; const p=uvTri(s.position); B.id[i]=s.id; B.obj[i]=s; B.kind[i]=0; B.X[i]=p.x; B.Y[i]=p.y; B.Z[i]=p.z; B.r[i]=uvStarRadiusLy(s); const c=uvHexRgb(s.color); B.cr[i]=c[0]; B.cg[i]=c[1]; B.cb[i]=c[2]; B.br[i]=s.brightness; B.gl[i]=s.glow; B.sidx[s.id]=i; }
   for(let k=0;k<np;k++){ const pl=u.planets[k], i=ns+k; const p=uvTri(uvPlanetPos(u,pl)); B.id[i]=pl.id; B.obj[i]=pl; B.kind[i]=1; B.X[i]=p.x; B.Y[i]=p.y; B.Z[i]=p.z; B.r[i]=uvPlanetRadiusLy(pl);
-    let col=pl.surface.color; if(pl.surface.mode==='map'){ const t=uvThumbOf(uvWid()); if(t&&t.avg) col=t.avg; } const c=uvHexRgb(col); B.cr[i]=c[0]; B.cg[i]=c[1]; B.cb[i]=c[2]; B.br[i]=1; B.gl[i]=0;
-    const j=B.sidx[pl.starId]; B.par[i]=j===undefined?-1:j; B.ph[i]=pl.orbit.phase*Math.PI/180; B.ord[i]=cnt[pl.starId]=(cnt[pl.starId]||0)+1; B.ord[i]--; B.orR[i]=uvLy(pl.orbit.radius,pl.orbit.radiusUnit); B.orT[i]=pl.orbit.tilt*Math.PI/180; }
+    let col=pl.surface.color; if(pl.surface.mode==='map'&&uvBodyWid(pl)){ const t=uvThumbOf(uvBodyWid(pl)); if(t&&t.avg) col=t.avg; } const c=uvHexRgb(col); B.cr[i]=c[0]; B.cg[i]=c[1]; B.cb[i]=c[2]; B.br[i]=1; B.gl[i]=0;
+    B.sidx[pl.id]=i; const j=B.sidx[pl.starId]; B.par[i]=j===undefined?-1:j; B.ph[i]=pl.orbit.phase*Math.PI/180; B.ord[i]=cnt[pl.starId]=(cnt[pl.starId]||0)+1; B.ord[i]--; B.orR[i]=uvLy(pl.orbit.radius,pl.orbit.radiusUnit); B.orT[i]=pl.orbit.tilt*Math.PI/180; }
+  for(let k=0;k<nm;k++){ const mn=u.moons[k], i=ns+np+k; const p=uvTri(uvMoonPos(u,mn)); B.id[i]=mn.id; B.obj[i]=mn; B.kind[i]=2; B.X[i]=p.x; B.Y[i]=p.y; B.Z[i]=p.z; B.r[i]=uvPlanetRadiusLy(mn);
+    let col=mn.surface.color; if(mn.surface.mode==='map'&&uvBodyWid(mn)){ const t=uvThumbOf(uvBodyWid(mn)); if(t&&t.avg) col=t.avg; } const c=uvHexRgb(col); B.cr[i]=c[0]; B.cg[i]=c[1]; B.cb[i]=c[2]; B.br[i]=1; B.gl[i]=0;
+    const j=B.sidx[mn.planetId]; B.par[i]=j===undefined?-1:j; B.ph[i]=mn.orbit.phase*Math.PI/180; B.ord[i]=cnt['m:'+mn.planetId]=(cnt['m:'+mn.planetId]||0)+1; B.ord[i]--; B.orR[i]=uvLy(mn.orbit.radius,mn.orbit.radiusUnit); B.orT[i]=mn.orbit.tilt*Math.PI/180; }
   U3.B=B; U3.w={SX:new Float32Array(n),SY:new Float32Array(n),DP:new Float64Array(n),RP:new Float32Array(n),DD:new Float64Array(n),VIS:new Uint8Array(n),MESH:new Uint8Array(n)};
   const mk=(g,cap)=>{ g.setAttribute('position',new U3.THREE.BufferAttribute(new Float32Array(cap*3),3)); g.setAttribute('aSize',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aCore',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aGlow',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aMode',new U3.THREE.BufferAttribute(new Float32Array(cap),1)); g.setAttribute('aColor',new U3.THREE.BufferAttribute(new Float32Array(cap*3),3)); };
   if(U3.ptsS){ U3.ptsS.geometry.dispose(); U3.ptsS.geometry=new U3.THREE.BufferGeometry(); mk(U3.ptsS.geometry,n+1); U3.ptsP.geometry.dispose(); U3.ptsP.geometry=new U3.THREE.BufferGeometry(); mk(U3.ptsP.geometry,n+1); }
@@ -1963,8 +2214,8 @@ function uv3dMeshOf(kind,k){
   pool[k]=m; return m;
 }
 function uv3dTexOf(wid){
-  const t=uvThumbOf(wid); if(!t||!t.canvas) return null; let e=U3.tex[wid]; if(e&&e.rev===t.rev&&e.cv===t.canvas) return e.tex;
-  if(e&&e.tex) e.tex.dispose(); const tex=new U3.THREE.CanvasTexture(t.canvas); tex.needsUpdate=true; U3.tex[wid]={rev:t.rev,cv:t.canvas,tex}; return tex;
+  const t=uvThumbOf(wid); if(!t||!t.canvas) return null; let e=U3.tex[wid]; if(e&&e.rev===t.rev&&e.cv===t.canvas&&e.wr===wrapOn()) return e.tex;
+  if(e&&e.tex) e.tex.dispose(); const tex=new U3.THREE.CanvasTexture(t.canvas); tex.needsUpdate=true; if(wrapOn()) tex.wrapS=U3.THREE.RepeatWrapping; U3.tex[wid]={rev:t.rev,cv:t.canvas,tex,wr:wrapOn()}; return tex;
 }
 /* 1コマを描く。距離の区切りで、メッシュ/スプライト/まとめた点に分ける */
 function uv3dFrame(){
@@ -1982,7 +2233,7 @@ function uv3dFrame(){
   }
   cand.sort((a,b)=>DD[a]-DD[b]); const meshIdx=cand.slice(0,24); meshIdx.forEach(i=>{ MESH[i]=1; });
   /* 惑星が恒星のすぐそばに重なるときは、画面上で少し離して並べる(軌道の実際の大きさのほうが大きければ、そのまま) */
-  for(let i=B.ns;i<n;i++){ const j=B.par[i]; if(j<0||!VIS[i]||!VIS[j]||MESH[i]) continue; const off=Math.hypot(SX[i]-SX[j],SY[i]-SY[j]); const dr=(ov?10:7)+4*B.ord[i]; if(off<dr){ SX[i]=SX[j]+dr*Math.cos(B.ph[i]); SY[i]=SY[j]-dr*Math.sin(B.ph[i]); } }
+  for(let i=B.ns;i<n;i++){ const j=B.par[i]; if(j<0||!VIS[i]||!VIS[j]||MESH[i]) continue; const off=Math.hypot(SX[i]-SX[j],SY[i]-SY[j]); const dr=(B.kind[i]===2?(ov?6:4):(ov?10:7))+4*B.ord[i]; if(off<dr){ SX[i]=SX[j]+dr*Math.cos(B.ph[i]); SY[i]=SY[j]-dr*Math.sin(B.ph[i]); } }
   const hit=[]; const stats={mode:'3d',total:n,drawn:0,mesh:meshIdx.length,mid:0,far:0,clusters:0,overview:ov,labels:0};
   const sg=U3.ptsS.geometry, pg=U3.ptsP.geometry; const sa=(g,k)=>g.attributes[k].array; const S={p:sa(sg,'position'),sz:sa(sg,'aSize'),co:sa(sg,'aCore'),gl:sa(sg,'aGlow'),mo:sa(sg,'aMode'),c:sa(sg,'aColor'),n:0}; const P={p:sa(pg,'position'),sz:sa(pg,'aSize'),co:sa(pg,'aCore'),gl:sa(pg,'aGlow'),mo:sa(pg,'aMode'),c:sa(pg,'aColor'),n:0};
   const pm=U3.ptMax; const meshDisc=meshIdx.map(i=>({x:SX[i],y:SY[i],r:Math.max(2,RP[i]),d:DP[i]}));
@@ -1993,13 +2244,13 @@ function uv3dFrame(){
     const star=B.kind[i]===0; const rp=RP[i]; const mid=!far;
     if(star){ const bright=B.br[i], gl=B.gl[i]; const core=Math.max(rp,ov?3.5:(mid?2.2:1.6)); const halo=mid||ov?core+(gl*bright*(ov?14:12)+gl*core*1.2)*(ov?hs:1):core+gl*2.5; let size=Math.min(pm,halo*2); const cf=Math.min(1,core/(size/2));
       put(S,SX[i],SY[i],size,cf,mid||ov?0.2+0.8*gl:0.35*gl,0,B.cr[i]*bright,B.cg[i]*bright,B.cb[i]*bright); hit.push({id:B.id[i],kind:'star',sx:SX[i],sy:SY[i],r:Math.max(8,size/2+2),w:DP[i]}); }
-    else { const core=Math.max(rp,ov?3:(mid?2.4:1.8)); const size=Math.min(pm,core*2); put(P,SX[i],SY[i],size,1,0,mid?1:0,B.cr[i],B.cg[i],B.cb[i]); hit.push({id:B.id[i],kind:'planet',sx:SX[i],sy:SY[i],r:Math.max(7,size/2+2),w:DP[i]}); }
+    else { const mo=B.kind[i]===2; const core=Math.max(rp,mo?(ov?2:(mid?1.8:1.4)):(ov?3:(mid?2.4:1.8))); const size=Math.min(pm,core*2); put(P,SX[i],SY[i],size,1,0,mid?1:0,B.cr[i],B.cg[i],B.cb[i]); hit.push({id:B.id[i],kind:mo?'moon':'planet',sx:SX[i],sy:SY[i],r:Math.max(mo?6:7,size/2+2),w:DP[i]}); }
     stats.drawn++; if(mid) stats.mid++; else stats.far++;
   };
   const cell=Math.max(1,lod.cell); const grid=new Map();
   for(let i=0;i<n;i++){
     if(!VIS[i]||MESH[i]) continue; const sx=SX[i], sy=SY[i]; if(sx<-40||sx>Wd+40||sy<-40||sy>Hd+40) continue; if(meshDisc.length&&hidden(sx,sy,DP[i])) continue;
-    const far=DD[i]>=lod.mid;
+    const far=DD[i]>=(B.kind[i]===2?lod.mid*0.1:lod.mid);   /* 衛星は、惑星より先に簡略化する(遠いと点になる) */
     if(far&&!ov){ const key=Math.floor((sx+40)/cell)*65536+Math.floor((sy+40)/cell); let g=grid.get(key); if(!g){ g={n:0,sx:0,sy:0,r:0,g:0,b:0,idx:[]}; grid.set(key,g); } g.n++; g.sx+=sx; g.sy+=sy; g.idx.push(i); continue; }
     emit(i,far);
   }
@@ -2019,13 +2270,13 @@ function uv3dFrame(){
     if(B.kind[i]===0){ const m=uv3dMeshOf('s',ks++); m.body.visible=true; m.body.position.set(x,y,z); m.body.scale.setScalar(rad); m.body.material.uniforms.uColor.value.setRGB(B.cr[i]*B.br[i],B.cg[i]*B.br[i],B.cb[i]*B.br[i]);
       const hf=2.2+B.gl[i]*10; m.halo.visible=true; m.halo.position.set(x,y,z); m.halo.quaternion.copy(q); m.halo.scale.setScalar(rad*hf); const hu=m.halo.material.uniforms; hu.uColor.value.setRGB(B.cr[i]*B.br[i],B.cg[i]*B.br[i],B.cb[i]*B.br[i]); hu.uCore.value=1/hf; hu.uGlow.value=0.2+0.8*B.gl[i]; usedS.push(m); }
     else { const m=uv3dMeshOf('p',kp++); m.body.visible=true; m.body.position.set(x,y,z); m.body.scale.setScalar(rad); const pl=B.obj[i]; const un=m.body.material.uniforms; un.uColor.value.setRGB(B.cr[i],B.cg[i],B.cb[i]);
-      let use=0; if(pl.surface.mode==='map'){ const tx=uv3dTexOf(uvWid()); if(tx){ un.uMap.value=tx; use=1; } else uv3dAskThumb(uvWid()); } un.uUse.value=use;
-      const j=B.par[i]; let lx=-0.5,ly=0.6,lz=0.7; if(j>=0){ const ex=B.X[j]-B.X[i], ey=B.Y[j]-B.Y[i], ez=B.Z[j]-B.Z[i]; const el=Math.hypot(ex,ey,ez)||1; const wx=ex/el, wy=ey/el, wz=ez/el; lx=wx*right.x+wy*right.y+wz*right.z; ly=wx*up.x+wy*up.y+wz*up.z; lz=wx*back.x+wy*back.y+wz*back.z; }
+      let use=0; const bw=uvBodyWid(pl); if(pl.surface.mode==='map'&&bw){ const tx=uv3dTexOf(bw); if(tx){ un.uMap.value=tx; use=1; } else uv3dAskThumb(bw); } un.uUse.value=use;
+      let j=B.par[i]; if(B.kind[i]===2&&j>=0) j=B.par[j]; let lx=-0.5,ly=0.6,lz=0.7; if(j>=0){ const ex=B.X[j]-B.X[i], ey=B.Y[j]-B.Y[i], ez=B.Z[j]-B.Z[i]; const el=Math.hypot(ex,ey,ez)||1; const wx=ex/el, wy=ey/el, wz=ez/el; lx=wx*right.x+wy*right.y+wz*right.z; ly=wx*up.x+wy*up.y+wz*up.z; lz=wx*back.x+wy*back.y+wz*back.z; }
       un.uLight.value.set(lx,ly,lz); usedP.push(m); }
   });
   for(let k=ks;k<U3.pool.s.length;k++){ const m=U3.pool.s[k]; if(m){ m.body.visible=false; m.halo.visible=false; } }
   for(let k=kp;k<U3.pool.p.length;k++){ const m=U3.pool.p[k]; if(m) m.body.visible=false; }
-  meshIdx.forEach(i=>{ hit.push({id:B.id[i],kind:B.kind[i]===0?'star':'planet',sx:SX[i],sy:SY[i],r:Math.max(10,RP[i]),w:DP[i]}); });
+  meshIdx.forEach(i=>{ hit.push({id:B.id[i],kind:B.kind[i]===0?'star':(B.kind[i]===2?'moon':'planet'),sx:SX[i],sy:SY[i],r:Math.max(10,RP[i]),w:DP[i]}); });
   /* 軌道の線(惑星の軌道が、画面で十分大きいとき) */
   { const arr=U3.orbitLines.geometry.attributes.position.array; let m=0; const maxSeg=60;
     if(UV.orbits){ const sel=UV.sel; const list=[]; for(let i=B.ns;i<n;i++){ const j=B.par[i]; if(j<0||!VIS[j]||DD[j]>lod.mid*0.5+lod.near) continue; const rpx=B.orR[i]*f/DP[j]; if(rpx>3&&rpx<6000) list.push(i); }
@@ -2145,31 +2396,35 @@ const uvR12=(v)=>Number(Number(v).toPrecision(12));
 function uv3dBodyBegin(P){
   const u=uvCur(); const b=uvBody(u,P.hit.id); if(!b) return false; const THREE=U3.THREE;
   const pos0=uvPosOf(u,b); const t0=uvTri(pos0); const P0=new THREE.Vector3(t0.x,t0.y,t0.z); const grab=uv3dPlanePoint(P.x0,P.y0,P0);
-  const d={id:b.o.id,kind:b.kind,P0,grab,orig:b.kind==='star'?JSON.stringify(b.o.position):JSON.stringify({phase:b.o.orbit.phase,tilt:b.o.orbit.tilt}),pos0,cur:null,changed:false};
+  const d={id:b.o.id,kind:b.kind,P0,grab,orig:b.kind==='star'?JSON.stringify(b.o.position):JSON.stringify({phase:b.o.orbit.phase,tilt:b.o.orbit.tilt,radius:b.o.orbit.radius}),pos0,cur:null,changed:false};
+  if(b.kind==='moon'){ const pl=uvPlanet(u,b.o.planetId); if(!pl) return false; d.pc=uvPlanetPos(u,pl); }
   if(b.kind==='planet'){ const s=uvStar(u,b.o.starId); if(!s) return false; d.star=s.position; d.R=uvLy(b.o.orbit.radius,b.o.orbit.radiusUnit); }
   UV.bodyDrag=d; U3.drag=d; document.getElementById('uvWrap').classList.add('uvmoving'); return true;
 }
 function uv3dBodyMove(x,y){
   const d=UV.bodyDrag; if(!d) return; const u=uvCur(); const b=uvBody(u,d.id); if(!b) return; const q=uv3dPlanePoint(x,y,d.P0); const delta=q.clone().sub(d.grab); const np=d.P0.clone().add(delta); const nu=uvUni(np);
   if(d.kind==='star'){ b.o.position={x:uvR12(nu.x),y:uvR12(nu.y),z:uvR12(nu.z)}; }
+  else if(d.kind==='moon'){ const o=uvMoonOrbitFromRel(b.o,{x:nu.x-d.pc.x,y:nu.y-d.pc.y,z:nu.z-d.pc.z}); if(o){ b.o.orbit.phase=o.phase; b.o.orbit.tilt=o.tilt; b.o.orbit.radius=o.radius; } }
   else { const o=uvOrbitFromDir(b.o,{x:nu.x-d.star.x,y:nu.y-d.star.y,z:nu.z-d.star.z}); if(o){ b.o.orbit.phase=o.phase; b.o.orbit.tilt=o.tilt; } }
   d.changed=true; UV.rev++; U3.dirty=true; uv3dHud(b,u);
 }
 function uv3dHud(b,u){
   const h=document.getElementById('uvDragHud'); if(!h) return; const pos=uvPosOf(u,b); const ref=uvBody(u,UV.ref); const st=b.kind==='planet'?uvStar(u,b.o.starId):null;
-  let t=(b.kind==='star'?'★ ':'● ')+(b.o.name||'(無名)')+'<br>x '+uvFmtLy(pos.x)+' / y '+uvFmtLy(pos.y)+' / z '+uvFmtLy(pos.z)+' 光年';
+  let t=(b.kind==='star'?'★ ':(b.kind==='moon'?'◦ ':'● '))+(b.o.name||'(無名)')+'<br>x '+uvFmtLy(pos.x)+' / y '+uvFmtLy(pos.y)+' / z '+uvFmtLy(pos.z)+' 光年';
   if(b.kind==='planet') t+='<br>'+(st?esc(st.name||'(無名)')+' からの距離 '+uvFmtLy(uvDistPos(pos,st.position))+' 光年(軌道の半径は変わりません) ・ 位相 '+b.o.orbit.phase+'° ・ 傾き '+b.o.orbit.tilt+'°':'');
+  if(b.kind==='moon'){ const pl=uvPlanet(u,b.o.planetId); t+='<br>'+(pl?esc(pl.name||'(無名)')+' の周り: 半径 '+b.o.orbit.radius+' '+esc(b.o.orbit.radiusUnit)+' ・ 位相 '+b.o.orbit.phase+'° ・ 傾き '+b.o.orbit.tilt+'°':''); }
+  if(b.kind!=='star') t+='<br>世界: '+(uvBodyWid(b.o)?'あり(地図'+(b.o.surface.mode==='map'?'あり':'は未使用')+')':'なし(単色)');
   if(ref&&ref.o.id!==b.o.id) t+='<br>'+esc(uvBodyName(ref))+' からの距離 '+uvFmtLy(uvDist(u,ref,b))+' 光年';
   h.innerHTML=t+'<br><span class="uvh2">離すと確定 / Esc で取り消し</span>'; h.style.display='block';
 }
 function uv3dBodyEnd(commit){
   const d=UV.bodyDrag; if(!d) return false; UV.bodyDrag=null; U3.drag=null; const wrap=document.getElementById('uvWrap'); if(wrap) wrap.classList.remove('uvmoving'); const h=document.getElementById('uvDragHud'); if(h) h.style.display='none';
   const u=uvCur(); const b=uvBody(u,d.id); if(!b){ UV.rev++; U3.dirty=true; return false; }
-  const fin=d.kind==='star'?JSON.parse(JSON.stringify(b.o.position)):{phase:b.o.orbit.phase,tilt:b.o.orbit.tilt}; const orig=JSON.parse(d.orig);
-  if(d.kind==='star') b.o.position=orig; else { b.o.orbit.phase=orig.phase; b.o.orbit.tilt=orig.tilt; }   /* いったん元に戻す(取り消しの単位を、確定の1回にするため) */
+  const fin=d.kind==='star'?JSON.parse(JSON.stringify(b.o.position)):{phase:b.o.orbit.phase,tilt:b.o.orbit.tilt,radius:b.o.orbit.radius}; const orig=JSON.parse(d.orig);
+  if(d.kind==='star') b.o.position=orig; else { b.o.orbit.phase=orig.phase; b.o.orbit.tilt=orig.tilt; if(d.kind==='moon') b.o.orbit.radius=orig.radius; }   /* いったん元に戻す(取り消しの単位を、確定の1回にするため) */
   UV.rev++; U3.dirty=true; U3.key='';
   if(!commit||!d.changed){ uvRefresh(); return false; }
-  const ok=uvMutate(d.kind==='star'?'恒星の位置を変更(3D)':'惑星の位置を変更(3D)',(uu)=>{ const t=uvBody(uu,d.id); if(d.kind==='star') t.o.position=fin; else { t.o.orbit.phase=fin.phase; t.o.orbit.tilt=fin.tilt; } });
+  const ok=uvMutate(d.kind==='star'?'恒星の位置を変更(3D)':(d.kind==='moon'?'衛星の軌道を変更(3D)':'惑星の位置を変更(3D)'),(uu)=>{ const t=uvBody(uu,d.id); if(d.kind==='star') t.o.position=fin; else { t.o.orbit.phase=fin.phase; t.o.orbit.tilt=fin.tilt; if(d.kind==='moon') t.o.orbit.radius=fin.radius; } });
   U3.key=''; uvRefresh(); return ok;
 }
 
@@ -2272,7 +2527,8 @@ function uvWire(){
   root.addEventListener('click',(e)=>{
     const th=e.target.closest('[data-uvsort]'); if(th){ const k=th.dataset.uvsort; if(UV.sortKey===k) UV.sortDir=-UV.sortDir; else { UV.sortKey=k; UV.sortDir=1; } document.getElementById('uvTableWrap').innerHTML=uvTableHtml(uvCur()); return; }
     const t=e.target.closest('button'); if(t){ const id=t.id||'';
-      if(t.dataset.uvconv){ uvConvForm(t.dataset.uvconv); return; } if(t.dataset.uvout){ uvPlanetDeleteConfirm(t.dataset.uvout); return; }
+      if(t.dataset.uvopen){ uvOpenBodyWorld(t.dataset.uvopen); return; } if(t.dataset.uvmkw){ uvMakeWorldForm(t.dataset.uvmkw); return; } if(t.dataset.uvmvw){ uvMoveWorldForm(t.dataset.uvmvw); return; } if(t.dataset.uvdetw){ uvDetachWorldForm(t.dataset.uvdetw); return; }
+      if(t.dataset.uvaddmoon){ uvMoonForm(t.dataset.uvaddmoon,null); return; } if(t.dataset.uvconv){ uvConvForm(t.dataset.uvconv); return; } if(t.dataset.uvout){ uvPlanetDeleteConfirm(t.dataset.uvout); return; }
       if(t.dataset.uvedit){ uvPlanetForm(t.dataset.uvedit); return; } if(t.dataset.uvsedit){ uvStarForm(t.dataset.uvsedit); return; } if(t.dataset.uvsdel){ uvStarDeleteConfirm(t.dataset.uvsdel); return; }
       if(t.dataset.uvfocus){ uvFocusBody(t.dataset.uvfocus); return; }
       switch(id){
@@ -2290,8 +2546,8 @@ function uvWire(){
       if(f==='x'||f==='y'||f==='z'){ if(b.kind!=='star') return; const v=parseFloat(t.value); if(!Number.isFinite(v)){ t.value=o.position[f]; return; } uvSetPos(bid,f,v); U3.key=''; }
       else if(f==='name'){ uvMutate('名前を変更',(uu)=>{ uvBody(uu,bid).o.name=uvStr(t.value,200); }); }
       else if(f==='notes'){ uvMutate('メモを変更',(uu)=>{ uvBody(uu,bid).o.notes=uvStr(t.value,8000); }); }
-      else if(b.kind==='planet'&&(f==='ov'||f==='rv')){ const v=t.value===''?null:parseFloat(t.value); if(t.value!==''&&!(v>=0)){ t.value=''; return; } uvMutate('周期を変更',(uu)=>{ uvPlanet(uu,bid)[f==='ov'?'orbitalPeriod':'rotationPeriod'].value=v; }); }
-      else if(b.kind==='planet'&&(f==='ou'||f==='ru')){ uvMutate('周期の単位を変更',(uu)=>{ uvPlanet(uu,bid)[f==='ou'?'orbitalPeriod':'rotationPeriod'].unit=uvUnit(t.value,UV_PERIOD_UNITS,'日'); }); }
+      else if((b.kind==='planet'||b.kind==='moon')&&(f==='ov'||f==='rv')){ const v=t.value===''?null:parseFloat(t.value); if(t.value!==''&&!(v>=0)){ t.value=''; return; } uvMutate('周期を変更',(uu)=>{ uvBody(uu,bid).o[f==='ov'?'orbitalPeriod':'rotationPeriod'].value=v; }); }
+      else if((b.kind==='planet'||b.kind==='moon')&&(f==='ou'||f==='ru')){ uvMutate('周期の単位を変更',(uu)=>{ uvBody(uu,bid).o[f==='ou'?'orbitalPeriod':'rotationPeriod'].unit=uvUnit(t.value,UV_PERIOD_UNITS,'日'); }); }
       if(UV.mode!=='table'&&UV.mode!=='stars') uvRefresh(); return; }
     if(id==='uvHelpChk'){ uvSetHelp(t.checked); return; }
     if(id==='uvLabelsChk'){ UV.labels=t.checked; uvRefresh(); return; } if(id==='uvLinesChk'){ UV.lines=t.checked; uvRefresh(); return; } if(id==='uvOrbitChk'){ UV.orbits=t.checked; U3.dirty=true; return; }
@@ -2690,13 +2946,14 @@ function invalidateResolvedExcept(sid){ Store.resolved.forEach((r,id)=>{ if(id!=
 
 /* ---------- 画素アクセス ---------- */
 function getPx(R, layer, x, y){
+  if(wrapOn()){ const P=W().mapWidth; x=x%P; if(x<0) x+=P; }   /* v53: 横は周期で折り返す(縦は従来どおり) */
   if(x<0||y<0) return 0;
   const t = R.layers[layer].get(tkey(x>>8,y>>8)); if(!t) return 0;
   return t[((y&255)<<8)|(x&255)];
 }
 function pxReader(R, layer){
-  const mp = R.layers[layer]; let ck=-1, ct=null;
-  return (x,y)=>{ if(x<0||y<0) return 0; const k=tkey(x>>8,y>>8); if(k!==ck){ ck=k; ct=mp.get(k)||null; } return ct? ct[((y&255)<<8)|(x&255)] : 0; };
+  const mp = R.layers[layer]; let ck=-1, ct=null; const wP=wrapOn()?W().mapWidth:0;
+  return (x,y)=>{ if(wP){ x=x%wP; if(x<0) x+=wP; } if(x<0||y<0) return 0; const k=tkey(x>>8,y>>8); if(k!==ck){ ck=k; ct=mp.get(k)||null; } return ct? ct[((y&255)<<8)|(x&255)] : 0; };
 }
 
 /* ---------- ベクター差分の編集 ---------- */
@@ -3401,11 +3658,12 @@ function createWorld(opts){
     metrics: deepClone(DEFAULT_METRICS), statistics: [],
     assets: [], eras: [], history: [],
     refImages: [],
-    uvStars: [], uvPlanets: [], uvCalendar: uvNormCal(opts.uvCalendar),   /* v51: 世界 = 宇宙(恒星・惑星は、作成後に宇宙の画面で置く) */
+    uvStars: [], uvPlanets: [], uvMoons: [], uvCalendar: uvNormCal(opts.uvCalendar),   /* v51: 世界 = 宇宙(恒星・惑星は、作成後に宇宙の画面で置く) */
     createdAt: Date.now(), updatedAt: Date.now(),
   };
   normalizeTerrainSystem(world);
   normalizeWorld(world);   /* 新規作成直後でも、リロード後と同じ初期状態にする */
+  if(opts.wrapX===true) world.mapDisplay.wrapX=true;   /* v53: 左右の端をつなげる(新しい世界の既定。画面の作成で指定) */
   Store.reset(id);
   if(opts.fill!=='unset') fillLayerUniform(world, rootId, 'terrain', 1);
   if(typeof syncBaseline==='function') syncBaseline(world);
@@ -3738,7 +3996,7 @@ async function migrateLegacyStorage(){
       DB.legacyTilesKept = DB.legacyTilesKept||{};
     }catch(e){ console.error('legacy migrate failed', id, e); }
   }
-  DB.currentWorldId = parsed.currentWorldId && DB.worlds[parsed.currentWorldId] ? parsed.currentWorldId : Object.keys(DB.worlds)[0]||null;
+  DB.currentWorldId = parsed.currentWorldId && DB.worlds[parsed.currentWorldId] ? parsed.currentWorldId : uvFirstVisibleWid()||null;
   Store.reset(null);
   return true;
 }
@@ -3759,7 +4017,7 @@ async function loadDB(){
     }catch(e){ console.error('load failed', e); }
   }
   if(!had){ had = await migrateLegacyStorage(); }
-  if(had && (!DB.currentWorldId || !DB.worlds[DB.currentWorldId])) DB.currentWorldId = Object.keys(DB.worlds)[0]||null;
+  if(had && (!DB.currentWorldId || !DB.worlds[DB.currentWorldId])) DB.currentWorldId = uvFirstVisibleWid()||null;
   if(DB.currentWorldId && ok) await Store.loadWorld(DB.currentWorldId);
   else if(DB.currentWorldId) Store.worldId = DB.currentWorldId;
   return had && !!DB.currentWorldId;
@@ -3807,13 +4065,28 @@ const MAP_MODES = [
   {id:'custom', label:'カスタム', desc:'レイヤーパネルで表示項目を自由に組み合わせます'},
 ];
 
+/* ---------- v53 左右の端をつなげる地図: 基本の部品 ----------
+   周期: ピクセルでは w.mapWidth、マップ単位(線・頂点・都市などの座標)では w.extentW。上下は折り返さない。
+   wrapOn() が false(既存の世界の既定)のとき、下の関数はすべて従来と同じ値を返す。 */
+const Wrap={force:null};   /* force: true/false のとき設定を無視(プレビュー・横に並べるPNG用) */
+function wrapOn(w){ if(Wrap.force!==null) return Wrap.force; w=w||W(); return !!(w && w.mapDisplay && w.mapDisplay.wrapX===true); }
+function foldPx(x,w){ w=w||W(); if(!wrapOn(w)) return x; const P=w.mapWidth; x=x%P; return x<0?x+P:x; }
+function foldU(x,w){ w=w||W(); if(!wrapOn(w)) return x; const P=w.extentW; x=x%P; return x<0?x+P:x; }
+/* 2つの座標(同じ単位)の差を、周期を考慮した最短の差にする(つなげない世界では b-a のまま) */
+function wrapDelta(a,b,P,on){ let d=b-a; if(on===undefined?!wrapOn():!on) return d; d=d%P; if(d>P/2) d-=P; else if(d<=-P/2) d+=P; return d; }
+/* 線・頂点を描いている途中: 新しい点 x を、直前の点 prev に最も近い周期の複製へ寄せる(端で途切れない) */
+function wrapNear(x,prev,P){ if(!wrapOn()) return x; return prev+wrapDelta(prev,x,P,true); }
+/* 物(線・領域)の座標が周期の外にあるときの保存形: 最初の頂点が [0,周期) に入るように、全体を周期の整数倍だけずらす */
+function wrapNormPts(pts){ const w=W(); if(!wrapOn(w)||!pts||!pts.length) return pts; const P=w.extentW; const k=Math.floor(pts[0].x/P); if(!k) return pts; return pts.map(p=>Object.assign({},p,{x:p.x-k*P})); }
+function wrapShifts(){ return wrapOn()?[-1,0,1]:[0]; }
+
 /* ---------- 座標変換 ---------- */
 function ppu(){ const w=W(); return {x:w.mapWidth/w.extentW, y:w.mapHeight/w.extentH}; }
 function screenToUnit(sx,sy){ return {x:(sx-MapView.offX)/MapView.scale, y:(sy-MapView.offY)/MapView.scale}; }
 function unitToScreen(ux,uy){ return {x:ux*MapView.scale+MapView.offX, y:uy*MapView.scale+MapView.offY}; }
 function unitToPx(ux,uy){ const p=ppu(); return {x:ux*p.x, y:uy*p.y}; }
 function screenToPx(sx,sy){ const u=screenToUnit(sx,sy); return unitToPx(u.x,u.y); }
-function unitDist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
+function unitDist(a,b){ return Math.hypot(wrapDelta(a.x,b.x,W()?W().extentW:0)*-1,a.y-b.y); }
 /* 距離・面積の計算方式(ピクセル単位/投影法)を考慮した表示用ヘルパー群。
    引数はいずれもマップの「unit」座標(既存の線・頂点データがそのまま持っている座標系)で受け取り、
    内部で必要に応じて生ピクセル座標に変換してから mapDistanceKmPx / geoToPixel 等へ渡す。 */
@@ -4064,12 +4337,13 @@ function geoLocalKmPerPx(px, py){
    ピクセル単位方式にフォールバックし、距離が消えたり例外で処理が止まったりしないようにする。 */
 function mapDistanceKmPx(ax,ay,bx,by){
   const w=W();
+  if(wrapOn(w)){ ax=foldPx(ax,w); bx=foldPx(bx,w); }   /* v53: 経度は大圏距離が周期的(最短)。ピクセル方式は下で最短の東西差を使う */
   if(geoCalcMode()==='projection'){
     const ga=pixelToGeo(ax,ay), gb=pixelToGeo(bx,by);
     if(ga && gb){ const R=(w.geoCalc.projection.planetRadiusKm)||6371; const d=haversineKm(ga.lat,ga.lon,gb.lat,gb.lon,R); if(isFinite(d)) return d; }
   }
   const P=ppu();
-  return Math.hypot((ax-bx)/P.x,(ay-by)/P.y)*(w.kmPerUnit||1);
+  return Math.hypot(wrapDelta(bx,ax,w.mapWidth)/P.x,(ay-by)/P.y)*(w.kmPerUnit||1);
 }
 /* 複数点を結んだ経路距離(生ピクセル座標の配列)をkmで返す */
 /* 国家領土・地域・行政区画などの面積(km²)を、選択中の計算方式に応じて算出する。
@@ -4320,32 +4594,35 @@ function computeIdLayerLabelStats(R, stride, layerKey){
       for(let x=0;x<TS;x+=stride){ const gx=bx+x; if(gx>=w.mapWidth) break; const v=t[(y<<8)|x]; if(v) rid[gRow+Math.floor(gx/stride)]=v; }
     }
   });
-  return labelStatsFromGrid(rid,gw,gh,stride);
+  return labelStatsFromGrid(rid,gw,gh,stride,undefined,wrapOn(w));
 }
-function labelStatsFromGrid(rid,gw,gh,stride,centerTies){
-  const gridN=gw*gh;
+function labelStatsFromGrid(rid,gw,gh,stride,centerTies,wrapX){
+  const gridN=gw*gh; const WX=!!wrapX;   /* v53: WX のとき、左右の端のセルを隣り合うものとして扱う(重心などは、端をまたいだ座標=周期の外の値になりうる) */
   // 1) 連結成分検出(4近傍・同じridのみ)
   const compId = new Int32Array(gridN).fill(-1);
-  const qx = new Int32Array(gridN), qy = new Int32Array(gridN);
+  const uxCell = WX ? new Int32Array(gridN) : null;   /* 端をまたいで続けた横座標 */
+  const qx = new Int32Array(gridN), qy = new Int32Array(gridN), qu = WX ? new Int32Array(gridN) : null;
   const comps = [];
   for(let gy=0; gy<gh; gy++) for(let gx=0; gx<gw; gx++){
     const idx=gy*gw+gx; if(compId[idx]!==-1) continue; const rv=rid[idx]; if(!rv) continue;
-    const cid=comps.length; let qh0=0, qt=0; qx[qt]=gx; qy[qt]=gy; qt++; compId[idx]=cid;
+    const cid=comps.length; let qh0=0, qt=0; qx[qt]=gx; qy[qt]=gy; if(WX) qu[qt]=gx; qt++; compId[idx]=cid; if(WX) uxCell[idx]=gx;
     let n=0,sx=0,sy=0,x0=gx,x1=gx,y0=gy,y1=gy;
     while(qh0<qt){
-      const cx=qx[qh0], cy=qy[qh0]; qh0++; n++; sx+=cx; sy+=cy;
-      if(cx<x0)x0=cx; if(cx>x1)x1=cx; if(cy<y0)y0=cy; if(cy>y1)y1=cy;
+      const cx=qx[qh0], cy=qy[qh0], cu=WX?qu[qh0]:cx; qh0++; n++; sx+=cu; sy+=cy;
+      if(cu<x0)x0=cu; if(cu>x1)x1=cu; if(cy<y0)y0=cy; if(cy>y1)y1=cy;
       const cidx=cy*gw+cx;
-      if(cx+1<gw){ const i2=cidx+1; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=cx+1; qy[qt]=cy; qt++; } }
-      if(cx-1>=0){ const i2=cidx-1; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=cx-1; qy[qt]=cy; qt++; } }
-      if(cy+1<gh){ const i2=cidx+gw; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=cx; qy[qt]=cy+1; qt++; } }
-      if(cy-1>=0){ const i2=cidx-gw; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=cx; qy[qt]=cy-1; qt++; } }
+      const rx=(cx+1<gw)?cx+1:(WX?0:-1);
+      if(rx>=0){ const i2=cy*gw+rx; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=rx; qy[qt]=cy; if(WX){ qu[qt]=cu+1; uxCell[i2]=cu+1; } qt++; } }
+      const lx=(cx-1>=0)?cx-1:(WX?gw-1:-1);
+      if(lx>=0){ const i2=cy*gw+lx; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=lx; qy[qt]=cy; if(WX){ qu[qt]=cu-1; uxCell[i2]=cu-1; } qt++; } }
+      if(cy+1<gh){ const i2=cidx+gw; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=cx; qy[qt]=cy+1; if(WX){ qu[qt]=cu; uxCell[i2]=cu; } qt++; } }
+      if(cy-1>=0){ const i2=cidx-gw; if(compId[i2]===-1 && rid[i2]===rv){ compId[i2]=cid; qx[qt]=cx; qy[qt]=cy-1; if(WX){ qu[qt]=cu; uxCell[i2]=cu; } qt++; } }
     }
-    comps.push({rid:rv, n, sx, sy, x0,y0,x1,y1, sxx:0,syy:0,sxy:0, mx:sx/n, my:sy/n, distMax:0, ax:gx, ay:gy});
+    comps.push({rid:rv, n, sx, sy, x0,y0,x1,y1, sxx:0,syy:0,sxy:0, mx:sx/n, my:sy/n, distMax:0, ax:WX?gx:gx, ay:gy});
   }
   if(!comps.length) return new Map();
   // 2) 各成分内で「自成分の境界(または成分外)までの距離」を多重始点BFSで計算
-  const isDiffOrEdge=(gx,gy,cid)=>{ if(gx<0||gy<0||gx>=gw||gy>=gh) return true; return compId[gy*gw+gx]!==cid; };
+  const isDiffOrEdge=(gx,gy,cid)=>{ if(WX){ gx=((gx%gw)+gw)%gw; if(gy<0||gy>=gh) return true; } else if(gx<0||gy<0||gx>=gw||gy>=gh) return true; return compId[gy*gw+gx]!==cid; };
   const dist = new Int32Array(gridN).fill(-1);
   const bqx = new Int32Array(gridN), bqy = new Int32Array(gridN); let bqt=0;
   for(let gy=0; gy<gh; gy++) for(let gx=0; gx<gw; gx++){
@@ -4355,17 +4632,20 @@ function labelStatsFromGrid(rid,gw,gh,stride,centerTies){
   let bqh=0;
   while(bqh<bqt){
     const cx=bqx[bqh], cy=bqy[bqh]; const idx=cy*gw+cx; const cid=compId[idx]; const d=dist[idx]; bqh++;
-    if(cx+1<gw){ const i2=idx+1; if(compId[i2]===cid && dist[i2]===-1){ dist[i2]=d+1; bqx[bqt]=cx+1; bqy[bqt]=cy; bqt++; } }
-    if(cx-1>=0){ const i2=idx-1; if(compId[i2]===cid && dist[i2]===-1){ dist[i2]=d+1; bqx[bqt]=cx-1; bqy[bqt]=cy; bqt++; } }
+    const rx=(cx+1<gw)?cx+1:(WX?0:-1);
+    if(rx>=0){ const i2=cy*gw+rx; if(compId[i2]===cid && dist[i2]===-1){ dist[i2]=d+1; bqx[bqt]=rx; bqy[bqt]=cy; bqt++; } }
+    const lx=(cx-1>=0)?cx-1:(WX?gw-1:-1);
+    if(lx>=0){ const i2=cy*gw+lx; if(compId[i2]===cid && dist[i2]===-1){ dist[i2]=d+1; bqx[bqt]=lx; bqy[bqt]=cy; bqt++; } }
     if(cy+1<gh){ const i2=idx+gw; if(compId[i2]===cid && dist[i2]===-1){ dist[i2]=d+1; bqx[bqt]=cx; bqy[bqt]=cy+1; bqt++; } }
     if(cy-1>=0){ const i2=idx-gw; if(compId[i2]===cid && dist[i2]===-1){ dist[i2]=d+1; bqx[bqt]=cx; bqy[bqt]=cy-1; bqt++; } }
   }
   // 3) 主軸方向(共分散)と最大距離点(ラベル基準点)をまとめて1パスで集計
   for(let gy=0; gy<gh; gy++) for(let gx=0; gx<gw; gx++){
     const idx=gy*gw+gx; const cid=compId[idx]; if(cid===-1) continue;
-    const c=comps[cid]; const dx=gx-c.mx, dy=gy-c.my;
+    const ugx=WX?uxCell[idx]:gx;
+    const c=comps[cid]; const dx=ugx-c.mx, dy=gy-c.my;
     c.sxx+=dx*dx; c.syy+=dy*dy; c.sxy+=dx*dy;
-    const d=dist[idx]; if(d>c.distMax || (centerTies && d===c.distMax && Math.hypot(gx-c.mx,gy-c.my)<Math.hypot(c.ax-c.mx,c.ay-c.my))){ c.distMax=d; c.ax=gx; c.ay=gy; }
+    const d=dist[idx]; if(d>c.distMax || (centerTies && d===c.distMax && Math.hypot(ugx-c.mx,gy-c.my)<Math.hypot(c.ax-c.mx,c.ay-c.my))){ c.distMax=d; c.ax=ugx; c.ay=gy; }
   }
   // 4) ワールド座標へ変換して国家(rid)ごとにまとめる(面積の大きい成分=本土から順)
   const out = new Map();
@@ -4392,13 +4672,13 @@ function computeNationLabelStats(R, stride){ return computeIdLayerLabelStats(R, 
    書き出し(own:true の renderBase: タイムラプス・PNG・3Dのテクスチャ等)は、その場で同期計算する。通常の画面だけは従来どおり遅延計算。 */
 const LblStats={sync:false,lru:[],max:16};
 function lblStride(w){ return Math.max(1, Math.round(Math.sqrt(w.mapWidth*w.mapHeight/1.5e6))); }
-function lblKey(R,kind,stride){ const w=W(); return [R.id,Store.rev,Typo.rev,w.currentYear,w.currentMonth||1,w.currentDay||1,w.mapWidth,w.mapHeight,stride,kind,w.mapMode||''].join(':'); }
+function lblKey(R,kind,stride){ const w=W(); return [R.id,Store.rev,Typo.rev,w.currentYear,w.currentMonth||1,w.currentDay||1,w.mapWidth,w.mapHeight,stride,kind,w.mapMode||'',wrapOn(w)?'W':''].join(':'); }
 function lblGet(key){ const i=LblStats.lru.findIndex(e=>e.key===key); if(i<0) return null; const e=LblStats.lru.splice(i,1)[0]; LblStats.lru.push(e); return e.data; }
 function lblPut(key,data){ LblStats.lru.push({key,data}); while(LblStats.lru.length>LblStats.max) LblStats.lru.shift(); }
 /* 計算そのものは「領土の中身」だけで決まる(地図状態ID+編集の版+地図サイズ+走査間隔+種別)。同じ領土の別の年は、この結果を共有して時間を節約する
    (結果の入れ物=上のキャッシュのキーは年ごとに別。領土が変わった年は必ず再計算される) */
 const LblTerr={lru:[],max:8};
-function lblTerrCompute(R,kind,stride,compute){ const w=W(); const k=[R.id,Store.rev,w.mapWidth,w.mapHeight,stride,kind].join(':'); const i=LblTerr.lru.findIndex(e=>e.k===k); if(i>=0){ const e=LblTerr.lru.splice(i,1)[0]; LblTerr.lru.push(e); return e.d; } const d=compute(R,stride); LblTerr.lru.push({k,d}); while(LblTerr.lru.length>LblTerr.max) LblTerr.lru.shift(); return d; }
+function lblTerrCompute(R,kind,stride,compute){ const w=W(); const k=[R.id,Store.rev,w.mapWidth,w.mapHeight,stride,kind,wrapOn(w)?'W':''].join(':'); const i=LblTerr.lru.findIndex(e=>e.k===k); if(i>=0){ const e=LblTerr.lru.splice(i,1)[0]; LblTerr.lru.push(e); return e.d; } const d=compute(R,stride); LblTerr.lru.push({k,d}); while(LblTerr.lru.length>LblTerr.max) LblTerr.lru.shift(); return d; }
 function lblStatsFor(R, kind, compute, slotOwner, slotName){
   const w=W(); const stride=lblStride(w); const key=lblKey(R,kind,stride);
   const hit=lblGet(key); if(hit){ if(!LblStats.sync&&(!slotOwner[slotName]||slotOwner[slotName].key!==key)) slotOwner[slotName]={key,data:hit}; return hit; }
@@ -4452,6 +4732,8 @@ function mergeLabelComponents(nat, comps){
   merged.sort((a,b)=> b.n-a.n);
   return merged;
 }
+/* v53: x(マップ単位)の周期の複製が、[a,b] に1つも入らないとき true(つなげない世界では x<a||x>b と同じ) */
+function wrapCullX(x,a,b){ if(!wrapOn()) return x<a||x>b; const P=W().extentW; const k=Math.ceil((a-x)/P); return x+k*P>b; }
 function computeNationLabelPlacements(R, view, cw, ch){
   const w=W(); const year=w.currentYear; const S=view.scale; const pp=ppu();
   const stats = getNationLabelStats(R);
@@ -4476,7 +4758,7 @@ function computeNationLabelPlacements(R, view, cw, ch){
       }
       if(angleDeg>60) angleDeg-=180*Math.round(angleDeg/180); if(angleDeg>60) angleDeg=60; if(angleDeg<-60) angleDeg=-60;
       const radiusU = c.radius/Math.max(pp.x,pp.y);
-      if(cx<vx0-radiusU||cx>vx1+radiusU||cy<vy0-radiusU||cy>vy1+radiusU) return;
+      if(wrapCullX(cx,vx0-radiusU,vx1+radiusU)||cy<vy0-radiusU||cy>vy1+radiusU) return;
       candidates.push({nat, label, cx, cy, angleDeg, radiusU, sizeMul, n:c.n, isMain:i===0});
     });
   });
@@ -4528,7 +4810,7 @@ function computeRegionLabelPlacements(R, view, cw, ch, avoidBoxes){
       const c = comps[0]; // 最大成分のみ
       const cx=c.cx/pp.x, cy=c.cy/pp.y;
       const radiusU = c.radius/Math.max(pp.x,pp.y);
-      if(cx<vx0-radiusU||cx>vx1+radiusU||cy<vy0-radiusU||cy>vy1+radiusU) return;
+      if(wrapCullX(cx,vx0-radiusU,vx1+radiusU)||cy<vy0-radiusU||cy>vy1+radiusU) return;
       candidates.push({region:r, label:r.name, cx, cy, radiusU, n:c.n, depth:d});
     });
   }
@@ -4599,6 +4881,7 @@ function renderOverlayOnly(){
 }
 function flushRender(){
   const cv = document.getElementById('mapcanvas'); if(!cv || !W() || currentView!=='map') return;
+  if(wrapOn() && !MapView.drag){ const per=W().extentW*MapView.scale; if(per>0){ const k=Math.floor(MapView.offX/per); if(k) MapView.offX-=k*per; } }
   if(MapView.baseDirty){ MapView.baseDirty=false; renderBase(cv.getContext('2d'), cv.width, cv.height, MapView, {}); }
   if(MapView.overlayDirty){ MapView.overlayDirty=false; renderOverlay(); }
 }
@@ -4625,6 +4908,8 @@ function renderRefImages(ctx, view, order){
   });
   ctx.restore();
 }
+/* v53: 周期が256の倍数のときだけ、タイルの番号を周期で折り返す(隣のタイルがちょうど反対側の端になる) */
+function wrapTileX(t){ if(!wrapOn()) return t; const P=W().mapWidth; if(P%TS) return t; const T=P/TS; return ((t%T)+T)%T; }
 function layerCanvas(name, cw, ch, own){
   if(own){ const c=document.createElement('canvas'); c.width=cw; c.height=ch; return c; }
   let c=_LC[name]; if(!c){ c=document.createElement('canvas'); _LC[name]=c; }
@@ -4633,14 +4918,43 @@ function layerCanvas(name, cw, ch, own){
 }
 function renderBase(ctx, cw, ch, view, opts){
   const prevSync=LblStats.sync; LblStats.sync=!!(opts&&opts.own);
-  try{ return renderBaseImpl(ctx, cw, ch, view, opts); } finally { LblStats.sync=prevSync; }
+  try{ return (wrapOn() && !(opts&&opts._pass)) ? renderBaseWrapped(ctx, cw, ch, view, opts||{}) : renderBaseImpl(ctx, cw, ch, view, opts); } finally { LblStats.sync=prevSync; }
+}
+/* 段階 'v'(図形)では文字を描かず、段階 'l'(名前)では図形を描かず文字だけを、いちばん画面の中心に近い複製の位置へ1回だけ描く。
+   描画の中身(各関数)は変えず、描画先(ctx)の呼び出しだけを差し替える */
+function wrapStubCtx(ctx, mode, cw, Pscr){
+  const proto=Object.getPrototypeOf(ctx); const own=[];
+  const set=(k,f)=>{ ctx[k]=f; own.push(k); };
+  const noop=function(){};
+  if(mode==='v'){ set('fillText',noop); set('strokeText',noop); }
+  else if(mode==='l'){
+    ['stroke','fill','drawImage','fillRect','strokeRect','putImageData'].forEach(k=>set(k,noop));
+    const shifted=(name)=>function(t,x,y,mw){ const m=ctx.getTransform(); const sx=m.a*x+m.c*y+m.e; const k=Pscr>0?Math.round((cw/2-sx)/Pscr):0; ctx.save(); ctx.setTransform(m.a,m.b,m.c,m.d,m.e+k*Pscr,m.f); try{ proto[name].call(ctx,t,x,y,mw); } finally { ctx.restore(); } };
+    set('fillText',shifted('fillText')); set('strokeText',shifted('strokeText'));
+  }
+  return ()=>{ own.forEach(k=>{ delete ctx[k]; }); };
+}
+function renderBaseWrapped(ctx, cw, ch, view, opts){
+  const w=W(); const Pu=w.extentW, S=view.scale;
+  const u0=-view.offX/S, u1=(cw-view.offX)/S;
+  let c0=Math.floor(u0/Pu), c1=Math.max(c0,Math.ceil(u1/Pu)-1); if(c1-c0>40){ c1=c0+40; }   /* 極端に縮小しても、複製の数に上限(40周期)を置く */
+  const shift=(c)=>Object.assign({}, view, {offX:Math.round(view.offX+c*Pu*S)});   /* 複製のつなぎ目が、半端な画素でにじまないよう、各複製の位置は整数画素にそろえる */
+  for(let c=c0;c<=c1;c++) renderBaseImpl(ctx,cw,ch,shift(c),Object.assign({},opts,{_pass:'r',_first:c===c0}));
+  let undo=wrapStubCtx(ctx,'v',cw,Pu*S);
+  try{ for(let c=c0-1;c<=c1+1;c++) renderBaseImpl(ctx,cw,ch,shift(c),Object.assign({},opts,{_pass:'v'})); } finally { undo(); }
+  const lctx=opts._labelCtx||ctx;   /* 地球儀のテクスチャ用: 名前だけを別の透明な面に描き、あとで周期で折りたたむ */
+  undo=wrapStubCtx(lctx,'l',cw,Pu*S);
+  try{ renderBaseImpl(lctx,cw,ch,view,Object.assign({},opts,{_pass:'l'})); } finally { undo(); }
+  renderBaseImpl(ctx,cw,ch,view,Object.assign({},opts,{_pass:'f'}));
 }
 function renderBaseImpl(ctx, cw, ch, view, opts){
   const w=W(); const sid=currentStateId(); if(!w||!sid) return;
   const R=resolveState(sid); _R=R;
   const year=w.currentYear; updatePalettes(w,year);
   const own = !!opts.own;
-  ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=1; ctx.fillStyle='#080b10'; ctx.fillRect(0,0,cw,ch);
+  const pass=opts._pass||'', doR=(!pass||pass==='r'), doV=(!pass||pass==='v'||pass==='l'), doF=(!pass||pass==='f'), Pu_=w.extentW;   /* v53: pass が空なら従来どおり(すべて1回で描く) */
+  if(!pass || (pass==='r' && opts._first)){ ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=1; ctx.fillStyle='#080b10'; ctx.fillRect(0,0,cw,ch); }
+  else ctx.setTransform(1,0,0,1,0,0);
   const P=ppu(); const kx=view.scale/P.x, ky=view.scale/P.y, kmin=Math.min(kx,ky);
   const lod = kmin>=1?0:Math.min(4,Math.floor(Math.log2(1/kmin)));
   const rx0=(-view.offX)/kx, ry0=(-view.offY)/ky, rx1=(cw-view.offX)/kx, ry1=(ch-view.offY)/ky;
@@ -4653,6 +4967,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   const ovX=0.6/kx, ovY=0.6/ky;
 
   // --- 未設定の背景 + 地形 ---
+  if(doR){
   ctx.save(); rasterT();
   const sty=(opts&&opts.std)?'standard':styleOf(w);   /* opts.std=true のときだけ標準(現在は使っていない) */
   ctx.fillStyle=(sty==='parchment')?styleOpts(w).paper:(STYLE_BG[sty]||'#141a22'); ctx.fillRect(0,0,w.mapWidth,w.mapHeight);
@@ -4664,7 +4979,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
     for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
       const k=tkey(tx,ty), t=R.layers.terrain.get(k);
       if(!t){ if(sty==='parchment') ctx.drawImage(bakeTerrainStyled(PAPER_EMPTY,null,lod,'off',elt,{x:tx,y:ty,nb:()=>null},sty,w), tx*TS, ty*TS, TS+ovX, TS+ovY); continue; }
-      ctx.drawImage(bakeTerrainStyled(t, R.layers.elev.get(k)||null, lod, emode, elt, {x:tx,y:ty,nb:(dx,dy)=>R.layers.terrain.get(tkey(tx+dx,ty+dy))}, sty, w), tx*TS, ty*TS, TS+ovX, TS+ovY);
+      ctx.drawImage(bakeTerrainStyled(t, R.layers.elev.get(k)||null, lod, emode, elt, {x:tx,y:ty,nb:(dx,dy)=>R.layers.terrain.get(tkey(wrapTileX(tx+dx),ty+dy))}, sty, w), tx*TS, ty*TS, TS+ovX, TS+ovY);
     }
   } else if(emode!=='off'){
     for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
@@ -4675,6 +4990,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   if(typeof elevContourDraw==='function') elevContourDraw(ctx,R,w,lod,tx0,ty0,tx1,ty1,ovX,ovY,emode);   /* 等高線(標高から描画時に計算) */
   if(sty==='parchment'&&!(opts&&opts.nodeco)) parchmentDeco(ctx,w,kmin);   /* v40: 古地図風の飾り */
   ctx.restore();
+  }
 
   // --- 領域(占領/係争/カスタム) と 国家領土 は半透明で重ねる ---
   const drawIdLayer = (name, layer, bake, alpha)=>{
@@ -4689,11 +5005,12 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
     if(any){ ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=alpha; ctx.drawImage(lc,0,0); ctx.restore(); }
   };
   const showNations = AL.nations && mode!=='terrain' || (AL.nations && mode==='terrain');
-  if(showNations) drawIdLayer('nation','nation',bakeNation,effectiveNationOpacity(w));
-  if(AL.adminRegions){ for(let d=0; d<=REGION_TIER_MAX; d++){ drawIdLayer(regionTierLayer(d), regionTierLayer(d), bakeRegionTier(d), 0.38); } }
-  if(typeof cultDrawFills==='function') cultDrawFills(drawIdLayer, AL, w, year);   /* 言語・宗教・文化の分布 */
+  if(doR&&showNations) drawIdLayer('nation','nation',bakeNation,effectiveNationOpacity(w));
+  if(doR&&AL.adminRegions){ for(let d=0; d<=REGION_TIER_MAX; d++){ drawIdLayer(regionTierLayer(d), regionTierLayer(d), bakeRegionTier(d), 0.38); } }
+  if(doR&&typeof cultDrawFills==='function') cultDrawFills(drawIdLayer, AL, w, year);   /* 言語・宗教・文化の分布 */
 
   // --- ラスター由来の線(海岸線・国境・領域境界) ---
+  if(doR){
   ctx.save(); rasterT(); ctx.beginPath(); ctx.rect(0,0,w.mapWidth,w.mapHeight); ctx.clip();
   ctx.lineJoin='round'; ctx.lineCap='butt';
   const eachTile = (layer, fn)=>{ for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){ const k=tkey(tx,ty), t=R.layers[layer].get(k); if(!t) continue; ctx.save(); ctx.translate(tx*TS,ty*TS); fn(t,k); ctx.restore(); } };
@@ -4723,16 +5040,19 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
     if((gx1-gx0)*(gy1-gy0)<400000){ ctx.beginPath(); for(let x=gx0;x<=gx1;x++){ ctx.moveTo(x,gy0); ctx.lineTo(x,gy1); } for(let y=gy0;y<=gy1;y++){ ctx.moveTo(gx0,y); ctx.lineTo(gx1,y); } ctx.stroke(); }
   }
   ctx.restore();
+  }
 
   // --- ベクター(座標はマップ単位) ---
+  if(doV){
   ctx.save(); ctx.setTransform(view.scale,0,0,view.scale,view.offX,view.offY);
   const S=view.scale, zr=S/(view.fitScale||S);
   const vx0=-view.offX/S, vy0=-view.offY/S, vx1=(cw-view.offX)/S, vy1=(ch-view.offY)/S;
-  const inView=(bb)=> !(bb[2]<vx0||bb[0]>vx1||bb[3]<vy0||bb[1]>vy1);
+  const inView=(bb)=> pass==='l' ? wrapShifts().some(k=>!(bb[2]+k*Pu_<vx0||bb[0]+k*Pu_>vx1||bb[3]<vy0||bb[1]>vy1)) : !(bb[2]<vx0||bb[0]>vx1||bb[3]<vy0||bb[1]>vy1);
+  const cullX=(x)=> pass==='l' ? wrapCullX(x,vx0,vx1) : (x<vx0||x>vx1);
   ctx.lineJoin='round'; ctx.lineCap='round';
 
   // 行政区画境界(塗らない・線のみ。階層が深いほど細く淡く。拡大に応じて下位階層を表示)
-  if(AL.admin){
+  if(pass!=='l' && AL.admin){
     const groups=[[],[],[],[],[]];
     R.admin.forEach(g=>{ const reg=regionById(g.id); if(!reg||!g.rings) return; const d=Math.min(4,regionDepth(reg)); const thr=[0,0.55,1.3,2.8,5][d]; if(zr<thr && mode!=='administrative') return; const e=vecPath(g,'admin'); if(inView(e.bbox)) groups[d].push(e.path); });
     const boost = mode==='administrative'?1.35:1;
@@ -4746,7 +5066,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   // 線(河川・山脈・道路・鉄道・国境線)
   const lineOrder=['range','river','road','rail','border'];
   lineOrder.forEach(kind=>{
-    if(!AL[kind]) return; const st=LINE_KINDS[kind];
+    if(pass==='l'||!AL[kind]) return; const st=LINE_KINDS[kind];
     ctx.strokeStyle=st.color; ctx.globalAlpha=st.alpha||1; ctx.lineWidth=st.width/S; ctx.setLineDash(st.dash.map(v=>v/S*1));
     R.lines.forEach(l=>{ if(l.kind!==kind||!l.points||l.points.length<2) return; const e=vecPath(l,'line'); if(!inView(e.bbox)) return;
       if(kind==='rail'){ ctx.setLineDash([]); ctx.strokeStyle='rgba(20,22,26,.85)'; ctx.lineWidth=(st.width+1.6)/S; ctx.stroke(e.path); ctx.strokeStyle=st.color; ctx.lineWidth=st.width/S; ctx.setLineDash(st.dash.map(v=>v/S)); }
@@ -4759,7 +5079,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   (w.customLayers||[]).forEach(layer=>{
     if(layer.visible===false) return;
     (layer.points||[]).forEach(p=>{
-      if(p.x<vx0||p.x>vx1||p.y<vy0||p.y>vy1) return;
+      if(cullX(p.x)||p.y<vy0||p.y>vy1) return;
       if(layer.id==='labels'){ if(!AL.labels) return; ctx.font=tyFont('mapLabel',`600 ${14/S}px`,'"Spectral","Noto Serif JP",serif'); ctx.textAlign='center'; ctx.lineWidth=3/S; ctx.strokeStyle='rgba(8,10,14,.8)'; ctx.strokeText(p.label||'',p.x,p.y); ctx.fillStyle='#f2ecd8'; ctx.fillText(p.label||'',p.x,p.y); ctx.textAlign='left'; return; }
       ctx.fillStyle=layer.color||'#c79a3f'; ctx.strokeStyle='#12161d'; ctx.lineWidth=1/S; ctx.beginPath(); ctx.arc(p.x,p.y,4/S,0,7); ctx.fill(); ctx.stroke();
       if(AL.labels && zr>1.2){ ctx.fillStyle='#fff'; ctx.font=tyFont('mapLabel',(10.5/S)+'px','sans-serif'); ctx.fillText(p.label||'', p.x+6/S, p.y-4/S); }
@@ -4777,7 +5097,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
       const ended = c.ended===''||c.ended===undefined?Infinity:Number(c.ended);
       if(year<founded || year>ended) return;
       if(c.lineIds && c.lineIds.length && !c.lineIds.includes(curLine)) return;
-      if(c.x<vx0||c.x>vx1||c.y<vy0||c.y>vy1) return;
+      if(cullX(c.x)||c.y<vy0||c.y>vy1) return;
       const pop=Number(c.population)||0; const kind=c.kind||'都市';
       const tier = (c.isCapital||kind==='首都') ? 'capital' : (kind==='村'?'village':(pop>=1000000?'metro':(pop>=100000?'city':'town')));
       if(zr<1.4 && (tier==='town'||tier==='village')) return;
@@ -4795,7 +5115,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   if(AL.diplomacy && AL.diploModes){ try{ diploDraw(ctx,view,cw,ch,AL,S,zr,own,R); }catch(e){ console.warn('diplomacy draw failed',e); } }
   // 国家名ラベル(国土形状・飛地・分断領域を考慮した自動配置。computeNationLabelPlacements参照)
   let nationLabelBoxes = [];
-  if(AL.labels && showNations && zr>0.45){
+  if(pass!=='v' && AL.labels && showNations && zr>0.45){
     const placements = computeNationLabelPlacements(R, view, cw, ch);
     placements.forEach(pl=>{
       const halfW=pl.fontSize*S*0.31*Math.max(3,tyVLen(pl.label)), halfH=pl.fontSize*S*0.62;
@@ -4812,7 +5132,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   }
   // 行政区画名(ラスター領域を持つ地域は、国土形状を考慮した新方式で配置。国名ラベルとの重なりを優先的に避ける)
   const regionsWithRaster = new Set();
-  if(AL.adminRegions && AL.adminLabels){
+  if(pass!=='v' && AL.adminRegions && AL.adminLabels){
     for(let d=0; d<=REGION_TIER_MAX; d++){ getRegionTierLabelStats(R,d).forEach((v,rid)=> regionsWithRaster.add(rid)); }
     const placements = computeRegionLabelPlacements(R, view, cw, ch, nationLabelBoxes);
     placements.forEach(pl=>{
@@ -4824,14 +5144,14 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
     });
     ctx.textAlign='left'; ctx.textBaseline='alphabetic';
   }
-  if(AL.admin && AL.adminLabels && zr>1.1){
+  if(pass!=='v' && AL.admin && AL.adminLabels && zr>1.1){
     R.admin.forEach(g=>{ const reg=regionById(g.id); if(!reg||!g.rings||!g.rings.length) return; if(regionsWithRaster.has(reg.rid)) return; if(regionEffectiveDisplayMode(reg)!=='full') return; const d=regionDepth(reg); if(zr<[1.1,1.8,3,5,8][Math.min(4,d)]) return;
       const e=vecPath(g,'admin'); if(!inView(e.bbox)) return; const cx=(e.bbox[0]+e.bbox[2])/2, cy=(e.bbox[1]+e.bbox[3])/2;
       const wS=(e.bbox[2]-e.bbox[0])*S; if(wS<50) return;
       ctx.font=tyFont('mapLabel',`italic ${clamp(10+ (4-d)*1.2,9,15)/S}px`,'"Spectral","Noto Serif JP",serif'); ctx.textAlign='center'; ctx.strokeStyle='rgba(8,10,14,.75)'; ctx.lineWidth=2.4/S; ctx.strokeText(reg.name,cx,cy); ctx.fillStyle='rgba(247,240,220,.92)'; ctx.fillText(reg.name,cx,cy); ctx.textAlign='left'; });
   }
   // 出来事マーカー
-  if(AL.events){
+  if(pass!=='l' && AL.events){
     w.events.forEach(e=>{
       if(e.x===undefined||e.x===null||e.x==='') return; if(Math.abs((e.year||0)-year)>3) return;
       ctx.strokeStyle='#e0b25a'; ctx.lineWidth=1.6/S; const r=5/S;
@@ -4839,6 +5159,8 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
     });
   }
   ctx.restore();
+  }
+  if(doF){
   if(AL.diplomacy && (AL.diploBanner || (typeof TL!=='undefined' && TL.playing))){ try{ diploDrawBanner(ctx,cw,ch,view); }catch(e){ console.warn(e); } }
   // 参考画像は「地図データそのもの」ではなく編集用の補助オーバーレイのため、
   // 地形・水域・国家領土・行政境界・国境・都市/道路/鉄道・ラベルなど
@@ -4847,6 +5169,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   // 「below」グループを先に、「above」グループを後に描くことで
   // 参考画像同士の重なり順の意味だけを残す(地図の下に隠れることはない)。
   if(!own){ renderRefImages(ctx, view, 'below'); renderRefImages(ctx, view, 'above'); }
+  }
   ctx.setTransform(1,0,0,1,0,0);
 }
 function drawPointSymbol(ctx,c,kind,tier,S){
@@ -4878,6 +5201,8 @@ function pointInRing(x,y,ring){
   }
   return inside;
 }
+/* v53: 周期の複製も含めた最短距離 */
+function distToSegW(px,py,a,b){ if(!wrapOn()) return distToSeg(px,py,a,b); const Pu=W().extentW; return Math.min(distToSeg(px-Pu,py,a,b),distToSeg(px,py,a,b),distToSeg(px+Pu,py,a,b)); }
 function distToSeg(px,py,a,b){
   const dx=b.x-a.x, dy=b.y-a.y; const l2=dx*dx+dy*dy; let t=l2? ((px-a.x)*dx+(py-a.y)*dy)/l2 : 0; t=clamp(t,0,1);
   return Math.hypot(px-(a.x+dx*t), py-(a.y+dy*t));
@@ -4885,7 +5210,7 @@ function distToSeg(px,py,a,b){
 function nearestVertex(sx,sy,maxPx,filter){
   const R = resolveState(currentStateId()); if(!R) return null;
   const S=MapView.scale, u=screenToUnit(sx,sy), thr=maxPx/S; let best=null, bd=thr;
-  const test=(coll,id,pts,ri)=>{ for(let i=0;i<pts.length;i++){ const d=Math.hypot(pts[i].x-u.x,pts[i].y-u.y); if(d<bd){ bd=d; best={x:pts[i].x,y:pts[i].y,coll,id,idx:i,ri}; } } };
+  const Pu_=W().extentW; const test=(coll,id,pts,ri)=>{ for(let i=0;i<pts.length;i++){ const d=Math.hypot(wrapDelta(u.x,pts[i].x,Pu_),pts[i].y-u.y); if(d<bd){ bd=d; best={x:pts[i].x,y:pts[i].y,coll,id,idx:i,ri}; } } };
   R.admin.forEach(g=>{ if(filter&&filter.coll&&filter.coll!=='admin') return; g.rings.forEach((r,ri)=>test('admin',g.id,r,ri)); });
   R.lines.forEach(l=>{ if(filter&&filter.coll&&filter.coll!=='lines') return; test('lines',l.id,l.points,0); });
   return best;
@@ -4893,19 +5218,20 @@ function nearestVertex(sx,sy,maxPx,filter){
 function nearestSegment(sx,sy,maxPx){
   const R = resolveState(currentStateId()); if(!R) return null;
   const S=MapView.scale, u=screenToUnit(sx,sy); let best=null, bd=maxPx/S;
-  R.admin.forEach(g=>g.rings.forEach((r,ri)=>{ for(let i=0;i<r.length;i++){ const d=distToSeg(u.x,u.y,r[i],r[(i+1)%r.length]); if(d<bd){ bd=d; best={coll:'admin',id:g.id,ri,idx:i,d}; } } }));
-  R.lines.forEach(l=>{ for(let i=0;i<l.points.length-1;i++){ const d=distToSeg(u.x,u.y,l.points[i],l.points[i+1]); if(d<bd){ bd=d; best={coll:'lines',id:l.id,ri:0,idx:i,d}; } } });
+  R.admin.forEach(g=>g.rings.forEach((r,ri)=>{ for(let i=0;i<r.length;i++){ const d=distToSegW(u.x,u.y,r[i],r[(i+1)%r.length]); if(d<bd){ bd=d; best={coll:'admin',id:g.id,ri,idx:i,d}; } } }));
+  R.lines.forEach(l=>{ for(let i=0;i<l.points.length-1;i++){ const d=distToSegW(u.x,u.y,l.points[i],l.points[i+1]); if(d<bd){ bd=d; best={coll:'lines',id:l.id,ri:0,idx:i,d}; } } });
   return best;
 }
 /* カーソル位置を頂点に吸着 / Shift で45度単位に拘束 */
 function snapPoint(sx,sy,e){
   const u = screenToUnit(sx,sy); const out={x:u.x,y:u.y,snapped:false};
   const d = MapView.draft;
+  if(wrapOn() && d && d.pts.length){ out.x=wrapNear(out.x,d.pts[d.pts.length-1].x,W().extentW); }   /* v53 */
   if(e && e.shiftKey && d && d.pts.length){ const l=d.pts[d.pts.length-1]; const dx=u.x-l.x, dy=u.y-l.y; const len=Math.hypot(dx,dy); const ang=Math.round(Math.atan2(dy,dx)/(Math.PI/4))*(Math.PI/4); out.x=l.x+Math.cos(ang)*len; out.y=l.y+Math.sin(ang)*len; return out; }
   if(MapView.lineOpt.snap && !(e&&e.altKey)){
     const v = nearestVertex(sx,sy,10);
-    if(v){ out.x=v.x; out.y=v.y; out.snapped=true; out.ref=v; }
-    else if(d && d.pts.length>=3 && d.tool==='admin'){ const f=unitToScreen(d.pts[0].x,d.pts[0].y); if(Math.hypot(f.x-sx,f.y-sy)<12){ out.x=d.pts[0].x; out.y=d.pts[0].y; out.snapped=true; out.closing=true; } }
+    if(v){ out.x=(wrapOn()&&d&&d.pts.length)?wrapNear(v.x,d.pts[d.pts.length-1].x,W().extentW):v.x; out.y=v.y; out.snapped=true; out.ref=v; }
+    else if(d && d.pts.length>=3 && d.tool==='admin'){ const f=unitToScreen(d.pts[0].x+(wrapOn()?wrapDelta(u.x,d.pts[0].x,W().extentW)-(d.pts[0].x-u.x):0),d.pts[0].y); if(Math.hypot(f.x-sx,f.y-sy)<12){ out.x=d.pts[0].x; out.y=d.pts[0].y; out.snapped=true; out.closing=true; } }
   }
   return out;
 }
@@ -4915,24 +5241,24 @@ function hitTestMap(sx,sy){
   for(const c of w.cities){
     const nat=c.nationId?nationById(c.nationId):null; if(nat&&!nationIsActive(nat,year)) continue;
     const f=c.founded===''||c.founded===undefined?-Infinity:Number(c.founded), e=c.ended===''||c.ended===undefined?Infinity:Number(c.ended); if(year<f||year>e) continue;
-    const p=unitToScreen(c.x,c.y); if(Math.hypot(p.x-sx,p.y-sy)<10) return {type:'city',id:c.id};
+    if(wrapShifts().some(k=>{ const p=unitToScreen(c.x+k*w.extentW,c.y); return Math.hypot(p.x-sx,p.y-sy)<10; })) return {type:'city',id:c.id};
   }
   let best=null, bd=7/S;
-  R.lines.forEach(l=>{ if(!MapView.activeLayers[l.kind]) return; for(let i=0;i<l.points.length-1;i++){ const d=distToSeg(u.x,u.y,l.points[i],l.points[i+1]); if(d<bd){ bd=d; best={type:'line',id:l.id}; } } });
+  R.lines.forEach(l=>{ if(!MapView.activeLayers[l.kind]) return; for(let i=0;i<l.points.length-1;i++){ const d=distToSegW(u.x,u.y,l.points[i],l.points[i+1]); if(d<bd){ bd=d; best={type:'line',id:l.id}; } } });
   if(best) return best;
   const seg = nearestSegment(sx,sy,6); if(seg && seg.coll==='admin') return {type:'region',id:seg.id};
-  const px=Math.floor(screenToPx(sx,sy).x), py=Math.floor(screenToPx(sx,sy).y);
+  const px=foldPx(Math.floor(screenToPx(sx,sy).x),w), py=Math.floor(screenToPx(sx,sy).y);
   if(px>=0&&py>=0&&px<w.mapWidth&&py<w.mapHeight){
     const nrid=getPx(R,'nation',px,py); if(nrid){ const n=nationByRid(nrid); if(n&&nationIsActive(n,year)) return {type:'nation',id:n.id,px,py}; }
     let bestReg=null, bdepth=-1;
-    R.admin.forEach(g=>{ const reg=regionById(g.id); if(!reg) return; if(g.rings.some(r=>pointInRing(u.x,u.y,r))){ const d=regionDepth(reg); if(d>bdepth){ bdepth=d; bestReg=g.id; } } });
+    R.admin.forEach(g=>{ const reg=regionById(g.id); if(!reg) return; if(g.rings.some(r=>wrapShifts().some(k=>pointInRing(u.x+k*w.extentW,u.y,r)))){ const d=regionDepth(reg); if(d>bdepth){ bdepth=d; bestReg=g.id; } } });
     if(bestReg) return {type:'region',id:bestReg};
     return {type:'terrain',px,py};
   }
   return null;
 }
 function pixelInfoAt(px,py){
-  const w=W(); const R=resolveState(currentStateId()); if(px<0||py<0||px>=w.mapWidth||py>=w.mapHeight) return null;
+  const w=W(); const R=resolveState(currentStateId()); px=foldPx(px,w); if(px<0||py<0||px>=w.mapWidth||py>=w.mapHeight) return null;
   const tr=getPx(R,'terrain',px,py), el=getPx(R,'elev',px,py), nr=getPx(R,'nation',px,py);
   return {terrain: tr?terrainByRid(w,tr):null, elev:el, nation: nr?nationByRid(nr):null};
 }
@@ -5196,31 +5522,33 @@ function milPanelClick(e){
   }
 }
 
+/* v53: 画面に入る周期の複製の番号(つなげない世界では [0] だけ) */
+function wrapCopies(cw){ if(!wrapOn()) return [0]; const w=W(), S=MapView.scale, Pu=w.extentW; const a=Math.floor((-MapView.offX/S)/Pu), b=Math.max(a,Math.ceil(((cw-MapView.offX)/S)/Pu)-1); const o=[]; for(let c=a;c<=Math.min(b,a+40);c++) o.push(c); return o; }
 function renderOverlayBase(){
   const cv=document.getElementById('overlaycanvas'); const w=W(); if(!cv||!w) return;
   const ctx=cv.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height);
   const sid=currentStateId(); if(!sid) return; const R=resolveState(sid); const S=MapView.scale;
-  ctx.setTransform(S,0,0,S,MapView.offX,MapView.offY); ctx.lineJoin='round'; ctx.lineCap='round';
-  const sel=MapView.selection;
+  const sel=MapView.selection; const PuO=w.extentW; const tool=MapView.tool; const d=MapView.draft;
+  for(const ovK of wrapCopies(cv.width)){
+  ctx.setTransform(S,0,0,S,MapView.offX+ovK*PuO*S,MapView.offY); ctx.lineJoin='round'; ctx.lineCap='round';
+  
   if(sel){
     ctx.strokeStyle='#ff5a5a'; ctx.lineWidth=2.6/S;
     if(sel.type==='city'){ const c=cityById(sel.id); if(c){ ctx.beginPath(); ctx.arc(c.x,c.y,9/S,0,7); ctx.stroke(); } }
     else if(sel.type==='region'){ const g=R.admin.get(sel.id); if(g){ ctx.stroke(vecPath(g,'admin').path); } }
     else if(sel.type==='line'){ const l=R.lines.get(sel.id); if(l){ ctx.lineWidth=(LINE_KINDS[l.kind].width+3)/S; ctx.globalAlpha=.55; ctx.stroke(vecPath(l,'line').path); ctx.globalAlpha=1; } }
   }
-  const tool=MapView.tool;
   // 頂点ハンドル(頂点編集ツール)
   if(tool==='vertex'){
     const sq=4.5/S; ctx.fillStyle='#fff'; ctx.strokeStyle='#12161d'; ctx.lineWidth=1/S;
     const drawPts=(pts)=>pts.forEach(p=>{ ctx.beginPath(); ctx.rect(p.x-sq,p.y-sq,sq*2,sq*2); ctx.fill(); ctx.stroke(); });
-    const vx0=-MapView.offX/S, vy0=-MapView.offY/S, vx1=(cv.width-MapView.offX)/S, vy1=(cv.height-MapView.offY)/S;
+    const vx0=-MapView.offX/S-ovK*PuO, vy0=-MapView.offY/S, vx1=(cv.width-MapView.offX)/S-ovK*PuO, vy1=(cv.height-MapView.offY)/S;
     R.admin.forEach(g=>{ const bb=vecPath(g,'admin').bbox; if(bb[2]<vx0||bb[0]>vx1||bb[3]<vy0||bb[1]>vy1) return; g.rings.forEach(r=>drawPts(r)); });
     R.lines.forEach(l=>{ const bb=vecPath(l,'line').bbox; if(bb[2]<vx0||bb[0]>vx1||bb[3]<vy0||bb[1]>vy1) return; drawPts(l.points); });
     const hv = MapView.pointer && !MapView.drag ? nearestVertex(MapView.pointer.x,MapView.pointer.y,10):null;
     if(hv){ ctx.strokeStyle='#ffce54'; ctx.lineWidth=2/S; ctx.beginPath(); ctx.arc(hv.x,hv.y,8/S,0,7); ctx.stroke(); }
   }
   // 作図中の線: 確定済み頂点 + 現在位置までのリアルタイム線
-  const d=MapView.draft;
   if(d){
     const cur = MapView.cursorUnit;
     const isAdmin = d.tool==='admin'; const st = isAdmin? {color:'#ffd27a',width:2.2,dash:[]} : LINE_KINDS[d.kind];
@@ -5250,6 +5578,7 @@ function renderOverlayBase(){
       const drawPin=(p,fill)=>{ if(!p) return; ctx.fillStyle=fill; ctx.strokeStyle='#12161d'; ctx.lineWidth=1.4/S; ctx.beginPath(); ctx.arc(p.x,p.y,6/S,0,7); ctx.fill(); ctx.stroke(); };
       drawPin(RT.from,'#7dffb0'); drawPin(RT.to,'#ff9a4a');
     }
+  }
   }
   ctx.setTransform(1,0,0,1,0,0);
 
@@ -5346,7 +5675,13 @@ function eraseSpecs(){
 }
 function isLandAt(tt, idx){ const v=tt?tt[idx]:0; return v!==0 && !Pal.terrain.water[v]; }
 /* 1回のスタンプ(px座標の中心 cx,cy)。opacity/hardness は決定的ディザで表現する */
+/* v53: つなげる世界では、スタンプを周期(幅)で折り返す。端をまたぐスタンプは、両側へ1回ずつ押す(各回は従来どおり地図の内側だけに書く) */
 function stampAt(cx, cy, spec){
+  const w=W(); if(!wrapOn(w) || spec.layer==='sphere') return stampAtCore(cx,cy,spec);
+  const P=w.mapWidth; const r=Math.max(MapView.brush.size/2,0.71)+1; cx=((cx%P)+P)%P;
+  for(const m of [-1,0,1]){ const c2=cx+m*P; if(c2+r<0||c2-r>P) continue; stampAtCore(c2,cy,spec); }
+}
+function stampAtCore(cx, cy, spec){
   if(spec.layer==='sphere'){ diploEraseStamp(cx,cy); return; }
   const w=W(), sid=Stroke.cur.sid, R=resolveState(sid); const bf=brushCovFn(); const r=bf.r;
   if(MapView.brush.size<=1){ cx=Math.floor(cx)+0.5; cy=Math.floor(cy)+0.5; }
@@ -5384,6 +5719,7 @@ function stampAt(cx, cy, spec){
   MapView.dirtyBrush = true;
 }
 function strokeSegment(spec, ax,ay,bx,by){
+  if(wrapOn()){ const Pp=W().mapWidth; bx=ax+wrapDelta(ax,bx,Pp,true); }   /* v53: 直前の点に最も近い周期の複製へ寄せる(パンで座標が周期分ずれても、線が地図を横切らない) */
   const step=Math.max(1, MapView.brush.size*0.18); const dist=Math.hypot(bx-ax,by-ay); const n=Math.max(1,Math.ceil(dist/step));
   for(let i=1;i<=n;i++){ const t=i/n; const x=ax+(bx-ax)*t, y=ay+(by-ay)*t; for(const s of (Array.isArray(spec)?spec:[spec])) stampAt(x,y,s); }
 }
@@ -5407,6 +5743,7 @@ let _fillCancel=false;
 async function floodFill(sx0, sy0, specIn){
   const w=W(); const spec=specIn||paintSpecFor(MapView.lastBrushTool);
   if(!spec){ return; }
+  if(wrapOn(w)) sx0=foldPx(Math.floor(sx0),w);
   if(sx0<0||sy0<0||sx0>=w.mapWidth||sy0>=w.mapHeight) return;
   if(!Stroke.begin('塗りつぶし')) return;
   const sid=Stroke.cur.sid, R=resolveState(sid); updatePalettes(w,w.currentYear);
@@ -5421,7 +5758,9 @@ async function floodFill(sx0, sy0, specIn){
   let mk=-1, mm=null; const barred=(x,y)=>{ if(!masks) return false; const k=tkey(x>>8,y>>8); if(k!==mk){ mk=k; mm=masks.get(k)||null; } return mm? mm[((y&255)<<8)|(x&255)]===1 : false; };
   const MW=w.mapWidth, MH=w.mapHeight; const rdRef=rd[refLayer];
   const vsel=MapView.valueSelection, vselRead=vsel?pxReader(R,vsel.layer):null;
+  const WR=wrapOn(w); const fx=(x)=>{ x%=MW; return x<0?x+MW:x; };   /* v53: 横は周期で折り返して広げる */
   const ok=(x,y)=>{
+    if(WR) x=fx(x);
     if(x<0||y<0||x>=MW||y>=MH) return false;
     if(!sim(rdRef(x,y))) return false;
     if(bar.nation && refLayer!=='nation' && rd.nation(x,y)!==seedNation) return false;
@@ -5437,12 +5776,13 @@ async function floodFill(sx0, sy0, specIn){
   // キャッシュしたまま、後からsetVisがそのタイルのビットマップを作成しても気づけず、
   // isVisが永遠にfalseを返し続けて(=訪問済み判定が効かず)同じマス目を無限に再探索し、
   // 塗りつぶしが完了しなくなる(特に地図全体が1タイル(256×256)に収まる小さなマップで顕在化する)。
-  const isVis=(x,y)=>{ const k=tkey(x>>8,y>>8); if(k!==vk || !vt){ vk=k; vt=vis.get(k)||null; } if(!vt) return false; const i=((y&255)<<8)|(x&255); return (vt[i>>5]>>>(i&31))&1; };
-  const setVis=(x,y)=>{ const k=tkey(x>>8,y>>8); let t=vis.get(k); if(!t){ t=new Uint32Array(TS2>>5); vis.set(k,t); } const i=((y&255)<<8)|(x&255); t[i>>5]|=(1<<(i&31)); };
-  const writeSpan=(xl,xr,y)=>{
+  const isVis=(x,y)=>{ if(WR) x=fx(x); const k=tkey(x>>8,y>>8); if(k!==vk || !vt){ vk=k; vt=vis.get(k)||null; } if(!vt) return false; const i=((y&255)<<8)|(x&255); return (vt[i>>5]>>>(i&31))&1; };
+  const setVis=(x,y)=>{ if(WR) x=fx(x); const k=tkey(x>>8,y>>8); let t=vis.get(k); if(!t){ t=new Uint32Array(TS2>>5); vis.set(k,t); } const i=((y&255)<<8)|(x&255); t[i>>5]|=(1<<(i&31)); };
+  const writeSpan0=(xl,xr,y)=>{
     for(let tx=xl>>8; tx<=(xr>>8); tx++){ const key=tkey(tx,y>>8); const t=Stroke.tile(spec.layer,key,true); const a=Math.max(xl,tx*TS)-tx*TS, b=Math.min(xr,tx*TS+TS-1)-tx*TS; const o=((y&255)<<8);
       if(spec.protect){ for(let i=a;i<=b;i++){ const old=t[o+i]; if(old===0||old===target) t[o+i]=target; } } else t.fill(target,o+a,o+b+1); }
   };
+  const writeSpan=(xl,xr,y)=>{ if(!WR){ writeSpan0(xl,xr,y); return; } let a=xl; while(a<=xr){ const fa=fx(a); const len=Math.min(xr-a+1, MW-fa); writeSpan0(fa,fa+len-1,y); a+=len; } };
   MapView.busy=true; _fillCancel=false; const prog=showProgress('塗りつぶし中… (Escで中断)');
   let count=0, iter=0, last=performance.now();
   const stack=[[sx0,sy0]];
@@ -5450,8 +5790,8 @@ async function floodFill(sx0, sy0, specIn){
     while(stack.length){
       const [x,y]=stack.pop();
       if(isVis(x,y) || !ok(x,y)) continue;
-      let xl=x; while(xl-1>=0 && !isVis(xl-1,y) && ok(xl-1,y)) xl--;
-      let xr=x; while(xr+1<MW && !isVis(xr+1,y) && ok(xr+1,y)) xr++;
+      let xl=x; while((WR||xl-1>=0) && !isVis(xl-1,y) && ok(xl-1,y) && (!WR||x-xl+1<MW)) xl--;
+      let xr=x; while((WR||xr+1<MW) && !isVis(xr+1,y) && ok(xr+1,y) && (!WR||xr-xl+1<MW)) xr++;
       for(let i=xl;i<=xr;i++) setVis(i,y);
       writeSpan(xl,xr,y); count+=xr-xl+1;
       for(let dy=-1;dy<=1;dy+=2){ const ny=y+dy; if(ny<0||ny>=MH) continue; let inS=false;
@@ -5556,10 +5896,13 @@ function showProgress(text){
 }
 
 /* ---------- 範囲選択 / コピー / 貼り付け ---------- */
+/* v53: つなげる世界の範囲は、幅が周期以下で、x0 は [0,周期)。端をまたぐときは x1 が周期以上になる */
+function rectWrapNorm(r){ const w=W(); if(!wrapOn(w)) return r; const P=w.mapWidth; if(r.x1-r.x0+1>P) r.x1=r.x0+P-1; const k=Math.floor(r.x0/P); r.x0-=k*P; r.x1-=k*P; return r; }
 function normRect(a,b){ return {x0:Math.min(a.x,b.x), y0:Math.min(a.y,b.y), x1:Math.max(a.x,b.x), y1:Math.max(a.y,b.y)}; }
 function copyRect(cut){
   const rs=MapView.rectSel, w=W(); if(!rs){ toast('先に「範囲選択」で範囲を選んでください','err'); return; }
-  const x0=clamp(rs.x0,0,w.mapWidth-1), y0=clamp(rs.y0,0,w.mapHeight-1), x1=clamp(rs.x1,0,w.mapWidth-1), y1=clamp(rs.y1,0,w.mapHeight-1);
+  const WRc=wrapOn(w);
+  const x0=WRc?Math.max(0,rs.x0):clamp(rs.x0,0,w.mapWidth-1), y0=clamp(rs.y0,0,w.mapHeight-1), x1=WRc?Math.min(rs.x1,Math.max(0,rs.x0)+w.mapWidth-1):clamp(rs.x1,0,w.mapWidth-1), y1=clamp(rs.y1,0,w.mapHeight-1);
   const cw=x1-x0+1, ch=y1-y0+1; if(cw*ch>16e6){ toast('コピーできる範囲は約1600万pxまでです','err'); return; }
   const R=resolveState(currentStateId()); const clip={w:cw,h:ch,layers:{}}; updatePalettes(w,w.currentYear);
   LAYER_IDS.forEach(l=>{ if(!MapView.copyLayers[l]) return; const rd=pxReader(R,l); const arr=new LAYER_DEF[l].ctor(cw*ch); let any=false;
@@ -5576,9 +5919,10 @@ function copyRect(cut){
   if(cut){
     if(!Stroke.begin('切り取り')) return;
     const specs=LAYER_IDS.filter(l=>MapView.copyLayers[l]);
+    const segs=(WRc&&x1>=w.mapWidth)?[[x0,w.mapWidth-1],[0,x1-w.mapWidth]]:[[x0,x1]];   /* v53: 端をまたぐ範囲は、両側の端へ分けて消す */
     specs.forEach(l=>{ const sid=Stroke.cur.sid; const Rr=resolveState(sid);
-      for(let ty=y0>>8;ty<=(y1>>8);ty++) for(let tx=x0>>8;tx<=(x1>>8);tx++){ const key=tkey(tx,ty); if(!Rr.layers[l].get(key)) continue; const t=Stroke.tile(l,key,false); if(!t) continue;
-        const a=Math.max(x0,tx*TS)-tx*TS,b=Math.min(x1,tx*TS+TS-1)-tx*TS,c=Math.max(y0,ty*TS)-ty*TS,d=Math.min(y1,ty*TS+TS-1)-ty*TS;
+      for(const [sx0,sx1] of segs) for(let ty=y0>>8;ty<=(y1>>8);ty++) for(let tx=sx0>>8;tx<=(sx1>>8);tx++){ const key=tkey(tx,ty); if(!Rr.layers[l].get(key)) continue; const t=Stroke.tile(l,key,false); if(!t) continue;
+        const a=Math.max(sx0,tx*TS)-tx*TS,b=Math.min(sx1,tx*TS+TS-1)-tx*TS,c=Math.max(y0,ty*TS)-ty*TS,d=Math.min(y1,ty*TS+TS-1)-ty*TS;
         for(let y=c;y<=d;y++) t.fill(0,(y<<8)+a,(y<<8)+b+1); Bake.dropArr(l,t); if(l==='elev'){ const tr=Rr.layers.terrain.get(key); if(tr) Bake.terrain.delete(tr); } } });
     Stroke.end(); renderMap();
   }
@@ -5591,7 +5935,7 @@ function pasteClip(px0,py0){
   const skip=MapView.pasteOpts.skipZero;
   Object.keys(c.layers).forEach(l=>{ if(!MapView.pasteOpts.layers[l]) return; const src=c.layers[l];
     for(let y=0;y<c.h;y++){ const gy=py0+y; if(gy<0||gy>=w.mapHeight) continue;
-      for(let x=0;x<c.w;x++){ const gx=px0+x; if(gx<0||gx>=w.mapWidth) continue; const v=src[y*c.w+x]; if(!v&&skip) continue;
+      for(let x=0;x<c.w;x++){ let gx=px0+x; if(wrapOn(w)) gx=foldPx(gx,w); if(gx<0||gx>=w.mapWidth) continue; const v=src[y*c.w+x]; if(!v&&skip) continue;
         const key=tkey(gx>>8,gy>>8); const t=Stroke.tile(l,key,true); t[((gy&255)<<8)|(gx&255)]=v; } }
     LAYER_DEF[l]; });
   const R=resolveState(Stroke.cur.sid);
@@ -6048,8 +6392,26 @@ async function heavyOp(label, asyncFn){
   return true;
 }
 /* dirs: {left,right,top,bottom} 追加するpx数 */
+/* v53: 周期(幅)が変わる操作の確認。つなげる設定が「いいえ」の世界では何も出さず、従来どおり進む。
+   戻り値は Promise<boolean>。端をまたぐ線・区画の件数を、影響として示す */
+function wrapCrossCount(){
+  const w=W(), P=w.extentW; let n=0;
+  w.mapStates.forEach(s=>{ const f=(pts)=>{ if(!pts||!pts.length) return; let a=Infinity,b=-Infinity; pts.forEach(p=>{ if(p.x<a)a=p.x; if(p.x>b)b=p.x; }); if(b>=P||a<0) n++; };
+    Object.values(s.vec.add.admin).forEach(g=>g.rings.forEach(f)); Object.values(s.vec.add.lines).forEach(l=>f(l.points)); });
+  return n;
+}
+function wrapResizeConfirm(oldW,newW,how){
+  if(!wrapOn()||oldW===newW) return Promise.resolve(true);
+  const n=wrapCrossCount();
+  const msg=`この地図は「左右の端をつなげる」設定です。幅が ${oldW}px → ${newW}px に変わると、1周期の長さ(つながる位置)が変わります。\n`+
+    `・${how}。内容は、左端からの距離が同じ位置に残ります。\n・新しい右端と左端がつながるため、これまで端をまたいでいた地形・国境・線は、新しい端では同じようにはつながりません(端をまたぐ線・区画: ${n}件)。\n・上下の寸法には影響しません。`;
+  return new Promise(res=>{ openModal('周期(幅)が変わります', `<p id="wrapResizeMsg" style="white-space:pre-wrap">${esc(msg)}</p>`, [
+    {label:'キャンセル', onClick:()=>{ closeModal(); res(false); }},
+    {label:'続ける', cls:'danger', onClick:()=>{ closeModal(); res(true); }}]); });
+}
 async function expandCanvas(dirs){
-  const w=W(); const oldW=w.mapWidth, oldH=w.mapHeight; const L=dirs.left||0,Rr=dirs.right||0,T=dirs.top||0,B=dirs.bottom||0;
+  const w=W(); const oldW=w.mapWidth, oldH=w.mapHeight; let L=dirs.left||0,Rr=dirs.right||0; const T=dirs.top||0,B=dirs.bottom||0;
+  if(wrapOn(w)&&(L||Rr)){ Rr+=L; L=0; if(!(await wrapResizeConfirm(oldW,oldW+Rr,'左側への拡張も、右側に加えます(左端からの距離を変えないため)'))) return false; }
   const newW=oldW+L+Rr, newH=oldH+T+B;
   if(newW>MAP_MAX_SIDE||newH>MAP_MAX_SIDE||newW*newH>MAP_PX_HARD_CAP){ toast('上限(16384×16384 / 1辺32768px)を超えるため拡張できません','err'); return false; }
   return heavyOp(`キャンバスを拡張 ${oldW}×${oldH} → ${newW}×${newH}`, async(prog)=>{
@@ -6063,6 +6425,7 @@ async function expandCanvas(dirs){
 }
 async function changeResolution(newW,newH){
   const w=W(); const oldW=w.mapWidth, oldH=w.mapHeight;
+  if(wrapOn(w)&&newW!==oldW&&!(await wrapResizeConfirm(oldW,newW,'解像度の変更は、地図全体を縮尺して幅を変えます'))) return false;
   if(newW<16||newH<16||newW>MAP_MAX_SIDE||newH>MAP_MAX_SIDE||newW*newH>MAP_PX_HARD_CAP){ toast('解像度が範囲外です(16px〜、最大16384×16384)','err'); return false; }
   return heavyOp(`解像度を変更 ${oldW}×${oldH} → ${newW}×${newH}`, async(prog)=>{
     await remapAllStates(newW,newH,scaleMapper(oldW,oldH,newW,newH),n=>prog.set(`解像度を変更中… ${n}`));
@@ -8097,6 +8460,7 @@ function finishDraft(){
   let pts=d.pts.slice();
   while(pts.length>=2 && unitDist(pts[pts.length-1],pts[pts.length-2])*MapView.scale<3) pts.pop();
   if(d.tool==='admin' && pts.length>=2 && unitDist(pts[0],pts[pts.length-1])*MapView.scale<12) pts.pop();
+  pts=wrapNormPts(pts);   /* v53: 保存は、最初の点が周期の範囲に入る形(端をまたぐ部分は周期の外の座標のまま。連続性を保つ) */
   if(d.tool==='admin'){
     if(pts.length<3){ toast('行政区画には3点以上が必要です','err'); return; }
     MapView.draft=null; toggleDraftButtons();
@@ -8126,7 +8490,7 @@ function fmtDuration(hours){
 /* 地形/道路/鉄道/河川を粗いグリッドにラスタライズ(経路探索専用・キャッシュ有効=Store.revが変わるまで再利用) */
 function buildRouteGrid(sid){
   const geoSig = geoCalcMode()==='projection' ? ('proj:'+JSON.stringify(W().geoCalc.projection)) : 'pixel:'+(W().kmPerUnit||1);
-  const cacheKey = sid+':'+Store.rev+':'+geoSig;
+  const cacheKey = sid+':'+Store.rev+':'+geoSig+(wrapOn()?':W':'');
   if(MapView._routeGridCache && MapView._routeGridCache.key===cacheKey) return MapView._routeGridCache.data;
   const w=W(), R=resolveState(sid), P=ppu();
   /* グリッド解像度。以前は最大でも220×220程度だったため、1マスが実際の地図ではかなりの距離に
@@ -8172,7 +8536,14 @@ function buildRouteGrid(sid){
   R.lines.forEach(l=>{
     const mask = l.kind==='road'?roadM : l.kind==='rail'?railM : l.kind==='river'?riverM : null;
     if(!mask||!l.points||l.points.length<2) return;
-    for(let i=0;i<l.points.length-1;i++){ const a=l.points[i], b=l.points[i+1]; markSeg(mask, a.x*P.x,a.y*P.y, b.x*P.x,b.y*P.y); }
+    for(let i=0;i<l.points.length-1;i++){ const a=l.points[i], b=l.points[i+1];
+      if(!wrapOn(w)){ markSeg(mask, a.x*P.x,a.y*P.y, b.x*P.x,b.y*P.y); continue; }
+      /* v53: 周期の境界で線分を分け、それぞれを [0,周期) に折りたたんで印を付ける */
+      const Pw=w.mapWidth, ax=a.x*P.x, ay=a.y*P.y, bx=b.x*P.x, by=b.y*P.y; const k0=Math.floor(Math.min(ax,bx)/Pw), k1=Math.floor(Math.max(ax,bx)/Pw);
+      for(let k=k0;k<=k1;k++){ const xl=k*Pw, xr=(k+1)*Pw; const t0=(bx===ax)?0:Math.max(0,Math.min(1,((bx>ax?xl:xr)-ax)/(bx-ax))), t1=(bx===ax)?1:Math.max(0,Math.min(1,((bx>ax?xr:xl)-ax)/(bx-ax)));
+        if(bx!==ax && t1<=t0 && k0!==k1) continue; const sx0=ax+(bx-ax)*t0-xl, sx1=ax+(bx-ax)*t1-xl, sy0=ay+(by-ay)*t0, sy1=ay+(by-ay)*t1;
+        markSeg(mask, Math.min(Pw-1e-6,Math.max(0,sx0)),sy0, Math.min(Pw-1e-6,Math.max(0,sx1)),sy1); }
+    }
   });
   /* 1セル分だけ膨張させ、隣接セル同士が確実に「道路/鉄道でつながっている」と判定されるようにする
      (グリッドが粗い大陸規模の地図でも、細い線1本のせいで経路探索上だけ道路/鉄道が途切れて認識され
@@ -8182,7 +8553,8 @@ function buildRouteGrid(sid){
     for(let gy=0;gy<rows;gy++) for(let gx=0;gx<cols;gx++){
       const idx=gy*cols+gx; if(!mask[idx]) continue;
       out[idx]=1;
-      if(gx>0) out[idx-1]=1; if(gx<cols-1) out[idx+1]=1;
+      if(gx>0) out[idx-1]=1; else if(wrapOn(w)) out[idx+cols-1]=1;
+      if(gx<cols-1) out[idx+1]=1; else if(wrapOn(w)) out[idx-cols+1]=1;
       if(gy>0) out[idx-cols]=1; if(gy<rows-1) out[idx+cols]=1;
     }
     return out;
@@ -8257,7 +8629,7 @@ function routeEdgeSpeed(mode, grid, ia, ib){
 }
 /* 指定した地図単位座標の近くで、その移動手段が使えるグリッドセルを探す(螺旋探索) */
 function findGridNode(grid, unitPt, mode, maxRadius){
-  const P=ppu(), px=unitPt.x*P.x, py=unitPt.y*P.y;
+  const P=ppu(), px=foldPx(unitPt.x*P.x), py=unitPt.y*P.y;
   const gx0=clamp(Math.floor(px/grid.cellW),0,grid.cols-1), gy0=clamp(Math.floor(py/grid.cellH),0,grid.rows-1);
   const CATS=grid.CATS;
   const passable=(idx)=>{ const c=CATS[grid.cat[idx]];
@@ -8268,7 +8640,7 @@ function findGridNode(grid, unitPt, mode, maxRadius){
     let best=null, bestD=Infinity;
     for(let dy=-r;dy<=r;dy++) for(let dx=-r;dx<=r;dx++){
       if(Math.max(Math.abs(dx),Math.abs(dy))!==r) continue;
-      const nx=gx0+dx, ny=gy0+dy; if(nx<0||ny<0||nx>=grid.cols||ny>=grid.rows) continue;
+      let nx=gx0+dx; const ny=gy0+dy; if(ny<0||ny>=grid.rows) continue; if(wrapOn()) nx=((nx%grid.cols)+grid.cols)%grid.cols; else if(nx<0||nx>=grid.cols) continue;
       const idx=ny*grid.cols+nx; if(!passable(idx)) continue;
       const d=Math.hypot(dx,dy); if(d<bestD){ bestD=d; best={idx}; }
     }
@@ -8309,7 +8681,7 @@ function astarRoute(grid, mode, startNode, goalNode){
   const came=new Int32Array(n).fill(-1);
   const closed=new Uint8Array(n);
   const gxg=goal%cols, gyg=(goal/cols)|0;
-  const heur=(idx)=>{ const gx=idx%cols, gy=(idx/cols)|0; return Math.hypot((gx-gxg)*grid.cellKmX,(gy-gyg)*grid.cellKmY)/maxSpeed; };
+  const WXr=wrapOn(); const heur=(idx)=>{ const gx=idx%cols, gy=(idx/cols)|0; let ddx=Math.abs(gx-gxg); if(WXr&&cols-ddx<ddx) ddx=cols-ddx; return Math.hypot(ddx*grid.cellKmX,(gy-gyg)*grid.cellKmY)/maxSpeed; };
   const heap=[];
   const push=(idx,f)=>{ heap.push([f,idx]); let i=heap.length-1; while(i>0){ const p=(i-1)>>1; if(heap[p][0]<=heap[i][0]) break; const t=heap[p]; heap[p]=heap[i]; heap[i]=t; i=p; } };
   const pop=()=>{ const top=heap[0], last=heap.pop(); if(heap.length){ heap[0]=last; let i=0; for(;;){ let l=i*2+1,r=i*2+2,s=i; if(l<heap.length&&heap[l][0]<heap[s][0]) s=l; if(r<heap.length&&heap[r][0]<heap[s][0]) s=r; if(s===i) break; const t=heap[s]; heap[s]=heap[i]; heap[i]=t; i=s; } } return top; };
@@ -8333,7 +8705,7 @@ function astarRoute(grid, mode, startNode, goalNode){
     closed[cur]=1;
     const cx=cur%cols, cy=(cur/cols)|0;
     for(const nb2 of NB){
-      const nx=cx+nb2[0], ny=cy+nb2[1]; if(nx<0||ny<0||nx>=cols||ny>=grid.rows) continue;
+      let nx=cx+nb2[0]; const ny=cy+nb2[1]; if(ny<0||ny>=grid.rows) continue; if(WXr) nx=(nx+cols)%cols; else if(nx<0||nx>=cols) continue;
       const nb=ny*cols+nx; if(closed[nb]) continue;
       const edge=routeEdgeSpeed(mode,grid,cur,nb); if(!edge.ok) continue;
       const distKm=grid.cellKmXArr ? Math.hypot(nb2[0]*grid.cellKmXArr[cur], nb2[1]*grid.cellKmYArr[cur]) : Math.hypot(nb2[0]*grid.cellKmX, nb2[1]*grid.cellKmY);
@@ -8406,6 +8778,7 @@ function computeRoute(){
           const P=ppu();
           const pathUnit=res.path.map(idx=>{ const gx=idx%grid.cols, gy=(idx/grid.cols)|0; return {x:((gx+0.5)*grid.cellW)/P.x, y:((gy+0.5)*grid.cellH)/P.y}; });
           if(pathUnit.length) { pathUnit[0]=Object.assign({},RT.from); pathUnit[pathUnit.length-1]=Object.assign({},RT.to); }
+          if(wrapOn()&&pathUnit.length>1){ const Pu=W().extentW; for(let i=1;i<pathUnit.length-1;i++) pathUnit[i].x=pathUnit[i-1].x+wrapDelta(pathUnit[i-1].x,pathUnit[i].x,Pu,true); pathUnit[pathUnit.length-1].x=wrapNear(RT.to.x,pathUnit[pathUnit.length-2].x,Pu); }   /* v53: 端をまたぐ道のりを、とぎれない座標にそろえる */
           // km・時間は簡略化前の詳細な経路(実際に辿るマス目)から計算する(=表示の簡略化は見た目だけの処理)
           const km=pathDistGeoUnit(pathUnit);
           const tol=Math.max(grid.cellW/P.x, grid.cellH/P.y)*0.8;
@@ -8430,6 +8803,7 @@ function beginVertexDrag(v){
   pushMetaUndo('頂点を移動(境界線)');
   const refs=vertexRefsShared(v); const objs=new Map();
   refs.forEach(r=>{ let o=objs.get(r.coll+r.id); if(!o){ o=vecOwned(r.coll,r.id); objs.set(r.coll+r.id,o); } r.obj=o; r.pt = r.coll==='admin'? o.rings[r.ri][r.idx] : o.points[r.idx]; });
+  refs.forEach(r=>{ r.x0=r.pt.x; });
   MapView.drag={type:'vertex', refs, objs};
 }
 function insertVertexAt(seg, sx, sy){
@@ -8602,7 +8976,8 @@ function wireMapCanvas(){
     }
     if(tool==='fill'){ if(e.altKey){ pickAt(px,py); return; } if(MapView.fill.mode==='select'){ selectSameValueAt(px,py); return; } floodFill(px,py); return; }
     if(tool==='pick'){ pickAt(px,py); setTool(MapView.lastBrushTool); return; }
-    if(tool==='rect'){ MapView.drag={type:'rect', start:{x:clamp(px,0,w.mapWidth-1), y:clamp(py,0,w.mapHeight-1)}}; MapView.rectSel={x0:px,y0:py,x1:px,y1:py}; return; }
+    if(tool==='rect'){ if(wrapOn(w)){ MapView.drag={type:'rect', start:{x:px, y:clamp(py,0,w.mapHeight-1)}}; MapView.rectSel=rectWrapNorm({x0:px,y0:clamp(py,0,w.mapHeight-1),x1:px,y1:clamp(py,0,w.mapHeight-1)}); return; }
+      MapView.drag={type:'rect', start:{x:clamp(px,0,w.mapWidth-1), y:clamp(py,0,w.mapHeight-1)}}; MapView.rectSel={x0:px,y0:py,x1:px,y1:py}; return; }
     if(tool==='paste'){ if(MapView.pasteAt) pasteClip(MapView.pasteAt.x, MapView.pasteAt.y); return; }
     if(LINE_TOOLS.includes(tool) || tool==='admin'){
       const sp=snapPoint(p.x,p.y,e); MapView.cursorUnit=sp;
@@ -8628,21 +9003,21 @@ function wireMapCanvas(){
     const u=screenToUnit(p.x,p.y);
     if(tool==='route'){
       const RT=MapView.route;
-      if(!RT.from || RT.to){ RT.from={x:round2(u.x),y:round2(u.y)}; RT.to=null; RT.path=null; RT.result=null; RT.error=null; }
-      else { RT.to={x:round2(u.x),y:round2(u.y)}; computeRoute(); }
+      if(!RT.from || RT.to){ RT.from={x:round2(foldU(u.x,w)),y:round2(u.y)}; RT.to=null; RT.path=null; RT.result=null; RT.error=null; }
+      else { RT.to={x:round2(foldU(u.x,w)),y:round2(u.y)}; computeRoute(); }
       renderMapLayerPanel(); renderOverlayOnly();
       return;
     }
-    if(tool==='city-place'){ if(px<0||py<0||px>=w.mapWidth||py>=w.mapHeight) return; openCityModal(null,{x:round2(u.x),y:round2(u.y)}); return; }
-    if(tool==='event-place'){ openEventModal(null,{x:round2(u.x),y:round2(u.y)}); return; }
+    if(tool==='city-place'){ const pxf=foldPx(px,w); if(pxf<0||py<0||pxf>=w.mapWidth||py>=w.mapHeight) return; openCityModal(null,{x:round2(foldU(u.x,w)),y:round2(u.y)}); return; }
+    if(tool==='event-place'){ openEventModal(null,{x:round2(foldU(u.x,w)),y:round2(u.y)}); return; }
     if(tool==='label'){
       const text=prompt('ラベルの文字を入力してください'); if(!text) return;
-      const layer=w.customLayers.find(l=>l.id==='labels'); mutate('ラベルを配置: '+text, ()=>{ layer.points.push({x:round2(u.x),y:round2(u.y),label:text}); }); renderMap(); return;
+      const layer=w.customLayers.find(l=>l.id==='labels'); mutate('ラベルを配置: '+text, ()=>{ layer.points.push({x:round2(foldU(u.x,w)),y:round2(u.y),label:text}); }); renderMap(); return;
     }
     if(tool==='custom-point'){
       if(!MapView.activeCustomLayerId){ toast('左のパネルでカスタムレイヤーを選択してください','err'); return; }
       const text=prompt('ラベル(任意)')||''; const layer=w.customLayers.find(l=>l.id===MapView.activeCustomLayerId);
-      mutate('カスタム点を配置', ()=>{ layer.points.push({x:round2(u.x),y:round2(u.y),label:text}); }); renderMap(); return;
+      mutate('カスタム点を配置', ()=>{ layer.points.push({x:round2(foldU(u.x,w)),y:round2(u.y),label:text}); }); renderMap(); return;
     }
     if(tool==='refimg'){
       const selR = MapView.selectedRefImageId ? refImageById(MapView.selectedRefImageId) : null;
@@ -8678,10 +9053,10 @@ function wireMapCanvas(){
         for(const ev of evs){ const q=posOf(ev); const P=screenToPx(q.x,q.y); strokeSegment(d.spec,d.last.x,d.last.y,P.x,P.y); d.last={x:P.x,y:P.y}; }
         renderMap();
       } else if(d.type==='rect'){
-        const P=screenToPx(p.x,p.y); const w=W(); const r=normRect(d.start,{x:clamp(Math.floor(P.x),0,w.mapWidth-1),y:clamp(Math.floor(P.y),0,w.mapHeight-1)}); MapView.rectSel=r; renderOverlayOnly();
+        const P=screenToPx(p.x,p.y); const w=W(); const r=wrapOn(w) ? rectWrapNorm(normRect(d.start,{x:Math.floor(P.x),y:clamp(Math.floor(P.y),0,w.mapHeight-1)})) : normRect(d.start,{x:clamp(Math.floor(P.x),0,w.mapWidth-1),y:clamp(Math.floor(P.y),0,w.mapHeight-1)}); MapView.rectSel=r; renderOverlayOnly();
       } else if(d.type==='vertex'){
         const u=screenToUnit(p.x,p.y); const t=snapForDrag(p,e);
-        d.refs.forEach(r=>{ r.pt.x=round2(t.x); r.pt.y=round2(t.y); });
+        d.refs.forEach(r=>{ r.pt.x=round2(wrapOn()?wrapNear(t.x,r.x0,W().extentW):t.x); r.pt.y=round2(t.y); });
         d.objs.forEach(o=>vecTouched(o)); renderMap();
       } else if(d.type==='refimg-move'){
         const r=refImageById(d.id); if(r){ const u=screenToUnit(p.x,p.y); r.x = round2(d.x0 + (u.x-d.sx)); r.y = round2(d.y0 + (u.y-d.sy)); renderMap(); }
@@ -9379,21 +9754,31 @@ function exportMapImage(factor){
   renderBase(cv.getContext('2d'), cw, ch, {scale:MapView.scale*factor, offX:MapView.offX*factor, offY:MapView.offY*factor, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true});
   triggerDownloadCanvas(cv,(w.name||'map')+'_x'+factor+'.png');
 }
-function exportWholeMap(width){
+Wrap.tiles=1;
+/* v53: 全体のPNGの画像を作って返す(1周期を、つなげる世界では横に N 回並べる。N は 1〜8、つなげない世界では常に 1) */
+function wholeMapCanvas(width,tiles){
   const w=W(); const scale=width/w.extentW; const height=Math.round(w.extentH*scale);
-  if(width>16384||height>16384||width*height>268e6){ toast('出力サイズが大きすぎます(最大16384px/辺)','err'); return; }
-  const cv=document.createElement('canvas'); cv.width=width; cv.height=height;
+  const N=wrapOn(w)?Math.max(1,Math.min(8,Math.round(tiles||1))):1;
+  const cv=document.createElement('canvas'); cv.width=width*N; cv.height=height;
+  renderBase(cv.getContext('2d'), cv.width, height, {scale, offX:0, offY:0, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true});
+  return cv;
+}
+function exportWholeMap(width,tiles){
+  const w=W(); const scale=width/w.extentW; const height=Math.round(w.extentH*scale); tiles=tiles||Wrap.tiles||1; const N=wrapOn(w)?Math.max(1,Math.min(8,Math.round(tiles))):1;
+  if(width*N>16384||height>16384||width*N*height>268e6){ toast('出力サイズが大きすぎます(最大16384px/辺)','err'); return; }
+  const cv=document.createElement('canvas'); cv.width=width*N; cv.height=height;
   const prog=showProgress('地図全体を描画中…');
-  setTimeout(()=>{ try{ renderBase(cv.getContext('2d'), width, height, {scale, offX:0, offY:0, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true}); triggerDownloadCanvas(cv,(w.name||'map')+'_'+w.currentYear+'_'+width+'px.png'); }catch(e){ toast('出力に失敗: '+e.message,'err'); } prog.close(); },30);
+  setTimeout(()=>{ try{ renderBase(cv.getContext('2d'), cv.width, height, {scale, offX:0, offY:0, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true}); triggerDownloadCanvas(cv,(w.name||'map')+'_'+w.currentYear+'_'+width+'px'+(N>1?'_x'+N:'')+'.png'); }catch(e){ toast('出力に失敗: '+e.message,'err'); } prog.close(); },30);
 }
 function openExportResolutionModal(){
   const w=W();
   const body=`<p class="view-sub">地図全体(キャンバス全域)を、指定した幅のPNGで出力します。現在の年代・表示レイヤーが反映されます。</p>
     <div class="mini-btn-row" style="flex-direction:column;align-items:stretch;">${[1024,2048,4096,8192,16384].map(v=>`<button class="btn" data-exw="${v}">幅 ${v}px(高さ ${Math.round(w.extentH/w.extentW*v)}px)</button>`).join('')}</div>
+    ${wrapOn(w)?`<div class="lp-row" style="margin-top:8px;"><span>横に並べる回数(つなげた表示のまま)</span><select id="exTiles">${[1,2,3,4].map(n=>`<option value="${n}"${(Wrap.tiles||1)===n?' selected':''}>${n}${n===1?'(1周期)':''}</option>`).join('')}</select></div>`:''}
     <hr><div class="mini-btn-row"><button class="btn small" data-exp="2">現在の表示 ×2</button><button class="btn small" data-exp="4">現在の表示 ×4</button></div>
     <small class="hint">最大 16384px/辺。ベクターは出力サイズに合わせて再描画されます。</small>`;
   openModal('PNG出力(全体)', body, [{label:'閉じる', onClick:closeModal}]);
-  document.querySelectorAll('[data-exw]').forEach(b=> b.addEventListener('click',()=>{ closeModal(); exportWholeMap(Number(b.dataset.exw)); }));
+  document.querySelectorAll('[data-exw]').forEach(b=> b.addEventListener('click',()=>{ const sel=document.getElementById('exTiles'); if(sel) Wrap.tiles=Number(sel.value)||1; closeModal(); exportWholeMap(Number(b.dataset.exw), Wrap.tiles); }));
   document.querySelectorAll('[data-exp]').forEach(b=> b.addEventListener('click',()=>{ closeModal(); exportMapImage(Number(b.dataset.exp)); }));
 }
 function onWorldDataReplaced(){ MapView.stats=null; MapView._diffCache=null; if(MapView.pinnedStateId && !stateById(MapView.pinnedStateId)) MapView.pinnedStateId=null; if(MapView.selection && MapView.selection.type==='region' && !regionById(MapView.selection.id)) MapView.selection=null; }
@@ -9548,8 +9933,9 @@ function projOf(cfg){ return PROJECTIONS[cfg.projection] || PROJECTIONS.equirect
 /* 緯度経度 → 地図上のピクセル座標(mapToLatLonの逆変換。3D球体のクリック位置を
    2Dマップへ戻す用途や、球体用テクスチャの生成に使う) */
 function latLonToMap(lat,lon,cfg){
-  const w=W(); cfg=cfg||w.geo3d;
-  const {u,v}=projOf(cfg).forward(lat,lon,cfg);
+  const w=W(); cfg=geoWrapCfg(cfg||w.geo3d,w);
+  let {u,v}=projOf(cfg).forward(lat,lon,cfg);
+  if(geoWrapOn(cfg,w)) u=((u%1)+1)%1;   /* v54: 経度360°=1周期。一周期で折り返す */
   return {x:u*w.mapWidth, y:v*w.mapHeight};
 }
 /* 「縮尺から緯度経度範囲を自動計算」ボタンの実装。
@@ -9975,7 +10361,21 @@ function parchmentDeco(ctx,w,kmin){
   }
   ctx.restore();
 }
+/* v54: 「左右の端をつなげる」が「はい」のとき、地球儀の経度の一周 = 地図の1周期。
+   円筒図法(正距円筒・メルカトル)だけが対象(円錐・方位図法は、経度に比例した横の座標ではないため従来どおり)。*/
+function geoWrapOn(cfg,w){ w=w||W(); cfg=cfg||(w&&w.geo3d)||{}; if(!wrapOn(w)) return false; const t=cfg.projection||'equirectangular'; return t==='equirectangular'||t==='mercator'; }
+function geoWrapCfg(cfg,w){ return geoWrapOn(cfg,w)?Object.assign({},cfg,{lonMax:cfg.lonMin+360}):cfg; }
 async function buildMapTextureCanvas(targetW){
+  const w=W(); if(!wrapOn(w)) return buildMapTextureCanvasPlain(targetW);
+  /* 周期の両側に半周期ずつ余白をとって描き、真ん中の1周期を取り出す。名前(1要素1回)だけは別の面に描き、余白にはみ出した分を、反対側の端へ折りたたむ */
+  const tH=Math.max(2,Math.round(targetW*w.mapHeight/w.mapWidth)); const m=Math.round(targetW/2);
+  const A=document.createElement('canvas'); A.width=targetW+2*m; A.height=tH; const Lb=document.createElement('canvas'); Lb.width=A.width; Lb.height=tH;
+  renderBase(A.getContext('2d'), A.width, tH, {scale:targetW/w.extentW, offX:m, offY:0, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true, nodeco:true, _labelCtx:Lb.getContext('2d')});
+  const T=document.createElement('canvas'); T.width=targetW; T.height=tH; const c=T.getContext('2d'); c.drawImage(A,-m,0);
+  c.drawImage(Lb,m,0); c.drawImage(Lb,-m,0); c.drawImage(Lb,-(targetW+m),0);
+  return T;
+}
+async function buildMapTextureCanvasPlain(targetW){
   const w=W(); const targetH=Math.max(2,Math.round(targetW*w.mapHeight/w.mapWidth));
   const cv=document.createElement('canvas'); cv.width=targetW; cv.height=targetH;
   renderBase(cv.getContext('2d'), targetW, targetH, {scale:targetW/w.extentW, offX:0, offY:0, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true, nodeco:true});   /* v38: 3D地球儀も、選んだ表示スタイルで描く */
@@ -9991,7 +10391,7 @@ async function buildMapTextureCanvas(targetW){
    これにより、地図がどれだけ小さくても・どんな投影方式でも、3D側は常に「歪みのない完全な丸い
    球」として表示され続ける(=球の一部だけを覆う扁平なパッチとして表示されることはない)。 */
 function reprojectMapToEquirect(srcCanvas, cfg){
-  const type = cfg.projection||'equirectangular';
+  const type = cfg.projection||'equirectangular'; const WR=geoWrapOn(cfg); if(WR) cfg=geoWrapCfg(cfg);
   const proj = projOf(cfg);
   const sw=srcCanvas.width, sh=srcCanvas.height;
   // 2Dマップが覆う緯度経度の範囲(cfg.lonMin~lonMax / latMin~latMax)が、全球テクスチャの
@@ -10008,7 +10408,9 @@ function reprojectMapToEquirect(srcCanvas, cfg){
   // 全球フレーム上での、2Dマップが占める矩形(正距円筒・メルカトルの高速パス用)
   const dx0=clamp((cfg.lonMin+180)/360*outW,0,outW), dx1=clamp((cfg.lonMax+180)/360*outW,0,outW);
   const dyTop=clamp((90-cfg.latMax)/180*outH,0,outH), dyBot=clamp((90-cfg.latMin)/180*outH,0,outH);
+  const wx0=(cfg.lonMin+180)/360*outW;   /* v54: 周期で折り返す(経度360°=地図の1周期)ときの、左端の位置。端をまたぐ分は反対側にも描く */
   if(type==='equirectangular'){
+    if(WR){ if(dyBot>dyTop) for(let k=-1;k<=1;k++) octx.drawImage(srcCanvas,0,0,sw,sh, wx0+k*outW,dyTop, outW, dyBot-dyTop); return out; }
     if(dx1>dx0 && dyBot>dyTop) octx.drawImage(srcCanvas,0,0,sw,sh, dx0,dyTop, dx1-dx0, dyBot-dyTop);
     return out;
   }
@@ -10019,7 +10421,8 @@ function reprojectMapToEquirect(srcCanvas, cfg){
       const latTop=cfg.latMax + v0*(cfg.latMin-cfg.latMax), latBot=cfg.latMax + v1*(cfg.latMin-cfg.latMax);
       const sy0=clamp(proj.forward(latTop,cfg.lonMin,cfg).v*sh,0,sh), sy1=clamp(proj.forward(latBot,cfg.lonMin,cfg).v*sh,0,sh);
       const dy0=dyTop+v0*(dyBot-dyTop), dy1=dyTop+v1*(dyBot-dyTop);
-      if(dx1>dx0 && dy1>dy0 && sy1>sy0) octx.drawImage(srcCanvas,0,sy0,sw,Math.max(1,sy1-sy0), dx0,dy0, dx1-dx0, Math.max(1,dy1-dy0));
+      if(WR){ if(dy1>dy0 && sy1>sy0) for(let k=-1;k<=1;k++) octx.drawImage(srcCanvas,0,sy0,sw,Math.max(1,sy1-sy0), wx0+k*outW,dy0, outW, Math.max(1,dy1-dy0)); }
+      else if(dx1>dx0 && dy1>dy0 && sy1>sy0) octx.drawImage(srcCanvas,0,sy0,sw,Math.max(1,sy1-sy0), dx0,dy0, dx1-dx0, Math.max(1,dy1-dy0));
     }
     return out;
   }
@@ -10136,13 +10539,13 @@ function applyElevationToGeometry(geometry, heightCanvas, exaggeration){
     pos.needsUpdate=true; geometry.computeVertexNormals();
     return;
   }
-  const hw=heightCanvas.width, hh=heightCanvas.height;
+  const hw=heightCanvas.width, hh=heightCanvas.height; const GW=geoWrapOn();
   const hdata=heightCanvas.getContext('2d').getImageData(0,0,hw,hh).data;
   for(let i=0;i<pos.count;i++){
     const nx=pos.getX(i), ny=pos.getY(i), nz=pos.getZ(i); const len=Math.hypot(nx,ny,nz)||1;
     const nxN=nx/len, nyN=ny/len, nzN=nz/len;
     const u=uv.getX(i), v=uv.getY(i);
-    const hx=clamp(Math.floor(u*hw),0,hw-1), hy=clamp(Math.floor((1-v)*hh),0,hh-1);
+    const hx=GW?(((Math.floor(u*hw))%hw)+hw)%hw:clamp(Math.floor(u*hw),0,hw-1), hy=clamp(Math.floor((1-v)*hh),0,hh-1);
     // 注: 球ジオメトリのUV.yは北極=1・南極=0(three.jsのSphereGeometryの仕様)だが、
     // 色テクスチャはCanvasTexture既定のflipY=trueでGPUへアップロードされるため、
     // 実際に描画される内容はキャンバスの行=(1-UV.y)*高さに対応する。標高テクスチャも
@@ -10175,7 +10578,7 @@ async function updateGlobeTexture(){
     elevCv=reprojectMapToEquirect(elevCv, cfg); // 標高も色テクスチャと全く同じ再投影処理を共有する
     const THREE=window.THREE;
     disposeMesh(Globe3D.sphere); if(Globe3D.sphere) Globe3D.scene.remove(Globe3D.sphere);
-    const tex=new THREE.CanvasTexture(cv); tex.needsUpdate=true;
+    const tex=new THREE.CanvasTexture(cv); tex.needsUpdate=true; if(geoWrapOn(cfg,w)) tex.wrapS=THREE.RepeatWrapping;
     const geo=fullSphereGeometry();
     const mesh=new THREE.Mesh(geo, new THREE.MeshPhongMaterial({map:tex, shininess:6, transparent:true}));
     Globe3D.scene.add(mesh); Globe3D.sphere=mesh;
@@ -10214,15 +10617,28 @@ async function renderGlobe3DView(){
   catch(e){ toast('3D表示ライブラリの読み込みに失敗しました(ネット接続を確認してください)','err'); return; }
   if(currentView!=='globe3d') return; // 読み込み待ちの間に画面が切り替わっていた場合は中断
   if(!Globe3D.inited) initGlobe3DScene();
-  const key=w.currentYear+'|'+JSON.stringify(Object.assign({},w.geo3d,{elevExaggeration:0}))+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(w);
+  const key=w.currentYear+'|'+JSON.stringify(Object.assign({},w.geo3d,{elevExaggeration:0}))+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(w)+'|wrap:'+(wrapOn(w)?1:0)+'|'+w.mapWidth;
   if(Globe3D.lastKey!==key || Globe3D.forceRebuild){
     Globe3D.forceRebuild=false;
     await updateGlobeTexture();
     Globe3D.lastKey=key;
   }
   globeApplyLight(Globe3D.sun); globeSyncElevation();
+  globeEdgeNote();
   resizeGlobe3D();
   if(!Globe3D.raf) globeLoop();
+}
+/* v54: 経度の境目の注記。「いいえ」のときは、境目が地図の端であることを示す(地図の端の内容は作らない) */
+function globeEdgeNote(){
+  const root=document.getElementById('g3dRoot'); const w=W(); if(!root||!w) return; let n=document.getElementById('g3dEdgeNote');
+  if(!n){ n=document.createElement('div'); n.id='g3dEdgeNote'; n.style.cssText='position:absolute;left:12px;bottom:12px;max-width:420px;padding:6px 10px;font-size:12px;border-radius:6px;background:rgba(10,14,20,.78);color:var(--text-dim,#aab);z-index:5;pointer-events:none;'; (document.getElementById('g3dCanvasWrap')||root).appendChild(n); }
+  const cfg=w.geo3d; let t='';
+  if(!cfg.configured) t='';
+  else if(geoWrapOn(cfg,w)) t='左右の端をつなげた地図を貼っています(経度360°=地図の1周期)。経度の境目に、線や段差は出ません。';
+  else if(wrapOn(w)) t='「左右の端をつなげる」は「はい」ですが、この投影方式(円錐・方位図法)では、地球儀には従来どおり貼ります。';
+  else t='※ 経度 '+cfg.lonMin+'° と '+cfg.lonMax+'° の境目は、地図の左右の端です(つながっていません)。「左右の端をつなげる」を「はい」にすると、境目なく続きます。';
+  const pn=n.parentNode; if(pn&&getComputedStyle(pn).position==='static') pn.style.position='relative';
+  n.textContent=t; n.style.display=t?'block':'none';
 }
 function onGlobeClick(e){
   if(!Globe3D.sphere) return;
@@ -10394,13 +10810,13 @@ function createOffscreenGlobeRenderer(w,h){
 }
 async function renderOffscreenGlobeFrame(off, w, h, angleY){
   const wd=W(); const cfg=wd.geo3d;
-  const key=wd.currentYear+'|'+JSON.stringify(cfg)+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(wd);
+  const key=wd.currentYear+'|'+JSON.stringify(cfg)+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(wd)+'|wrap:'+(wrapOn(wd)?1:0);
   if(off.lastKey!==key){
     let cv=await buildMapTextureCanvas(Math.min(cfg.textureRes,2048));
     cv=reprojectMapToEquirect(cv, cfg); // 常に全球フレームへ変換
     const THREE=window.THREE;
     disposeMesh(off.sphere); if(off.sphere) off.scene.remove(off.sphere);
-    const tex=new THREE.CanvasTexture(cv); tex.needsUpdate=true;
+    const tex=new THREE.CanvasTexture(cv); tex.needsUpdate=true; if(geoWrapOn(cfg,wd)) tex.wrapS=THREE.RepeatWrapping;
     const geo=fullSphereGeometry();
     off.sphere=new THREE.Mesh(geo, new THREE.MeshPhongMaterial({map:tex, shininess:6, transparent:true})); off.scene.add(off.sphere);
     if(!off.unknown){ off.unknown=new THREE.Mesh(new THREE.SphereGeometry(99.4,48,32), new THREE.MeshPhongMaterial({color:0x11212c})); off.scene.add(off.unknown); }
@@ -10635,6 +11051,7 @@ function wireSettingsView(){
     populateWorldSelect(); toast('世界設定を保存しました');
   });
   document.getElementById('setDeleteWorldBtn').addEventListener('click', ()=> confirmDelete('世界「'+w.name+'」を完全に削除しますか？この操作は元に戻せません。', async ()=>{
+    if(worldHidden(w)){ toast('この世界は、宇宙の中の天体の世界です。宇宙の画面で、その天体の「世界を外す」から外してください','err'); return; }
     const id=w.id; delete DB.worlds[id]; await deleteWorldStorage(id);
     const rest = Object.keys(DB.worlds); DB.currentWorldId = rest[0]||null; History.clear();
     if(DB.currentWorldId) await Store.loadWorld(DB.currentWorldId); else Store.reset(null);
@@ -10675,7 +11092,8 @@ async function exportWorldJson(w){
     LAYER_IDS.forEach(l=>{ const o={}; t[l].forEach((a,k)=>{ const rec=tileEncode(a); o[k]={k:rec.k, b:bytesToB64(new Uint8Array(rec.d.buffer, rec.d.byteOffset, rec.d.byteLength))}; }); tiles[s.id][l]=o; });
     await nextFrame();
   }
-  try{ const json=JSON.stringify(syncExportDoc(w,tiles)); download((w.name||'world')+'.json', json, 'application/json'); toast('書き出しました ('+(json.length/1048576).toFixed(1)+' MB)'); }
+  try{ const docX=syncExportDoc(w,tiles); try{ const bw=await uvBundleWorlds(w); if(bw) docX.uvWorlds=bw; else delete docX.uvWorlds; }catch(e){ console.error(e); }
+    const json=JSON.stringify(docX); download((w.name||'world')+'.json', json, 'application/json'); toast('書き出しました ('+(json.length/1048576).toFixed(1)+' MB)'); }
   catch(e){ console.error(e); toast('書き出しに失敗しました(データが大きすぎます)。解像度を下げるか、バックアップ機能をご利用ください','err'); }
 }
 async function importWorldRaw(raw){
@@ -10747,6 +11165,7 @@ async function switchWorld(id){
   MapView.selection=null; MapView.selectedNationId=null; MapView.selectedRegionId=null; MapView._neverFit=false; MapView.pinnedStateId=null; MapView.stats=null; MapView.clip=null; MapView.rectSel=null;
   persist();
   fullRerender();
+  try{ uvOnWorldSwitched(); }catch(e){ console.warn(e); }
 }
 
 
@@ -10758,7 +11177,8 @@ function openNewWorldModal(){
     <div><label>暦の単位</label><input id="nwCal" value="年"></div>
     <div><label>初期の地図</label><select id="nwFill"><option value="sea">全面を海にする</option><option value="unset">未設定(何も描かれていない状態)</option></select></div>
     <div class="full"><label>説明</label><textarea id="nwDesc" rows="2"></textarea></div>
-    <div class="full" id="nwUvHead"><label><b>宇宙の設定</b>(この世界が、そのまま宇宙になります。恒星・惑星は、作成後に宇宙の画面で置きます)</label></div>
+    <div class="full"><label class="lp-chk"><input type="checkbox" id="nwWrap" checked>左右の端をつなげる(横方向に無限に続く地図。あとから、地図の表示の設定で変えられます)</label></div>
+    <div class="full" id="nwUvHead"><label><b>宇宙の設定</b>(ここで作る世界は、宇宙の中の最初の惑星の世界になります。最初の恒星と惑星は、自動で置かれます。ここで決める宇宙暦は、宇宙全体の年代です)</label></div>
     ${uvCalFields(uvNormCal({}),'nwuv')}
     ${typeof syncStorageSelectHtml==='function'?syncStorageSelectHtml():''}
     <div class="full"><label>地図の解像度(ピクセル数。後から変更・キャンバス拡張もできます)</label>
@@ -10780,15 +11200,20 @@ function openNewWorldModal(){
       if(nwS>nwE){ toast('開始年代は終了年代以下にしてください','err'); return; }
       let uvCal; try{ uvCal=uvReadCal('nwuv'); }catch(e){ toast(e.message||String(e),'err'); return; }
       closeModal(); await persist();
-      const world = createWorld({name, startYear:nwS, endYear:nwE, calendarUnit:document.getElementById('nwCal').value||'年', description:document.getElementById('nwDesc').value, mapWidth, mapHeight, fill:document.getElementById('nwFill').value, uvCalendar:uvCal});
+      const subOpts={wrapX:document.getElementById('nwWrap').checked, name, startYear:nwS, endYear:nwE, calendarUnit:document.getElementById('nwCal').value||'年', description:document.getElementById('nwDesc').value, mapWidth, mapHeight, fill:document.getElementById('nwFill').value};
+      /* v55: 世界の作成 = 宇宙(入れ物)・最初の恒星・最初の惑星(名前は世界の名前)・その惑星の世界(中身は空。地図は、選んだ設定の空の地図) */
+      const world = createWorld({name, mapWidth:64, mapHeight:32, fill:'unset', uvCalendar:uvCal});
+      const st0=uvNormStar({name:name+'の恒星',position:{x:0,y:0,z:0}}); const pl0=uvNormPlanet({name,starId:st0.id,surface:{mode:'color'}});
+      world.uvStars=[st0]; world.uvPlanets=[pl0]; if(typeof syncBaseline==='function') syncBaseline(world);
       DB.worlds[world.id] = world; DB.currentWorldId = world.id; Store.worldId=world.id; Store.fullRewrite=true; syncApplyStorageChoice(world.id);
       History.clear(); mapInitialized=false; MapView._neverFit=false; MapView.pinnedStateId=null; MapView.selection=null; MapView.stats=null;
-      persist();
+      await persist();
       document.getElementById('welcome').classList.add('hidden');
       document.getElementById('app').style.display='flex';
       fullRerender();
-      switchView('universe');   /* v51: 世界の作成と同時に宇宙があるので、作成後は宇宙の画面を開く */
-      toast('世界「'+name+'」を作成しました(宇宙の画面です。恒星・惑星を置いてください)');
+      switchView('universe');
+      let sub=null; try{ sub=await uvCreateBodyWorld(pl0.id,subOpts); if(sub) await uvOpenBodyWorld(pl0.id); }catch(e){ console.error(e); }
+      toast(sub?'世界「'+name+'」を作成しました(宇宙の中に、最初の恒星と惑星「'+name+'」ができ、この世界はその惑星の世界です。「◀ 宇宙に戻る」で宇宙の画面へ)':'世界「'+name+'」を作成しました(惑星の世界は作れませんでした。惑星の「世界を作る」で作ってください)',sub?undefined:'err');
     }},
   ]);
   document.getElementById('nwResPreset').addEventListener('change', (e)=>{
@@ -10872,8 +11297,9 @@ function goToSearchResult(type,id){
 
 function populateWorldSelect(){
   const sel = document.getElementById('worldSelect');
-  const worlds = Object.values(DB.worlds);
-  sel.innerHTML = worlds.map(w=>`<option value="${w.id}" ${w.id===DB.currentWorldId?'selected':''}>${esc(w.name)}${w.readOnly?'(閲覧専用)':''}</option>`).join('');
+  const worlds = Object.values(DB.worlds).filter(w=>!worldHidden(w)||w.id===DB.currentWorldId);   /* v55: 宇宙の中の世界は一覧に出さない(いま開いているときだけ、印を付けて出す) */
+  sel.innerHTML = worlds.map(w=>`<option value="${w.id}" ${w.id===DB.currentWorldId?'selected':''}>${worldHidden(w)?'◦ 宇宙の中: ':''}${esc(w.name)}${w.readOnly?'(閲覧専用)':''}</option>`).join('');
+  try{ uvOnWorldShown(); }catch(e){ console.warn(e); }
 }
 
 function refreshMapSelectorsIfOpen(){ if(currentView==='map'){ renderMapLayerPanel(); renderMapRightPanel(); renderMap(); } }
@@ -11033,7 +11459,7 @@ async function initApp(){
     fullRerender();
     switchView('dashboard');
   } else if(had && Object.keys(DB.worlds).length){
-    DB.currentWorldId = Object.keys(DB.worlds)[0];
+    DB.currentWorldId = uvFirstVisibleWid();
     await Store.loadWorld(DB.currentWorldId);
     document.getElementById('welcome').classList.add('hidden');
     document.getElementById('app').style.display='flex';
@@ -11445,7 +11871,7 @@ async function tutExitPracticeWorld(save){
     DB.currentWorldId = Tutorial.prevWorldId; Store.worldId = Tutorial.prevWorldId; Store.fullRewrite = true;
     await Store.loadWorld(Tutorial.prevWorldId);
   } else if(Object.keys(DB.worlds).length){
-    DB.currentWorldId = Object.keys(DB.worlds)[0]; Store.worldId = DB.currentWorldId; await Store.loadWorld(DB.currentWorldId);
+    DB.currentWorldId = uvFirstVisibleWid(); Store.worldId = DB.currentWorldId; await Store.loadWorld(DB.currentWorldId);
   } else {
     DB.currentWorldId = null;
   }
@@ -13676,6 +14102,7 @@ async function cropCanvas(newW,newH,cx,cy){
   if(newW>oldW||newH>oldH){ toast('切り取りは現在より小さいサイズにだけ使えます。拡大は「キャンバスを拡張」を使ってください','err'); return false; }
   if(newW===oldW&&newH===oldH){ toast('現在と異なるサイズを指定してください','err'); return false; }
   if(cx<0||cy<0||cx+newW>oldW||cy+newH>oldH){ toast('切り取り位置が範囲外です','err'); return false; }
+  if(wrapOn(w)&&newW!==oldW&&!(await wrapResizeConfirm(oldW,newW,'切り取りで幅が変わります(切り取る左端の位置は指定どおり)'))) return false;
   return heavyOp(`キャンバスを切り取り ${oldW}×${oldH} → ${newW}×${newH}`, async(prog)=>{
     const P=ppu();
     await remapAllStates(newW,newH,shiftMapper(-cx,-cy,oldW,oldH),n=>prog.set(`キャンバスを切り取り中… ${n}`));
@@ -15019,11 +15446,27 @@ function mapStyleHtml(d){
     <div class="lp-row" style="margin-left:22px;"><label><input type="checkbox" data-mstyle="sat-clouds" ${so.clouds?'checked':''} ${dis}> 雲を重ねる</label></div>
     <div class="lp-row" style="margin-left:22px;"><button class="btn small" data-mstyle="seed" ${dis}>模様・雲の種を変える</button><span class="lp-note">種=${d.satSeed}</span></div>
     <div class="lp-note" style="margin-left:22px;">陸は地形タイプごとの揺らぎ、海は海岸からの距離で色が変わります(海岸に近いほど明るい青緑)。</div>`;
+  h+=wrapSettingHtml(dis);
   if(d.style==='parchment') h+=`<div class="lp-row" style="margin-left:22px;"><span>紙の色</span><input type="color" data-mstyle="par-paper" value="${so.paper}" ${dis}><button class="btn small" data-mstyle="par-paper-reset" ${dis}>既定の色に戻す</button></div>
     <div class="lp-row" style="margin-left:22px;"><label><input type="checkbox" data-mstyle="par-burn" ${so.burn?'checked':''} ${dis}> 焼け・染み</label> <label><input type="checkbox" data-mstyle="par-deco" ${so.deco?'checked':''} ${dis}> 装飾(方位記号と枠)</label></div>
     <div class="lp-row" style="margin-left:22px;"><span>海の波線の間隔</span><select data-mstyle="par-wave" ${dis}>${WAVE_GAPS.map(g=>`<option value="${g}" ${so.wave===g?'selected':''}>${g}画素</option>`).join('')}</select></div>
     <div class="lp-row" style="margin-left:22px;"><button class="btn small" data-mstyle="par-seed" ${dis}>染みの位置・塗りのずれの種を変える</button><span class="lp-note">種=${so.parSeed}</span></div>`;
   return h;
+}
+function wrapPreviewOpen(){
+  const w=W(); if(!w) return; const P=w.mapWidth;
+  openModal('つなげた表示の確認(設定は変わりません)', `<p class="view-sub">地図を横に2周期ならべ、<b>右端のとなりに左端が続く</b>様子を表示します。中央が、つなぎ目(現在の右端=左端)です。国境・地形・名前のデータは変わりません。</p><canvas id="wrapPvCv" style="width:100%;max-width:560px;border:1px solid #333;"></canvas><p id="wrapPvInfo" class="lp-note"></p>`, [{label:'閉じる', onClick:closeModal}]);
+  const cv=document.getElementById('wrapPvCv'); const W0=560, sc=(W0/2)/w.extentW; const H0=Math.max(40,Math.round(w.extentH*sc)); cv.width=W0; cv.height=H0;
+  const prev=Wrap.force; Wrap.force=true;
+  try{ renderBase(cv.getContext('2d'), W0, H0, {scale:sc, offX:-(w.extentW*sc)/2, offY:0, fitScale:MapView.fitScale, activeLayers:MapView.activeLayers}, {own:true}); }
+  finally{ Wrap.force=prev; }
+  document.getElementById('wrapPvInfo').textContent=`1周期 = 幅 ${P}px。設定を「いいえ」のままにすると、この表示は従来どおり(端は終わり)です。`;
+}
+function wrapSettingHtml(dis){
+  const on=wrapOn(); const w=W();
+  return `<div class="lp-row"><label class="lp-chk"><input type="checkbox" data-mstyle="wrapx" ${on?'checked':''} ${dis}> 左右の端をつなげる</label></div>
+    <div class="lp-note">横方向だけ、左右の端をつなげて無限に続く地図として表示します(1周期=幅 ${w?w.mapWidth:''}px)。上下はつながりません。地形・国境・名前のデータは変わらず、端をまたぐ部分は反対側の端の内容を写して見せます。</div>
+    <div class="lp-row"><button class="btn small" data-mstyle="wrap-preview">つなげた表示を確認…</button></div>`;
 }
 function mapStyleMutate(summary, fn){
   const w=W(); if(!w) return false; if(w.readOnly) return false;
@@ -15035,6 +15478,7 @@ document.addEventListener('change',(ev)=>{
   const t=ev.target; if(!t||!t.matches||!t.matches('[data-mstyle]')) return; const kind=t.dataset.mstyle;
   if(kind==='style'){ const v=MAP_STYLES.some(s=>s[0]===t.value)?t.value:'standard';
     mapStyleMutate('地図の表示スタイル',(d,w)=>{ d.style=v; if(v==='mono'){ const m=monoOf(w); if(!m.land&&!m.sea&&!m.lake) d.mono=Object.assign({},MONO_DEFAULT); } if(v==='satellite'&&!Number.isInteger(d.satSeed)) d.satSeed=satSeedDefault(w); }); }
+  else if(kind==='wrapx'){ const v=!!t.checked; mapStyleMutate('左右の端をつなげる(地図の表示)',(d)=>{ d.wrapX=v; }); }
   else if(kind==='sat-strength'){ const v=STRENGTHS.some(x=>x[0]===t.value)?t.value:'mid'; mapStyleMutate('衛星風の模様の強さ',(d)=>{ d.satStrength=v; }); }
   else if(kind==='sat-clouds'){ const v=!!t.checked; mapStyleMutate('衛星風の雲',(d)=>{ d.satClouds=v; }); }
   else if(kind==='par-paper'){ const v=String(t.value||'').toLowerCase(); if(!HEX6.test(v)) return; mapStyleMutate('古地図風の紙の色',(d)=>{ d.parPaper=v; }); }
@@ -15048,6 +15492,7 @@ document.addEventListener('click',(ev)=>{
   const t=ev.target&&ev.target.closest?ev.target.closest('button[data-mstyle]'):null; if(!t||t.disabled) return; const kind=t.dataset.mstyle;
   if(/^reset-(land|sea|lake|all)$/.test(kind)){ const k=kind.slice(6);
     mapStyleMutate('単色表示の色を元の地形の色に戻す',(d)=>{ d.mono=Object.assign({land:'',sea:'',lake:''},d.mono||{}); if(k==='all'){ d.mono={land:'',sea:'',lake:''}; } else d.mono[k]=''; }); }
+  else if(kind==='wrap-preview'){ wrapPreviewOpen(); }
   else if(kind==='par-paper-reset'){ mapStyleMutate('古地図風の紙の色を既定に戻す',(d)=>{ d.parPaper=''; }); }
   else if(kind==='par-seed'){ mapStyleMutate('古地図風の種を変更',(d,w)=>{ let n; do{ n=Math.floor(Math.random()*1000000); }while(n===styleOpts(w).parSeed); d.parSeed=n; }); }
   else if(kind==='seed'){ mapStyleMutate('衛星風の模様の種を変更',(d,w)=>{ let n; do{ n=Math.floor(Math.random()*1000000); }while(n===satSeedOf(w)); d.satSeed=n; }); }
@@ -16197,14 +16642,22 @@ syncRegisterMetaOpener('openTradeRouteModal','tradeRoutes'); syncRegisterMetaOpe
 syncRegisterDocShape(function(doc){ return (doc.universe&&typeof doc.universe==='object')?uvDocHeader(doc.universe):null; });
 SyncMigrations[4]=function(doc){ /* 3 → 4: 宇宙の項目(universe)を持てる版。世界1つのデータの形は変えない(何もしない) */ };
 /* v51: 世界 = 宇宙。宇宙は世界のデータの一部(uvCalendar・uvStars・uvPlanets)。同期の登録・正規化・権限は、ほかの機能と同じ登録式 */
-syncRegister({name:'uvStars'}); syncRegister({name:'uvPlanets'}); syncRegister({name:'uvCalendar', kind:'singleton'});
+syncRegister({name:'uvStars'}); syncRegister({name:'uvPlanets'}); syncRegister({name:'uvMoons'}); syncRegister({name:'uvCalendar', kind:'singleton'}); syncRegister({name:'uvOwner', kind:'singleton'});
 registerWorldNormalizer('universe',440,uvNormalizeWorld);
-PERM_OF_COLL.uvStars='universe'; PERM_OF_COLL.uvPlanets='universe';
+PERM_OF_COLL.uvStars='universe'; PERM_OF_COLL.uvPlanets='universe'; PERM_OF_COLL.uvMoons='universe'; PERM_OF_COLL.uvOwner='universe';
+SyncMigrations[8]=function(doc){ /* 7 → 8: 惑星・衛星が、自分の世界(worldId)を持てる版。旧データの惑星・衛星は、世界を持たない(worldId は空)。表面が「世界の地図」だったものは、世界がないので単色(color)になる。何度行っても同じ結果(2回目は、表面が「地図」のものが残っていない)。恒星・宇宙暦・世界の内容は変えない */
+  if(!doc||typeof doc!=='object') return; const auto=!!doc.__uvAuto; delete doc.__uvAuto; const ch=[];
+  const fix=(arr,kind)=>{ if(!Array.isArray(arr)) return; arr.forEach(p=>{ if(!p||typeof p!=='object') return; if(typeof p.worldId!=='string') p.worldId=''; if(p.surface&&p.surface.mode==='map'&&!p.worldId){ p.surface=Object.assign({},p.surface,{mode:'color'}); if(!(auto&&String(p.id||'').indexOf('pl-auto-')===0)) ch.push({kind,name:String(p.name||'(無名)')}); } }); };
+  fix(doc.uvPlanets,'惑星'); fix(doc.uvMoons,'衛星');
+  if(!doc.uvOwner||typeof doc.uvOwner!=='object') doc.uvOwner={universe:'',body:'',kind:'',origin:''};
+  if(ch.length){ UV.migNotes.push({world:String(doc.name||'(無名の世界)'),items:ch}); clearTimeout(UV.migT); UV.migT=setTimeout(()=>{ try{ uvShowMigNotice(); }catch(e){ console.warn(e); } },1500); }
+};
+SyncMigrations[7]=function(doc){ /* 6 → 7: 衛星(uvMoons)を持てる版。既存の世界は何も変えない(衛星のない宇宙のまま。空の入れ物は、読み込み時の正規化で補われる) */ };
 SyncMigrations[5]=function(doc){ /* 4 → 5: 既存の世界は、そのまま宇宙として扱う(恒星1つ・惑星1つを自動で作る。恒星は原点、宇宙暦は未設定)。すでに宇宙の項目がある世界は触らない。IDは世界のIDから決める(別の端末で移行しても同じ) */
   if(!doc||typeof doc!=='object'||Array.isArray(doc.uvStars)||Array.isArray(doc.uvPlanets)) return;
   const nm=String(doc.name||'(無名の世界)'), k=String(doc.id||uid('w'));
   const st=uvNormStar({id:'st-auto-'+k,name:nm,position:{x:0,y:0,z:0}}); const pl=uvNormPlanet({id:'pl-auto-'+k,name:nm,starId:st.id,surface:{mode:'map'}});
-  doc.uvStars=[st]; doc.uvPlanets=[pl]; doc.uvCalendar=uvNormCal(doc.uvCalendar);
+  doc.uvStars=[st]; doc.uvPlanets=[pl]; doc.uvCalendar=uvNormCal(doc.uvCalendar); doc.__uvAuto=1;
 };
 /* 宇宙のファイル(id が uv: で始まる文書)は、世界の一覧に出さない */
 syncRegisterDocFilter(function(s){ return !UV_ENV_RE.test(String((s&&s.worldId)||'')); });
@@ -16215,6 +16668,7 @@ syncRegisterDocFilter(function(s){ return !UV_ENV_RE.test(String((s&&s.worldId)|
 syncRegister({name:'customGlyphs'});
 syncRegister({name:'glyphShapes'});
 syncRegister({name:'fontSettings', kind:'singleton'});
+SyncMigrations[6]=function(doc){ /* 5 → 6: 左右の端をつなげる設定(mapDisplay.wrapX)を持てる版。無い世界は「いいえ」= 従来の見た目・データのまま(何も足さない) */ };
 SyncMigrations[2] = function(doc){
   /* 1 → 2: フォント設定・独自文字の入れ物を補う(内容は作らない・書き換えない・revision は上げない)。何度実行しても同じ */
   if(!Array.isArray(doc.customGlyphs)) doc.customGlyphs=[];
@@ -19777,6 +20231,8 @@ async function atlasImportCore(raw, o){
   History.clear(); mapInitialized=false; MapView._neverFit=false; MapView.pinnedStateId=null; MapView.selection=null; MapView.stats=null;
   if(u.legacy) AtlasState.legacy[w.id]=u.kind; else delete AtlasState.legacy[w.id];
   await persist();
+  if(w._fileExtra&&w._fileExtra.uvWorlds) delete w._fileExtra.uvWorlds;
+  if(raw&&raw.uvWorlds&&typeof raw.uvWorlds==='object'&&!u.readOnly){ try{ await uvImportBundle(w,raw.uvWorlds); }catch(e){ console.error('uv bundle import',e); } }
   return {world:w, kind:u.kind, legacy:u.legacy, noTiles:u.kind!=='legacy-v1'&&!tileCount};
 }
 async function importWorldRaw(raw){ return atlasImportCore(raw,{}); }
