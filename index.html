@@ -1491,6 +1491,7 @@ function uvNormLod(l){ const n=(v,d,lo)=>{ const x=uvNum(v,d); return x>=lo?x:d;
 async function uvBoot(){
   try{ const l=await uvKvGet('uvlod'); if(l&&typeof l==='object') UV.lod=uvNormLod(l); }catch(e){}
   try{ const h=await uvKvGet('uvhelp'); if(h===false) UV.help=false; }catch(e){}
+  try{ await msBoot(); }catch(e){}
   try{ await uvLegacyMigrate(); }catch(e){ console.error('universe legacy migrate',e); }
 }
 function uvShowMigNotice(){
@@ -4961,6 +4962,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   const tx0=Math.max(0,Math.floor(rx0/TS)), ty0=Math.max(0,Math.floor(ry0/TS));
   const tx1=Math.min(Math.ceil(w.mapWidth/TS)-1,Math.floor(rx1/TS)), ty1=Math.min(Math.ceil(w.mapHeight/TS)-1,Math.floor(ry1/TS));
   const AL = view.activeLayers || MapView.activeLayers;
+  const MSA=(opts&&opts.std)?null:customStyleOf(w); MS.active=MSA;   /* v56: 利用者のスタイル(標準の6種類のときは null) */
   const mode=w.mapMode;
   const rasterT = ()=> ctx.setTransform(kx,0,0,ky,view.offX,view.offY);
   const smooth = kmin<2.5;
@@ -4970,7 +4972,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   if(doR){
   ctx.save(); rasterT();
   const sty=(opts&&opts.std)?'standard':styleOf(w);   /* opts.std=true のときだけ標準(現在は使っていない) */
-  ctx.fillStyle=(sty==='parchment')?styleOpts(w).paper:(STYLE_BG[sty]||'#141a22'); ctx.fillRect(0,0,w.mapWidth,w.mapHeight);
+  ctx.fillStyle=MSA?MSA.base:((sty==='parchment')?styleOpts(w).paper:(STYLE_BG[sty]||'#141a22')); ctx.fillRect(0,0,w.mapWidth,w.mapHeight);
   ctx.beginPath(); ctx.rect(0,0,w.mapWidth,w.mapHeight); ctx.clip();
   ctx.imageSmoothingEnabled = smooth;
   const elt=elevLt(w);
@@ -4978,8 +4980,9 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   if(AL.terrain){
     for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
       const k=tkey(tx,ty), t=R.layers.terrain.get(k);
-      if(!t){ if(sty==='parchment') ctx.drawImage(bakeTerrainStyled(PAPER_EMPTY,null,lod,'off',elt,{x:tx,y:ty,nb:()=>null},sty,w), tx*TS, ty*TS, TS+ovX, TS+ovY); continue; }
-      ctx.drawImage(bakeTerrainStyled(t, R.layers.elev.get(k)||null, lod, emode, elt, {x:tx,y:ty,nb:(dx,dy)=>R.layers.terrain.get(tkey(wrapTileX(tx+dx),ty+dy))}, sty, w), tx*TS, ty*TS, TS+ovX, TS+ovY);
+      if(!t){ if(MSA){ if(MSA.paper.grain!=='none'||MSA.paper.unevenness>0) ctx.drawImage(bakeTerrainCustom(PAPER_EMPTY,null,lod,'off',elt,{x:tx,y:ty,nb:()=>null},MSA,w), tx*TS, ty*TS, TS+ovX, TS+ovY); } else if(sty==='parchment') ctx.drawImage(bakeTerrainStyled(PAPER_EMPTY,null,lod,'off',elt,{x:tx,y:ty,nb:()=>null},sty,w), tx*TS, ty*TS, TS+ovX, TS+ovY); continue; }
+      if(MSA) ctx.drawImage(bakeTerrainCustom(t, R.layers.elev.get(k)||null, lod, emode, elt, {x:tx,y:ty,nb:(dx,dy)=>R.layers.terrain.get(tkey(wrapTileX(tx+dx),ty+dy))}, MSA, w), tx*TS, ty*TS, TS+ovX, TS+ovY);
+      else ctx.drawImage(bakeTerrainStyled(t, R.layers.elev.get(k)||null, lod, emode, elt, {x:tx,y:ty,nb:(dx,dy)=>R.layers.terrain.get(tkey(wrapTileX(tx+dx),ty+dy))}, sty, w), tx*TS, ty*TS, TS+ovX, TS+ovY);
     }
   } else if(emode!=='off'){
     for(let ty=ty0;ty<=ty1;ty++) for(let tx=tx0;tx<=tx1;tx++){
@@ -4989,6 +4992,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   }
   if(typeof elevContourDraw==='function') elevContourDraw(ctx,R,w,lod,tx0,ty0,tx1,ty1,ovX,ovY,emode);   /* 等高線(標高から描画時に計算) */
   if(sty==='parchment'&&!(opts&&opts.nodeco)) parchmentDeco(ctx,w,kmin);   /* v40: 古地図風の飾り */
+  if(MSA) msOverlay(ctx,MSA,w.mapWidth,w.mapHeight,kx,ky,rx0,ry0,rx1,ry1,{nodeco:!!(opts&&opts.nodeco)});
   ctx.restore();
   }
 
@@ -5066,7 +5070,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
   // 線(河川・山脈・道路・鉄道・国境線)
   const lineOrder=['range','river','road','rail','border'];
   lineOrder.forEach(kind=>{
-    if(pass==='l'||!AL[kind]) return; const st=LINE_KINDS[kind];
+    if(pass==='l'||!AL[kind]) return; const st=msInk(kind,LINE_KINDS[kind]);
     ctx.strokeStyle=st.color; ctx.globalAlpha=st.alpha||1; ctx.lineWidth=st.width/S; ctx.setLineDash(st.dash.map(v=>v/S*1));
     R.lines.forEach(l=>{ if(l.kind!==kind||!l.points||l.points.length<2) return; const e=vecPath(l,'line'); if(!inView(e.bbox)) return;
       if(kind==='rail'){ ctx.setLineDash([]); ctx.strokeStyle='rgba(20,22,26,.85)'; ctx.lineWidth=(st.width+1.6)/S; ctx.stroke(e.path); ctx.strokeStyle=st.color; ctx.lineWidth=st.width/S; ctx.setLineDash(st.dash.map(v=>v/S)); }
@@ -5104,7 +5108,7 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
       if(zr<0.5 && tier==='city') return;
       drawPointSymbol(ctx,c,kind,tier,S);
       if(AL.labels && (tier==='capital'?zr>0.6:zr>1.9)){
-        ctx.fillStyle='#f0ead8'; ctx.strokeStyle='rgba(8,10,14,.85)'; ctx.lineWidth=2.6/S; ctx.font=tyFont('mapLabel',((tier==='capital'?12.5:11)/S)+'px','"Inter","Noto Sans JP",sans-serif');
+        ctx.fillStyle=msLab.fill('#f0ead8'); ctx.strokeStyle=msLab.stroke('rgba(8,10,14,.85)'); ctx.lineWidth=msLab.w(2.6)/S; ctx.font=tyFont('mapLabel',((tier==='capital'?12.5:11)/S)+'px','"Inter","Noto Sans JP",sans-serif');
         ctx.strokeText(c.name,c.x+7/S,c.y+4/S); ctx.fillText(c.name,c.x+7/S,c.y+4/S);
       }
     });
@@ -5124,8 +5128,8 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
       ctx.translate(pl.x, pl.y);
       if(pl.angleDeg) ctx.rotate(pl.angleDeg*Math.PI/180);
       ctx.font=tyFont('mapLabel',`600 ${pl.fontSize}px`,'"Spectral","Noto Serif JP",serif'); ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.lineWidth=3.2/S; ctx.strokeStyle='rgba(8,10,14,0.78)'; ctx.strokeText(pl.label,0,0);
-      ctx.fillStyle='#f6f1e4'; ctx.fillText(pl.label,0,0);
+      ctx.lineWidth=msLab.w(3.2)/S; ctx.strokeStyle=msLab.stroke('rgba(8,10,14,0.78)'); ctx.strokeText(pl.label,0,0);
+      ctx.fillStyle=msLab.fill('#f6f1e4'); ctx.fillText(pl.label,0,0);
       ctx.restore();
     });
     ctx.textAlign='left'; ctx.textBaseline='alphabetic';
@@ -5138,8 +5142,8 @@ function renderBaseImpl(ctx, cw, ch, view, opts){
     placements.forEach(pl=>{
       ctx.save(); ctx.translate(pl.x, pl.y);
       ctx.font=tyFont('mapLabel',`500 ${pl.fontSize}px`,'"Spectral","Noto Serif JP",serif'); ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.lineWidth=2.6/S; ctx.strokeStyle='rgba(8,10,14,0.7)'; ctx.strokeText(pl.label,0,0);
-      ctx.fillStyle=`rgba(247,240,220,${Math.max(0.6,0.95-pl.depth*0.08)})`; ctx.fillText(pl.label,0,0);
+      ctx.lineWidth=msLab.w(2.6)/S; ctx.strokeStyle=msLab.stroke('rgba(8,10,14,0.7)'); ctx.strokeText(pl.label,0,0);
+      ctx.fillStyle=MS.active?MS.active.label.color:`rgba(247,240,220,${Math.max(0.6,0.95-pl.depth*0.08)})`; ctx.fillText(pl.label,0,0);
       ctx.restore();
     });
     ctx.textAlign='left'; ctx.textBaseline='alphabetic';
@@ -10115,6 +10119,211 @@ const MONO_DEFAULT={land:'#d9d0ae', sea:'#35648f', lake:'#6fb0cf'};
 const MONO_KINDS=[['land','陸'],['sea','海'],['lake','湖']];
 const HEX6=/^#[0-9a-f]{6}$/i;
 function styleOf(w){ w=w||W(); const d=(w&&w.mapDisplay)||{}; return MAP_STYLES.some(s=>s[0]===d.style)?d.style:'standard'; }
+/* ===================== v56: 利用者のスタイル ===================== */
+const MS={ dev:[], loaded:false, edit:null, notes:[], active:null };
+const MS_FORMAT='atlas-mapstyle-v1';
+const MS_ENUMS={ grain:[['none','なし'],['weak','弱'],['mid','中'],['strong','強']], tex:[['none','なし'],['grain','粒'],['streak','筋'],['blotch','斑点']], sea:[['solid','ベタ(地形の色)'],['waves','波線'],['depth','深さで色が変わる(沖と岸)']], coast:[['none','なし'],['outline','輪郭線'],['glow','光の縁'],['fade','移り変わり']] };
+/* 項目の一覧(パス・型・範囲・既定)。正規化と編集画面は、この一覧だけから作る */
+const MS_FIELDS=[
+ {p:'base',t:'color',d:'#141a22',l:'背景の色',sec:'背景・紙'},
+ {p:'paper.grain',t:'enum',e:'grain',d:'none',l:'紙の質感',sec:'背景・紙'},
+ {p:'paper.unevenness',t:'num',lo:0,hi:1,st:0.05,d:0,l:'紙の色むら',sec:'背景・紙'},
+ {p:'texture.kind',t:'enum',e:'tex',d:'none',l:'地形の模様の種類',sec:'地形の模様'},
+ {p:'texture.strength',t:'num',lo:0,hi:1,st:0.05,d:0.3,l:'模様の強さ',sec:'地形の模様'},
+ {p:'texture.size',t:'num',lo:1,hi:200,st:1,d:6,l:'模様の大きさ(ピクセル)',u:'px',sec:'地形の模様'},
+ {p:'sea.mode',t:'enum',e:'sea',d:'solid',l:'海の描き方',sec:'海・海岸'},
+ {p:'sea.waveGap',t:'num',lo:2,hi:200,st:1,d:8,l:'波線の間隔(ピクセル)',u:'px',sec:'海・海岸'},
+ {p:'sea.waveColor',t:'color',d:'#ffffff',l:'波線の色',sec:'海・海岸'},
+ {p:'sea.offshore',t:'color',d:'#0f2a44',l:'沖の色',sec:'海・海岸'},
+ {p:'sea.shore',t:'color',d:'#3b86a8',l:'岸の色',sec:'海・海岸'},
+ {p:'sea.depthRange',t:'num',lo:2,hi:200,st:1,d:20,l:'岸から沖へ色が変わる距離(ピクセル)',u:'px',sec:'海・海岸'},
+ {p:'coast.mode',t:'enum',e:'coast',d:'none',l:'海岸の描き方',sec:'海・海岸'},
+ {p:'coast.width',t:'num',lo:0,hi:50,st:0.5,d:2,l:'海岸の幅・太さ(ピクセル)',u:'px',sec:'海・海岸'},
+ {p:'coast.color',t:'color',d:'#000000',l:'海岸の色',sec:'海・海岸'},
+ {p:'coast.strength',t:'num',lo:0,hi:1,st:0.05,d:0.8,l:'海岸の強さ(光の縁)',sec:'海・海岸'},
+ {p:'ink.borderColor',t:'color',d:'#d94a3a',l:'国境線(手描き)の色',sec:'線'},
+ {p:'ink.borderWidth',t:'num',lo:0.5,hi:20,st:0.1,d:1.9,l:'国境線の太さ',sec:'線'},
+ {p:'ink.roadColor',t:'color',d:'#d8b76e',l:'道路の色',sec:'線'},
+ {p:'ink.roadWidth',t:'num',lo:0.5,hi:20,st:0.1,d:1.6,l:'道路の太さ',sec:'線'},
+ {p:'ink.riverColor',t:'color',d:'#4a90bf',l:'河川の色',sec:'線'},
+ {p:'ink.riverWidth',t:'num',lo:0.5,hi:20,st:0.1,d:2.4,l:'河川の太さ',sec:'線'},
+ {p:'grid.on',t:'bool',d:false,l:'格子を表示',sec:'格子・周辺・装飾'},
+ {p:'grid.gap',t:'num',lo:8,hi:1000,st:1,d:64,l:'格子の間隔(ピクセル)',u:'px',sec:'格子・周辺・装飾'},
+ {p:'grid.color',t:'color',d:'#ffffff',l:'格子の色',sec:'格子・周辺・装飾'},
+ {p:'grid.opacity',t:'num',lo:0,hi:1,st:0.05,d:0.2,l:'格子の不透明度',sec:'格子・周辺・装飾'},
+ {p:'vignette.strength',t:'num',lo:0,hi:1,st:0.05,d:0,l:'周辺の減光',sec:'格子・周辺・装飾'},
+ {p:'decor.compass.on',t:'bool',d:false,l:'方位記号を表示',sec:'格子・周辺・装飾'},
+ {p:'decor.compass.size',t:'num',lo:20,hi:400,st:1,d:80,l:'方位記号の大きさ(ピクセル)',u:'px',sec:'格子・周辺・装飾'},
+ {p:'decor.frame.on',t:'bool',d:false,l:'縁の枠を表示',sec:'格子・周辺・装飾'},
+ {p:'decor.frame.color',t:'color',d:'#5a3e1b',l:'枠の色',sec:'格子・周辺・装飾'},
+ {p:'label.color',t:'color',d:'#f2ecd8',l:'文字の色',sec:'文字'},
+ {p:'label.strokeWidth',t:'num',lo:0,hi:20,st:0.5,d:3,l:'文字の縁取りの幅',sec:'文字'},
+ {p:'label.strokeColor',t:'color',d:'#080a0e',l:'文字の縁取りの色',sec:'文字'},
+ {p:'seed',t:'int',lo:0,hi:999999999,d:1,l:'模様の乱数の種',sec:'模様の種'}
+];
+const MS_HEX=/^#[0-9a-f]{6}$/i, MS_HEX3=/^#[0-9a-f]{3}$/i;
+const MS_BAD=/(https?:|ftp:|data:|javascript:|file:|function\s*\(|=>|eval\s*\(|<\s*(script|img|svg|iframe)|url\s*\(|on\w+\s*=|\/\/[a-z0-9.-]+\.[a-z])/i;
+const msGet=(o,p)=>{ if(p==='texture.size'){ const z=o&&o.texture&&o.texture.size; return (z&&typeof z==='object')?z.value:z; } return p.split('.').reduce((a,k)=>a==null?undefined:a[k],o); };
+function msSet(o,p,v){ if(p==='texture.size'){ if(!o.texture||typeof o.texture!=='object') o.texture={}; o.texture.size={value:v,unit:'px'}; return; } const a=p.split('.'); let c=o; for(let i=0;i<a.length-1;i++){ if(!c[a[i]]||typeof c[a[i]]!=='object') c[a[i]]={}; c=c[a[i]]; } c[a[a.length-1]]=v; }
+function msHash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h.toString(36); }
+/* 値の組を正規化する。範囲外・不正な値は近い値(不正なものは既定)に直し、理由を notes に入れる */
+function msNorm(raw,notes){
+  notes=notes||[]; const r=(raw&&typeof raw==='object'&&!Array.isArray(raw))?raw:{}; const S={};
+  const nm=typeof r.name==='string'?r.name.replace(/[\u0000-\u001f]/g,'').trim():''; S.name=nm.slice(0,60); if(nm.length>60) notes.push('名前: 60文字までに切り詰めました');
+  S.id=(typeof r.id==='string'&&/^u:[\w-]{1,60}$/.test(r.id))?r.id:'u:'+uid('ms');
+  MS_FIELDS.forEach(f=>{ const v=msGet(r,f.p); let o=f.d;
+    if(f.t==='color'){ if(typeof v==='string'&&MS_HEX.test(v)) o=v.toLowerCase(); else if(typeof v==='string'&&MS_HEX3.test(v)) o='#'+v.slice(1).split('').map(c=>c+c).join('').toLowerCase(); else if(v!==undefined){ notes.push(f.l+': 「'+String(v).slice(0,20)+'」は色(#rrggbb)ではないため、既定 '+f.d+' にしました'); } }
+    else if(f.t==='bool'){ o=(v===undefined)?f.d:v===true; if(v!==undefined&&typeof v!=='boolean') notes.push(f.l+': オン/オフではない値を、'+(o?'オン':'オフ')+' にしました'); }
+    else if(f.t==='enum'){ const ok=MS_ENUMS[f.e].some(x=>x[0]===v); if(ok) o=v; else if(v!==undefined) notes.push(f.l+': 選択肢にない値を、既定 '+f.d+' にしました'); }
+    else { let n=Number(v); if(v===undefined||v===null||v===''||!Number.isFinite(n)){ if(v!==undefined&&v!==null&&v!=='') notes.push(f.l+': 数ではない値を、既定 '+f.d+' にしました'); n=f.d; }
+      else { if(f.t==='int'&&!Number.isInteger(n)){ const m=Math.round(n); notes.push(f.l+': 整数にするため '+n+' → '+m); n=m; }
+        if(n<f.lo){ notes.push(f.l+': '+n+' は小さすぎるため '+f.lo+' にしました(範囲 '+f.lo+'〜'+f.hi+(f.u?f.u:'')+')'); n=f.lo; } else if(n>f.hi){ notes.push(f.l+': '+n+' は大きすぎるため '+f.hi+' にしました(範囲 '+f.lo+'〜'+f.hi+(f.u?f.u:'')+')'); n=f.hi; } }
+      o=n; }
+    msSet(S,f.p,o); });
+  S.terrain={}; const tr=(r.terrain&&typeof r.terrain==='object'&&!Array.isArray(r.terrain))?r.terrain:{}; Object.keys(tr).slice(0,300).forEach(k=>{ const v=tr[k]; if(typeof v==='string'&&MS_HEX.test(v)) S.terrain[String(k).slice(0,60)]=v.toLowerCase(); else notes.push('地形「'+String(k).slice(0,20)+'」の色: 色(#rrggbb)ではないため、上書きしません'); });
+  S.texture.per={}; const pr=(r.texture&&r.texture.per&&typeof r.texture.per==='object'&&!Array.isArray(r.texture.per))?r.texture.per:{}; Object.keys(pr).slice(0,300).forEach(k=>{ const q=pr[k]; if(!q||typeof q!=='object') return; const o={};
+    if(q.kind!==undefined){ if(MS_ENUMS.tex.some(x=>x[0]===q.kind)) o.kind=q.kind; else notes.push('地形「'+String(k).slice(0,20)+'」の模様の種類: 選択肢にない値は使いません'); }
+    if(q.strength!==undefined){ let n=Number(q.strength); if(!Number.isFinite(n)){ notes.push('地形「'+String(k).slice(0,20)+'」の模様の強さ: 数ではないため使いません'); } else { if(n<0||n>1){ notes.push('地形「'+String(k).slice(0,20)+'」の模様の強さ: '+n+' → '+(n<0?0:1)+'(範囲 0〜1)'); n=n<0?0:1; } o.strength=n; } }
+    if(q.size!==undefined){ let n=Number(q.size&&typeof q.size==='object'?q.size.value:q.size); if(!Number.isFinite(n)){ notes.push('地形「'+String(k).slice(0,20)+'」の模様の大きさ: 数ではないため使いません'); } else { if(n<1||n>200){ notes.push('地形「'+String(k).slice(0,20)+'」の模様の大きさ: '+n+' → '+(n<1?1:200)+'(範囲 1〜200px)'); n=n<1?1:200; } o.size=n; } }
+    if(Object.keys(o).length) S.texture.per[String(k).slice(0,60)]=o; });
+  return S;
+}
+/* 取り込むファイルの検査: 値以外(スクリプト・外部URL・画像の埋め込み・知らない項目)があれば、理由を返す */
+function msValidateImport(j){
+  if(!j||typeof j!=='object'||Array.isArray(j)) return '形式が違います(atlas-mapstyle-v1 のファイルではありません)';
+  if(j.format!==MS_FORMAT) return '形式名が '+MS_FORMAT+' ではありません';
+  if(!Array.isArray(j.styles)||!j.styles.length) return 'スタイルが含まれていません'; if(j.styles.length>200) return 'スタイルが多すぎます(200個まで)';
+  const known=new Set(['name','id','terrain','texture','paper','sea','coast','ink','grid','vignette','decor','label','seed','base']);
+  let bad=''; const walk=(v,path,depth)=>{ if(bad) return; if(depth>6){ bad='入れ子が深すぎます'; return; }
+    if(v===null||typeof v==='boolean'||typeof v==='number') return;
+    if(typeof v==='string'){ if(v.length>200){ bad=path+': 文字列が長すぎます'; return; } if(MS_BAD.test(v)){ bad=path+': スクリプト・外部URL・画像の埋め込みなど、値以外のものが含まれています'; } return; }
+    if(Array.isArray(v)){ bad=path+': 配列は使えません'; return; }
+    if(typeof v==='object'){ Object.keys(v).forEach(k=>{ if(bad) return; if(MS_BAD.test(k)||k.length>80){ bad=path+'.'+k.slice(0,20)+': 項目名が不正です'; return; } walk(v[k],path+'.'+k,depth+1); }); return; }
+    bad=path+': 値以外のもの(関数など)が含まれています'; };
+  for(let i=0;i<j.styles.length&&!bad;i++){ const s=j.styles[i]; if(!s||typeof s!=='object'||Array.isArray(s)){ bad='スタイル'+(i+1)+': 形が違います'; break; } const unk=Object.keys(s).filter(k=>!known.has(k)); if(unk.length){ bad='スタイル'+(i+1)+': 知らない項目「'+unk[0].slice(0,20)+'」が含まれています(値以外のものを含むファイルは取り込めません)'; break; } walk(s,'スタイル'+(i+1),0); }
+  const top=Object.keys(j).filter(k=>k!=='format'&&k!=='styles'); if(!bad&&top.length) bad='知らない項目「'+top[0].slice(0,20)+'」が含まれています';
+  return bad;
+}
+/* 名前の重複は番号で区別する */
+function msUniqueName(name,list,selfId){ let base=(name||'').trim()||'新しいスタイル', n=base, i=2; const names=new Set(list.filter(s=>typeof s==='string'||s.id!==selfId).map(s=>typeof s==='string'?s:s.name)); MS_BUILTIN.forEach(b=>names.add(b.name)); while(names.has(n)){ n=base+' ('+(i++)+')'; } return n; }
+/* 標準の6種類(値の組で表す。描画は従来の処理のまま画素まで同じ。削除・上書きはできず、複製して編集する) */
+const MS_BUILTIN=(()=>{ const mk=(id,name,o)=>{ const S=msNorm(Object.assign({id:'u:builtin'},o),[]); S.id=id; S.name=name; S.builtin=true; return S; };
+  return [
+    mk('standard','標準',{base:'#141a22'}),
+    mk('parchment','古地図風',{base:'#e9dcb8',paper:{grain:'mid',unevenness:0.5},texture:{kind:'grain',strength:0.3,size:{value:3}},sea:{mode:'waves',waveGap:6,waveColor:'#6b7f8a'},coast:{mode:'outline',width:1,color:'#3a2a1a'},decor:{compass:{on:true,size:90},frame:{on:true,color:'#5a3e1b'}},label:{color:'#3a2a1a',strokeWidth:2,strokeColor:'#e9dcb8'},seed:20260}),
+    mk('modern','現代風',{base:'#eef0f2',sea:{mode:'solid'},coast:{mode:'outline',width:1,color:'#78aad7'},label:{color:'#202428',strokeWidth:3,strokeColor:'#ffffff'}}),
+    mk('digital','デジタル風',{base:'#05070f',coast:{mode:'glow',width:3,color:'#00ebff',strength:0.9},grid:{on:true,gap:32,color:'#00c8ff',opacity:0.14},label:{color:'#bff6ff'}}),
+    mk('satellite','衛星風',{base:'#141a22',texture:{kind:'blotch',strength:0.5,size:{value:14}},sea:{mode:'depth',offshore:'#12344f',shore:'#2a7f90',depthRange:24},coast:{mode:'fade',width:4},seed:1}),
+    mk('mono','単色(陸・海・湖)',{base:'#141a22'})
+  ]; })();
+const msIsCustomId=(id)=>typeof id==='string'&&/^u:[\w-]{1,60}$/.test(id);
+/* 使えるスタイルの一覧: 標準の6種類 + この世界に保存したもの + この端末に保存したもの */
+function msAll(w){ w=w||W(); const d=(w&&w.mapDisplay)||{}; const wl=Array.isArray(d.styles)?d.styles.filter(s=>s&&msIsCustomId(s.id)).map(s=>Object.assign(msNorm(s,[]),{store:'world'})):[]; const ids=new Set(wl.map(s=>s.id)); const dv=MS.dev.filter(s=>!ids.has(s.id)).map(s=>Object.assign({},s,{store:'device'})); return MS_BUILTIN.map(s=>Object.assign({},s,{store:'builtin'})).concat(wl,dv); }
+const MS_CACHE=new WeakMap();
+function msKeyOf(S){ return S?('u'+msHash(JSON.stringify([S.base,S.paper,S.terrain,S.texture,S.sea,S.coast,S.ink,S.grid,S.vignette,S.decor,S.label,S.seed]))):''; }
+/* いま開いている世界で使うスタイル(利用者のスタイルのときだけ。標準の6種類のときは null) */
+function customStyleOf(w){ w=w||W(); const d=(w&&w.mapDisplay)||{}; if(!msIsCustomId(d.style)) return null; const s=msAll(w).find(x=>x.id===d.style); return s&&!s.builtin?s:null; }
+function msInk(kind,st){ const S=MS.active; if(!S) return st; if(kind==='border') return Object.assign({},st,{color:S.ink.borderColor,width:S.ink.borderWidth}); if(kind==='road') return Object.assign({},st,{color:S.ink.roadColor,width:S.ink.roadWidth}); if(kind==='river') return Object.assign({},st,{color:S.ink.riverColor,width:S.ink.riverWidth}); return st; }
+const msLab={ fill:(d)=>MS.active?MS.active.label.color:d, stroke:(d)=>MS.active?MS.active.label.strokeColor:d, w:(d)=>MS.active?MS.active.label.strokeWidth*(d/3):d };
+/* ===== v56: 保存(この端末/この世界)・管理画面・編集画面・書き出し/読み込み ===== */
+async function msBoot(){ try{ const a=await uvKvGet('mapstyles'); if(Array.isArray(a)){ MS.dev=a.slice(0,200).map(s=>msNorm(s,[])); } }catch(e){ console.warn('mapstyle boot',e); } MS.loaded=true; }
+function msSaveDev(){ return uvKvPut('mapstyles',MS.dev.map(s=>{ const o=Object.assign({},s); delete o.store; delete o.builtin; return o; })); }
+function msCanEdit(){ const w=W(); return !!w&&!w.readOnly&&(typeof roleHasPerm!=='function'||roleHasPerm('display')); }
+function msRefresh(){ try{ MapView.baseDirty=true; }catch(e){} try{ renderMapLayerPanel(); }catch(e){} try{ renderMap(); }catch(e){} }
+function msPlain(S){ const o=JSON.parse(JSON.stringify(S)); delete o.store; delete o.builtin; return o; }
+function msExportObj(list){ return {format:MS_FORMAT,styles:list.map(s=>{ const o=msPlain(s); delete o.id; return o; })}; }
+function msNames(w,exceptId){ return msAll(w).filter(s=>s.id!==exceptId).map(s=>s.name); }
+/* 保存。store: 'device'(この端末の設定) / 'world'(この世界の表示設定)。戻り値: 保存できたか */
+function msCommit(S,store,summary){
+  const w=W(); if(!w||!msCanEdit()){ toast('表示設定を変える権限がありません','err'); return false; }
+  S=msNorm(S,[]); S.name=msUniqueName(S.name||'新しいスタイル',msNames(w,S.id));
+  delete S.builtin; delete S.store;
+  const wasWorld=Array.isArray((w.mapDisplay||{}).styles)&&w.mapDisplay.styles.some(x=>x&&x.id===S.id), wasDev=MS.dev.some(x=>x.id===S.id);
+  if(store==='world'){ const ok=mapStyleMutate(summary||'地図の表示スタイル(この世界に保存)',(d)=>{ const a=Array.isArray(d.styles)?d.styles.slice():[]; const i=a.findIndex(x=>x&&x.id===S.id); if(i>=0) a[i]=msPlain(S); else a.push(msPlain(S)); d.styles=a; }); if(!ok) return false;
+    if(wasDev){ MS.dev=MS.dev.filter(x=>x.id!==S.id); msSaveDev(); } }
+  else { if(wasWorld){ const ok=mapStyleMutate('地図の表示スタイル(この端末へ移動)',(d)=>{ d.styles=(d.styles||[]).filter(x=>!x||x.id!==S.id); }); if(!ok) return false; }
+    const i=MS.dev.findIndex(x=>x.id===S.id); if(i>=0) MS.dev[i]=S; else MS.dev.push(S); msSaveDev(); msRefresh(); }
+  return S;
+}
+function msDelete(id){ const w=W(); if(!w||!msCanEdit()||!msIsCustomId(id)) return false;
+  const inWorld=Array.isArray((w.mapDisplay||{}).styles)&&w.mapDisplay.styles.some(x=>x&&x.id===id);
+  if(inWorld||(w.mapDisplay&&w.mapDisplay.style===id)){ const ok=mapStyleMutate('地図の表示スタイルを削除',(d)=>{ d.styles=(d.styles||[]).filter(x=>!x||x.id!==id); if(d.style===id) d.style='standard'; }); if(!ok) return false; }
+  if(MS.dev.some(x=>x.id===id)){ MS.dev=MS.dev.filter(x=>x.id!==id); msSaveDev(); }
+  msRefresh(); return true; }
+function msUse(id){ if(!msCanEdit()) return false; return mapStyleMutate('地図の表示スタイル',(d)=>{ d.style=id; }); }
+function msNewFrom(baseId){ const b=MS_BUILTIN.find(s=>s.id===baseId)||MS_BUILTIN[0]; const S=JSON.parse(JSON.stringify(b)); delete S.builtin; S.id='u:'+uid('ms'); S.name=msUniqueName((b.name||'標準')+'(自分用)',msNames(W())); return S; }
+function msImportText(text,store){
+  let j; try{ j=JSON.parse(text); }catch(e){ return {ok:false,reason:'JSONとして読めません'}; }
+  const bad=msValidateImport(j); if(bad) return {ok:false,reason:bad};
+  const notes=[], added=[]; for(const raw of j.styles){ const S=msNorm(Object.assign({},raw,{id:undefined}),notes); S.name=msUniqueName(S.name||'取り込んだスタイル',msNames(W()).concat(added.map(a=>a.name))); const r=msCommit(S,store||'device','地図の表示スタイルを取り込む'); if(!r) return {ok:false,reason:'保存できませんでした(権限・読み取り専用)'}; added.push(r); }
+  return {ok:true,count:added.length,notes}; }
+/* ---- 見本の地図(利用者のデータとは無関係。編集画面のプレビュー専用) ---- */
+let MS_SAMPLE=null;
+function msSample(w){ const SP=stylePal(w), P=Pal.terrain; const sea=[],lake=[],land=[]; (w.terrainTypes||[]).forEach(t=>{ if(!t.rid||t.rid>255||!P.has[t.rid]) return; const k=SP.kind[t.rid]; (k===1?sea:k===2?lake:land).push(t.rid); });
+  const key=[sea[0],lake[0],land.join(',')].join('|'); if(MS_SAMPLE&&MS_SAMPLE.key===key) return MS_SAMPLE;
+  const tile=new Uint8Array(65536), elev=new Uint8Array(65536), sr=sea[0]||0, lr=lake[0]||sr; const L=land.length?land:[0];
+  for(let y=0;y<256;y++) for(let x=0;x<256;x++){ const dx=(x-120)/92, dy=(y-128)/78, rr=dx*dx+dy*dy+0.08*Math.sin(x/9)+0.06*Math.cos(y/7); let v=sr, el=0;
+    if(rr<1){ const ang=Math.atan2(y-128,x-120), idx=Math.floor(((ang+Math.PI)/(2*Math.PI))*L.length+((rr>0.55)?0:0.5))%L.length; v=L[idx]||sr; el=Math.max(0,Math.round(180*(1-rr))); }
+    const lx=(x-110)/18, ly=(y-120)/12; if(lx*lx+ly*ly<1&&rr<0.8){ v=lr; el=0; }
+    const ix=(x-228)/12, iy=(y-40)/10; if(ix*ix+iy*iy<1){ v=L[0]||sr; el=60; }
+    if(x>=244){ v=0; el=0; }   /* 右端の細い帯は何も描かない(背景の色の確認用) */
+    tile[(y<<8)|x]=v; elev[(y<<8)|x]=el; }
+  MS_SAMPLE={key,tile,elev}; return MS_SAMPLE; }
+function msPaintPreview(cv,S){ const w=W(); if(!cv||!w) return; const sm=msSample(w); const c=bakeTerrainCustom(sm.tile,sm.elev,0,'shade',null,{x:0,y:0,nb:()=>null},S,Object.assign({},w,{mapWidth:256,mapHeight:256})); const ctx=cv.getContext('2d'); cv.width=256; cv.height=256; ctx.clearRect(0,0,256,256); ctx.drawImage(c,0,0); const prev=MS.active; MS.active=S; msOverlay(ctx,S,256,256,1,1,0,0,256,256,{}); MS.active=prev;
+  ctx.save(); ctx.font='12px sans-serif'; ctx.fillStyle=S.label.color; ctx.strokeStyle=S.label.strokeColor; ctx.lineWidth=Math.min(6,S.label.strokeWidth); ctx.lineJoin='round'; ctx.strokeText('見本の町',80,125); ctx.fillText('見本の町',80,125); ctx.restore();
+  ctx.save(); ctx.strokeStyle=S.ink.riverColor; ctx.lineWidth=S.ink.riverWidth; ctx.beginPath(); ctx.moveTo(60,110); ctx.bezierCurveTo(90,140,110,100,140,150); ctx.stroke(); ctx.strokeStyle=S.ink.roadColor; ctx.lineWidth=S.ink.roadWidth; ctx.beginPath(); ctx.moveTo(70,170); ctx.lineTo(150,90); ctx.stroke(); ctx.strokeStyle=S.ink.borderColor; ctx.lineWidth=S.ink.borderWidth; ctx.beginPath(); ctx.moveTo(130,60); ctx.lineTo(130,200); ctx.stroke(); ctx.restore(); }
+/* ---- 編集画面 ---- */
+function msEdFieldHtml(f,S){ const v=msGet(S,f.p), id='msf-'+f.p.replace(/\./g,'-');
+  if(f.t==='color') return `<div class="lp-row"><span>${esc(f.l)}</span><input type="color" data-msf="${f.p}" value="${esc(v)}"></div>`;
+  if(f.t==='bool') return `<div class="lp-row"><label class="lp-chk"><input type="checkbox" data-msf="${f.p}" ${v?'checked':''}> ${esc(f.l)}</label></div>`;
+  if(f.t==='enum') return `<div class="lp-row"><span>${esc(f.l)}</span><select data-msf="${f.p}">${MS_ENUMS[f.e].map(([k,n])=>`<option value="${k}" ${v===k?'selected':''}>${n}</option>`).join('')}</select></div>`;
+  const rg=`min="${f.lo}" max="${f.hi}" step="${f.st||1}"`; return `<div class="lp-row"><span>${esc(f.l)}</span><input type="range" data-msf="${f.p}" data-msr="1" ${rg} value="${v}" style="flex:1;min-width:80px;"><input type="number" data-msf="${f.p}" data-msn="1" ${rg} value="${v}" style="width:84px;">${f.u?`<span class="lp-note">${f.u}</span>`:''}</div>`; }
+function msEdHtml(E){ const w=W(), S=E.cur; let secs=[], last=''; MS_FIELDS.forEach(f=>{ if(f.sec!==last){ if(last) secs.push('</fieldset>'); secs.push(`<fieldset style="margin:6px 0;border:1px solid var(--border,#445);border-radius:6px;"><legend>${esc(f.sec)}</legend>`); last=f.sec; } secs.push(msEdFieldHtml(f,S)); }); secs.push('</fieldset>');
+  const tt=(w.terrainTypes||[]).filter(t=>t.rid&&t.rid<256).map(t=>{ const o=S.terrain[t.id], per=S.texture.per[t.id]||{}; return `<tr><td>${esc(t.name)}</td><td><input type="checkbox" data-mst="${esc(t.id)}|on" ${o?'checked':''}><input type="color" data-mst="${esc(t.id)}|color" value="${esc(o||(HEX6.test(t.color)?t.color:'#808080'))}"></td><td><select data-mst="${esc(t.id)}|kind"><option value="">全体と同じ</option>${MS_ENUMS.tex.map(([k,n])=>`<option value="${k}" ${per.kind===k?'selected':''}>${n}</option>`).join('')}</select></td></tr>`; }).join('');
+  return `<div style="display:flex;gap:12px;flex-wrap:wrap;"><div style="flex:0 0 auto;"><canvas id="msPrev" width="256" height="256" style="width:256px;height:256px;border:1px solid #556;"></canvas><div class="lp-note">見本の地図です(あなたの地図のデータは使いません)。</div>
+    <div style="margin-top:6px;"><button class="btn small" id="msUndo">元に戻す</button> <button class="btn small" id="msRedo">やり直す</button></div></div>
+    <div style="flex:1;min-width:260px;max-height:60vh;overflow:auto;"><div class="lp-row"><span>名前</span><input type="text" data-msf="name" maxlength="60" value="${esc(S.name)}" style="flex:1;"></div>
+    <div class="lp-row"><span>保存先</span><select id="msStore"><option value="device" ${E.store==='device'?'selected':''}>この端末の設定(既定)</option><option value="world" ${E.store==='world'?'selected':''}>この世界に保存する</option></select></div>
+    ${secs.join('')}<fieldset style="margin:6px 0;border:1px solid var(--border,#445);border-radius:6px;"><legend>地形ごとの色・模様</legend><table class="tbl" style="width:100%;"><tr><th>地形</th><th>色の上書き</th><th>模様</th></tr>${tt}</table></fieldset>
+    <div id="msNotes" class="lp-note" style="color:var(--danger,#e66);"></div></div></div>`; }
+function msEdSync(){ const E=MS.edit; if(!E) return; const S=E.cur;
+  document.querySelectorAll('#modalBody [data-msf]').forEach(el=>{ const f=el.dataset.msf; const v=f==='name'?S.name:msGet(S,f); if(el.type==='checkbox') el.checked=!!v; else if(document.activeElement!==el||el.dataset.msn===undefined) el.value=v; });
+  document.querySelectorAll('#modalBody [data-mst]').forEach(el=>{ const [id,k]=el.dataset.mst.split('|'); const o=S.terrain[id], per=S.texture.per[id]||{}; if(k==='on') el.checked=!!o; else if(k==='color'&&o) el.value=o; else if(k==='kind') el.value=per.kind||''; });
+  const n=document.getElementById('msNotes'); if(n) n.textContent=E.notes.join(' / ');
+  msPaintPreview(document.getElementById('msPrev'),S);
+  const u=document.getElementById('msUndo'), r=document.getElementById('msRedo'); if(u) u.disabled=!E.undo.length; if(r) r.disabled=!E.redo.length; }
+function msEdApply(fn,snap){ const E=MS.edit; if(!E) return; const prev=JSON.stringify(E.cur); const draft=JSON.parse(prev); fn(draft); const notes=[]; E.cur=msNorm(draft,notes); E.cur.id=E.orig.id; E.notes=notes; if(snap&&E.snap!==JSON.stringify(E.cur)){ E.undo.push(E.snap); E.redo=[]; E.snap=JSON.stringify(E.cur); } msEdSync(); }
+function msEdit(S,isNew,store){ if(!msCanEdit()){ toast('表示設定を変える権限がありません','err'); return; }
+  S=msNorm(S,[]); const E=MS.edit={orig:S,cur:JSON.parse(JSON.stringify(S)),undo:[],redo:[],notes:[],isNew:!!isNew,store:store||'device'}; E.snap=JSON.stringify(E.cur);
+  openModal(isNew?'表示スタイルを作る':'表示スタイルを編集',msEdHtml(E),[{label:'キャンセル',onClick:()=>{ MS.edit=null; closeModal(); try{ msManage(); }catch(e){} }},{label:'編集を確定',cls:'primary',onClick:()=>{ const r=msCommit(E.cur,E.store,isNew?'表示スタイルを作る':'表示スタイルを編集'); if(!r) return; MS.edit=null; closeModal(); toast('スタイル「'+r.name+'」を保存しました'); msRefresh(); }}]); msEdSync(); }
+document.addEventListener('input',(ev)=>{ const t=ev.target; if(!MS.edit||!t||!t.dataset) return; if(t.dataset.msf!==undefined&&(t.type==='range'||t.type==='color')){ const f=t.dataset.msf; const v=t.type==='range'?Number(t.value):t.value; msEdApply((d)=>{ msSet(d,f,v); },false); } });
+document.addEventListener('change',(ev)=>{ const t=ev.target; if(!MS.edit||!t||!t.dataset) return;
+  if(t.dataset.msf!==undefined){ const f=t.dataset.msf; let v=t.type==='checkbox'?t.checked:(t.type==='range'||t.type==='number')?Number(t.value):t.value; const fd=MS_FIELDS.find(x=>x.p===f); const before=JSON.stringify(MS.edit.cur);
+    msEdApply((d)=>{ if(f==='name') d.name=String(v); else msSet(d,f,v); },true); if(fd&&fd.t==='num'&&!Number.isNaN(v)&&(v<fd.lo||v>fd.hi)) { MS.edit.notes.push(fd.l+': '+v+' は範囲('+fd.lo+'〜'+fd.hi+')の外のため、範囲内に直しました'); msEdSync(); } }
+  else if(t.dataset.mst!==undefined){ const [id,k]=t.dataset.mst.split('|'); msEdApply((d)=>{ d.terrain=d.terrain||{}; d.texture=d.texture||{}; d.texture.per=d.texture.per||{};
+      if(k==='on'){ if(t.checked){ const c=document.querySelector('[data-mst="'+id+'|color"]'); d.terrain[id]=c?c.value:'#808080'; } else delete d.terrain[id]; }
+      else if(k==='color'){ d.terrain[id]=t.value; }
+      else if(k==='kind'){ if(t.value){ d.texture.per[id]=Object.assign({},d.texture.per[id],{kind:t.value}); } else delete d.texture.per[id]; } },true); }
+  else if(t.id==='msStore'){ MS.edit.store=t.value==='world'?'world':'device'; } });
+document.addEventListener('click',(ev)=>{ const t=ev.target&&ev.target.closest?ev.target.closest('#msUndo,#msRedo'):null; if(!t||!MS.edit||t.disabled) return; const E=MS.edit;
+  if(t.id==='msUndo'&&E.undo.length){ E.redo.push(E.snap); E.snap=E.undo.pop(); E.cur=JSON.parse(E.snap); E.notes=[]; msEdSync(); }
+  else if(t.id==='msRedo'&&E.redo.length){ E.undo.push(E.snap); E.snap=E.redo.pop(); E.cur=JSON.parse(E.snap); E.notes=[]; msEdSync(); } });
+/* ---- 管理画面 ---- */
+function msManage(msg){ const w=W(); if(!w) return; const can=msCanEdit(), dis=can?'':'disabled'; const all=msAll(w), cur=(w.mapDisplay||{}).style||'standard';
+  const rows=all.map(s=>`<tr data-msid="${esc(s.id)}"><td>${esc(s.name)}${s.id===cur?' <b>(使用中)</b>':''}</td><td>${s.builtin?'標準(変更不可)':s.store==='world'?'この世界':'この端末'}</td><td>${s.builtin?'':`<button class="btn small" data-msa="use" ${dis}>使う</button> <button class="btn small" data-msa="edit" ${dis}>編集</button> <button class="btn small" data-msa="rename" ${dis}>名前変更</button> <button class="btn small" data-msa="delete" ${dis}>削除</button> `}<button class="btn small" data-msa="dup" ${dis}>複製</button> <button class="btn small" data-msa="export">書き出し</button></td></tr>`).join('');
+  openModal('表示スタイルの管理',`<p class="lp-note">表示だけを変えます。地形・国家・都市のデータは変わりません。</p><table class="tbl" style="width:100%;"><tr><th>名前</th><th>保存先</th><th>操作</th></tr>${rows}</table>
+   <div class="lp-row" style="margin-top:8px;"><span>新しく作る(元にする標準)</span><select id="msNewBase">${MS_BUILTIN.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select><button class="btn small" id="msNew" ${dis}>新規作成…</button></div>
+   <div class="lp-row"><span>ファイルから取り込む(.json)</span><input type="file" id="msImpFile" accept=".json,application/json" ${dis}></div><div id="msMgrMsg" class="lp-note">${esc(msg||'')}</div>`,[{label:'閉じる',onClick:closeModal}]); }
+document.addEventListener('click',(ev)=>{ const el=ev.target&&ev.target.closest?ev.target.closest('[data-msa],#msNew'):null; if(!el||el.disabled) return; const w=W(); if(!w) return;
+  if(el.id==='msNew'){ const b=document.getElementById('msNewBase').value; msEdit(msNewFrom(b),true,'device'); return; }
+  const tr=el.closest('tr'), id=tr&&tr.dataset.msid, S=msAll(w).find(x=>x.id===id); if(!S) return; const a=el.dataset.msa;
+  if(a==='use'){ if(msUse(id)) msManage(); }
+  else if(a==='edit'){ msEdit(S,false,S.store==='world'?'world':'device'); }
+  else if(a==='dup'){ const N=JSON.parse(JSON.stringify(S)); delete N.builtin; N.id='u:'+uid('ms'); N.name=msUniqueName(S.name+'(コピー)',msNames(w)); const r=msCommit(N,S.store==='world'?'world':'device','表示スタイルを複製'); if(r) msManage('「'+r.name+'」を作りました'); }
+  else if(a==='rename'){ openModal('名前を変える','<div class="lp-row"><input type="text" id="msRen" maxlength="60" style="flex:1;" value="'+esc(S.name)+'"></div>',[{label:'キャンセル',onClick:()=>msManage()},{label:'変更する',cls:'primary',onClick:()=>{ const nn=(document.getElementById('msRen').value||'').trim(); if(!nn){ toast('名前を入れてください','err'); return; } const N=JSON.parse(JSON.stringify(S)); N.name=nn; const r=msCommit(N,S.store==='world'?'world':'device','表示スタイルの名前変更'); if(r) msManage(); }}]); }
+  else if(a==='delete'){ openModal('確認','<p>スタイル「'+esc(S.name)+'」を削除します。これを使っている地図は「標準」に戻ります。よろしいですか?</p>',[{label:'キャンセル',onClick:()=>msManage()},{label:'削除する',cls:'danger',onClick:()=>{ msDelete(id); msManage('削除しました'); }}]); }
+  else if(a==='export'){ const o=msExportObj([S]); downloadBlob(new Blob([JSON.stringify(o,null,1)],{type:'application/json'}),'mapstyle-'+(S.name||'style').replace(/[^\w\u3040-\u30ff\u4e00-\u9fff-]+/g,'_')+'.json'); } });
+document.addEventListener('change',(ev)=>{ const t=ev.target; if(!t||t.id!=='msImpFile'||!t.files||!t.files[0]) return; const f=t.files[0]; const rd=new FileReader(); rd.onload=()=>{ const r=msImportText(String(rd.result||''),'device'); if(!r.ok){ msManage('取り込めません: '+r.reason); return; } msManage(r.count+'個のスタイルを取り込みました'+(r.notes.length?'(範囲外の値を直しました: '+r.notes.slice(0,5).join(' / ')+')':'')); }; rd.onerror=()=>msManage('ファイルを読めませんでした'); rd.readAsText(f); });
 function monoOf(w){ w=w||W(); const m=(w&&w.mapDisplay&&w.mapDisplay.mono)||{}; const o={}; MONO_KINDS.forEach(([k])=>{ o[k]=(typeof m[k]==='string'&&HEX6.test(m[k]))?m[k].toLowerCase():''; }); return o; }
 function satSeedDefault(w){ const s=String((w&&(w.id||w.name))||'atlas'); let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return (h>>>0)%1000000; }
 const PAPER_DEFAULT='#e9dcb8', WAVE_GAPS=[4,6,8,10,12,16], STRENGTHS=[['weak','弱'],['mid','中'],['strong','強']];
@@ -10225,6 +10434,78 @@ function bakeTerrainStyled(tile, elevTile, lod, emode, lt, org, style, w){
    ・設定(w.mapDisplay): satSeed / satStrength('weak'|'mid'|'strong') / satClouds /
        parSeed / parPaint(紙の色) / parBurn / parDeco / parWave(波線の間隔px)
    ========================================================= */
+/* ===== v56: 利用者のスタイルの描画(スタイルの値の組に従う。スタイルの名前では処理を分けない) ===== */
+Bake.custom=new WeakMap();
+function bakeTerrainCustom(tile, elevTile, lod, emode, lt, org, S, w){
+  w=w||W(); const P=Pal.terrain, SP=stylePal(w); emode=emode||'shade'; if(emode==='off') elevTile=null;
+  const needNb=(S.sea.mode==='depth'||S.coast.mode!=='none');
+  const T9=[]; let nbSig=''; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const a=(dx===0&&dy===0)?tile:((needNb&&org&&org.nb)?(org.nb(dx,dy)||null):null); T9.push(a); if(needNb&&!(dx===0&&dy===0)) nbSig+=arrId(a)+','; }
+  const key=[msKeyOf(S),SP.ver,P.ver,emode,ltKey(lt),arrId(elevTile),nbSig,w.mapWidth,w.mapHeight].join('|');
+  let e=Bake.custom.get(tile); if(!e||e.key!==key){ e={key,lods:{}}; Bake.custom.set(tile,e); }
+  const ck=lod+'@'+org.x+','+org.y; if(e.lods[ck]) return e.lods[ck];
+  const shadeFn=elevShadeFn(lt), ox=org.x*TS, oy=org.y*TS, s=1<<lod, n=TS>>lod, c=newTileCanvas(n), ctx=c.getContext('2d'), img=ctx.createImageData(n,n), d=img.data;
+  const kind=SP.kind, cat=P.cat, has=P.has, plut=P.lut, W_=w.mapWidth, H_=w.mapHeight, sd=S.seed|0;
+  const at=(X,Y)=>{ let cx=1,cy=1; if(X<0){cx=0;X+=256;} else if(X>=256){cx=2;X-=256;} if(Y<0){cy=0;Y+=256;} else if(Y>=256){cy=2;Y-=256;} if(X<0||X>=256||Y<0||Y>=256) return 0; const tt=T9[cy*3+cx]; return tt?tt[(Y<<8)|X]:0; };
+  /* 地形ごとの色と模様(利用者の上書き → なければ、地形の登録の色・全体の模様) */
+  const lut=new Uint8Array(768), tk=new Uint8Array(256), ts=new Float32Array(256), tz=new Float32Array(256); const KM={none:0,grain:1,streak:2,blotch:3};
+  for(let rid=1;rid<256;rid++){ lut[rid*3]=plut[rid*3]; lut[rid*3+1]=plut[rid*3+1]; lut[rid*3+2]=plut[rid*3+2]; tk[rid]=KM[S.texture.kind]; ts[rid]=S.texture.strength; tz[rid]=S.texture.size.value; }
+  (w.terrainTypes||[]).forEach(t=>{ if(t.rid>255||t.rid<1) return; const o=S.terrain[t.id]; if(o){ const q=hexToRgb(o); lut[t.rid*3]=q[0]; lut[t.rid*3+1]=q[1]; lut[t.rid*3+2]=q[2]; } const q=S.texture.per[t.id]; if(q){ if(q.kind!==undefined) tk[t.rid]=KM[q.kind]; if(q.strength!==undefined) ts[t.rid]=q.strength; if(q.size!==undefined) tz[t.rid]=q.size; } });
+  const bc=hexToRgb(S.base), wvc=hexToRgb(S.sea.waveColor), offc=hexToRgb(S.sea.offshore), shc=hexToRgb(S.sea.shore), cc=hexToRgb(S.coast.color);
+  /* 海岸までの距離(隣のタイルも含めた窓の中で、チャンファー距離変換) */
+  const need=Math.max(S.coast.mode!=='none'?S.coast.width:0,S.sea.mode==='depth'?S.sea.depthRange:0), Rs=needNb?Math.min(24,Math.ceil(need/s)+1):0, N=n+2*Rs;
+  let dL=null,dW=null;
+  if(needNb&&Rs>0){ const INF=1e9, ty=new Uint8Array(N*N); dL=new Float32Array(N*N).fill(INF); dW=new Float32Array(N*N).fill(INF);
+    for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const q=at((i-Rs)*s,(j-Rs)*s); const cell=(!q||!has[q])?0:(kind[q]===0?1:2); ty[j*N+i]=cell; if(cell===1) dL[j*N+i]=0; else if(cell===2) dW[j*N+i]=0; }
+    const ch=(a)=>{ for(let j=0;j<N;j++) for(let i=0;i<N;i++){ const o=j*N+i; let v=a[o]; if(i>0){ const t=a[o-1]+1; if(t<v) v=t; if(j>0){ const t2=a[o-N-1]+1.414; if(t2<v) v=t2; } } if(j>0){ const t=a[o-N]+1; if(t<v) v=t; if(i<N-1){ const t2=a[o-N+1]+1.414; if(t2<v) v=t2; } } a[o]=v; }
+      for(let j=N-1;j>=0;j--) for(let i=N-1;i>=0;i--){ const o=j*N+i; let v=a[o]; if(i<N-1){ const t=a[o+1]+1; if(t<v) v=t; if(j<N-1){ const t2=a[o+N+1]+1.414; if(t2<v) v=t2; } } if(j<N-1){ const t=a[o+N]+1; if(t<v) v=t; if(i>0){ const t2=a[o+N-1]+1.414; if(t2<v) v=t2; } } a[o]=v; } };
+    ch(dL); ch(dW); }
+  let landAvg=[120,130,90], seaAvg=[20,50,84]; { let lr=0,lg=0,lb=0,ln=0,sr=0,sg=0,sb=0,sn=0; for(let rid=1;rid<256;rid++){ if(!has[rid]) continue; if(kind[rid]===0){ lr+=lut[rid*3]; lg+=lut[rid*3+1]; lb+=lut[rid*3+2]; ln++; } else if(kind[rid]===1){ sr+=lut[rid*3]; sg+=lut[rid*3+1]; sb+=lut[rid*3+2]; sn++; } } if(ln) landAvg=[lr/ln,lg/ln,lb/ln]; if(sn) seaAvg=[sr/sn,sg/sn,sb/sn]; }
+  const pg=({none:0,weak:0.04,mid:0.08,strong:0.14})[S.paper.grain], pu=S.paper.unevenness, paperOn=pg>0||pu>0, wgap=S.sea.waveGap, wph=(sd%97)*0.37;
+  const coastW=S.coast.width, coastS=S.coast.strength, cm=S.coast.mode, sm=S.sea.mode, srange=S.sea.depthRange;
+  const mix=(a,b,t)=>a+(b-a)*t;
+  for(let py=0;py<n;py++){ const y=py*s;
+    for(let px=0;px<n;px++){
+      const x=px*s, idx=(y<<8)|x, v=tile[idx], o=(py*n+px)*4, X=ox+x, Y=oy+y;
+      if(X>=W_||Y>=H_) continue;
+      let r,g,b;
+      if(!v||!has[v]){ r=bc[0]; g=bc[1]; b=bc[2]; }
+      else {
+        const k=kind[v]; r=lut[v*3]; g=lut[v*3+1]; b=lut[v*3+2];
+        const kd=tk[v];
+        if(kd&&ts[v]>0){ let nz; const z=tz[v]; if(kd===1) nz=h2(X,Y,sd+11)-0.5; else if(kd===2) nz=vnoise(X/(z*4),Y/(z*0.7),sd+13)-0.5; else nz=vnoise(X/z,Y/z,sd+17)-0.5; const f=1+nz*2*ts[v]*0.35; r*=f; g*=f; b*=f; }
+        if(elevTile){ const el=elevTile[idx];
+          if(el){ const eL=elevTile[x>=s?idx-s:idx], eU=elevTile[y>=s?idx-(s<<8):idx];
+            if(emode==='bands'){ if(!k){ const bcol=elevBandColor(el); r=r*0.5+bcol[0]*0.5; g=g*0.5+bcol[1]*0.5; b=b*0.5+bcol[2]*0.5; } }
+            else { let sh=shadeFn(el-eL,el-eU); sh=sh<-45?-45:sh>45?45:sh; sh*=0.7; const lift=el*0.05; r+=sh+lift; g+=sh+lift; b+=sh+lift*0.8; } } }
+        const ci=dL?((py+Rs)*N+(px+Rs)):0;
+        if(k===1){
+          if(sm==='depth'&&dL){ const t=Math.min(1,(dL[ci]*s)/srange); r=mix(shc[0],offc[0],t); g=mix(shc[1],offc[1],t); b=mix(shc[2],offc[2],t); }
+          else if(sm==='waves'){ const yy=Y+Math.round(2.2*Math.sin(X/(wgap*2.3)+wph)); if(((yy%wgap)+wgap)%wgap===0){ r=mix(r,wvc[0],0.55); g=mix(g,wvc[1],0.55); b=mix(b,wvc[2],0.55); } }
+        }
+        if(dL&&cm!=='none'&&coastW>0){
+          if(cm==='outline'){ if(k===0&&dW[ci]*s<=coastW){ r=cc[0]; g=cc[1]; b=cc[2]; } }
+          else if(cm==='glow'){ if(k!==0){ const dd=dL[ci]*s; if(dd<=coastW){ const a=coastS*(1-dd/coastW); r=mix(r,cc[0],a); g=mix(g,cc[1],a); b=mix(b,cc[2],a); } } }
+          else if(cm==='fade'){ if(k===0){ const dd=dW[ci]*s; if(dd<coastW){ const a=0.5*(1-dd/coastW); r=mix(r,seaAvg[0],a); g=mix(g,seaAvg[1],a); b=mix(b,seaAvg[2],a); } } else { const dd=dL[ci]*s; if(dd<coastW){ const a=0.35*(1-dd/coastW); r=mix(r,landAvg[0],a); g=mix(g,landAvg[1],a); b=mix(b,landAvg[2],a); } } }
+        }
+      }
+      if(paperOn){ const f=1+(h2(X,Y,sd+3)-0.5)*2*pg+(fbm(X,Y,sd+5)-0.5)*pu*0.6; r*=f; g*=f; b*=f; }
+      d[o]=r<0?0:r>255?255:r; d[o+1]=g<0?0:g>255?255:g; d[o+2]=b<0?0:b>255?255:b; d[o+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0); e.lods[ck]=c; return c;
+}
+/* 格子・周辺の減光・装飾(方位記号・縁の枠)。ctx は地図の座標(拡大 kx,ky)。flags.nodeco: 3D地球儀などでは、周辺の減光・装飾を付けない */
+function msOverlay(ctx,S,mw,mh,kx,ky,rx0,ry0,rx1,ry1,flags){
+  flags=flags||{}; const kk=Math.max(1e-6,kx);
+  if(S.grid.on&&S.grid.opacity>0){ const g=S.grid.gap, x0=Math.max(0,Math.floor(rx0/g)*g), x1=Math.min(mw,rx1), y0=Math.max(0,Math.floor(ry0/g)*g), y1=Math.min(mh,ry1);
+    if((x1-x0)/g+(y1-y0)/g<=1200){ ctx.save(); ctx.globalAlpha=S.grid.opacity; ctx.strokeStyle=S.grid.color; ctx.lineWidth=1/kk; ctx.beginPath(); for(let x=x0;x<=x1;x+=g){ ctx.moveTo(x,Math.max(0,ry0)); ctx.lineTo(x,Math.min(mh,ry1)); } for(let y=y0;y<=y1;y+=g){ ctx.moveTo(Math.max(0,rx0),y); ctx.lineTo(Math.min(mw,rx1),y); } ctx.stroke(); ctx.restore(); } }
+  if(flags.nodeco) return;
+  if(S.vignette.strength>0){ ctx.save(); const gr=ctx.createRadialGradient(mw/2,mh/2,Math.min(mw,mh)*0.25,mw/2,mh/2,Math.hypot(mw,mh)/2); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(0,0,0,'+(0.75*S.vignette.strength)+')'); ctx.fillStyle=gr; ctx.fillRect(0,0,mw,mh); ctx.restore(); }
+  if(S.decor.frame.on){ ctx.save(); ctx.strokeStyle=S.decor.frame.color; ctx.lineWidth=4/kk; ctx.strokeRect(2/kk,2/kk,mw-4/kk,mh-4/kk); ctx.lineWidth=1/kk; ctx.strokeRect(8/kk,8/kk,mw-16/kk,mh-16/kk); ctx.restore(); }
+  if(S.decor.compass.on){ const sz=Math.min(S.decor.compass.size/kk,Math.min(mw,mh)*0.35), cx=mw-sz*0.62-14/kk, cy=mh-sz*0.62-14/kk, R=sz*0.5; ctx.save(); ctx.translate(cx,cy); ctx.strokeStyle=S.label.color; ctx.fillStyle=S.label.color; ctx.lineWidth=1.4/kk; ctx.beginPath(); ctx.arc(0,0,R*0.62,0,Math.PI*2); ctx.stroke();
+    for(let i=0;i<4;i++){ ctx.save(); ctx.rotate(i*Math.PI/2); ctx.beginPath(); ctx.moveTo(0,-R); ctx.lineTo(R*0.16,-R*0.2); ctx.lineTo(-R*0.16,-R*0.2); ctx.closePath(); if(i===0) ctx.fill(); else ctx.stroke(); ctx.restore(); }
+    ctx.font=(R*0.34)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.lineWidth=2.4/kk; ctx.strokeStyle=S.label.strokeColor; ctx.strokeText('N',0,-R-R*0.26); ctx.fillText('N',0,-R-R*0.26); ctx.restore(); }
+}
 const PAPER_EMPTY=new Uint8Array(65536);   /* タイルが無い所にも、古地図の紙を敷くための空のタイル */
 /* ---- 衛星風 ---- */
 function satPaint(E){
@@ -10526,7 +10807,7 @@ async function buildElevTextureCanvas(targetW){
    ここで扱う高さは符号付き(-255〜255相当)を想定した実装にしてあり、将来的にマイナス方向
    (陥没・海溝など)の値を扱うようになっても計算式を変える必要がないようにしている。
    元の2D標高データ・元の頂点配置の緯度経度対応(UV)は変更せず、半径だけを変える。 */
-function applyElevationToGeometry(geometry, heightCanvas, exaggeration){
+function applyElevationToGeometry(geometry, heightCanvas, exaggeration, hdataIn){
   if(!geometry) return;
   const pos=geometry.attributes.position, uv=geometry.attributes.uv;
   const base=geometry.userData.baseRadius||100;
@@ -10540,7 +10821,7 @@ function applyElevationToGeometry(geometry, heightCanvas, exaggeration){
     return;
   }
   const hw=heightCanvas.width, hh=heightCanvas.height; const GW=geoWrapOn();
-  const hdata=heightCanvas.getContext('2d').getImageData(0,0,hw,hh).data;
+  const hdata=hdataIn||heightCanvas.getContext('2d').getImageData(0,0,hw,hh).data;
   for(let i=0;i<pos.count;i++){
     const nx=pos.getX(i), ny=pos.getY(i), nz=pos.getZ(i); const len=Math.hypot(nx,ny,nz)||1;
     const nxN=nx/len, nyN=ny/len, nzN=nz/len;
@@ -10806,29 +11087,45 @@ function createOffscreenGlobeRenderer(w,h){
   const camera=new THREE.PerspectiveCamera(45,w/h,0.1,4000); camera.position.set(0,0,260);
   scene.add(new THREE.AmbientLight(0xffffff,0.6));
   const sun=new THREE.DirectionalLight(0xfff2df,0.85); sun.position.set(3,2,4); scene.add(sun); globeApplyLight(sun);
-  return {renderer,scene,camera,lastKey:'',sphere:null,unknown:null};
+  return {renderer,scene,camera,lastKey:'',sphere:null,unknown:null,hdata:null,hw:0,hh:0,elevKey:'',applied:'',elevBuilds:0,applies:0,disposed:false};
 }
+/* 標高の画像の更新を表す印(いまの年代の標高タイルの識別子と、タイルの変更の番号) */
+function globeElevSig(w){ w=w||W(); let sid; try{ sid=currentStateId(); }catch(e){ return ''; } const R=resolveState(sid); if(!R) return ''; const a=[]; R.layers.elev.forEach((t,k)=>a.push(k+':'+arrId(t))); a.sort(); return sid+'|'+a.join(',')+'|'+Store.rev; }
 async function renderOffscreenGlobeFrame(off, w, h, angleY){
-  const wd=W(); const cfg=wd.geo3d;
-  const key=wd.currentYear+'|'+JSON.stringify(cfg)+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(wd)+'|wrap:'+(wrapOn(wd)?1:0);
+  const wd=W(); const cfg=wd.geo3d; const THREE=window.THREE;
+  const cfgC=JSON.stringify(Object.assign({},cfg,{elevExaggeration:0}));   /* 標高の強さは色の絵に関係しない(画面の鍵と同じ) */
+  const key=wd.currentYear+'|'+cfgC+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(wd)+'|wrap:'+(wrapOn(wd)?1:0)+'|'+wd.mapWidth+'|'+globeElevSig(wd);   /* 標高の画像の更新(描き換え)も鍵に含める */
   if(off.lastKey!==key){
     let cv=await buildMapTextureCanvas(Math.min(cfg.textureRes,2048));
     cv=reprojectMapToEquirect(cv, cfg); // 常に全球フレームへ変換
-    const THREE=window.THREE;
     disposeMesh(off.sphere); if(off.sphere) off.scene.remove(off.sphere);
     const tex=new THREE.CanvasTexture(cv); tex.needsUpdate=true; if(geoWrapOn(cfg,wd)) tex.wrapS=THREE.RepeatWrapping;
     const geo=fullSphereGeometry();
     off.sphere=new THREE.Mesh(geo, new THREE.MeshPhongMaterial({map:tex, shininess:6, transparent:true})); off.scene.add(off.sphere);
-    if(!off.unknown){ off.unknown=new THREE.Mesh(new THREE.SphereGeometry(99.4,48,32), new THREE.MeshPhongMaterial({color:0x11212c})); off.scene.add(off.unknown); }
+    off.applied='flat';   /* 作りたての球は平ら */
+    if(!off.unknown){ off.unknown=new THREE.Mesh(new THREE.SphereGeometry(99.4,64,48), new THREE.MeshPhongMaterial({color:0x11212c})); off.scene.add(off.unknown); }
     off.lastKey=key;
   }
+  /* 標高の凹凸(画面と同じ強さ。標高レイヤーがオフなら 0 = 平ら)。標高の画像は、同じ年代・同じ設定の間は作り直さない */
+  const sc=globeElevScale(wd);
+  if(sc){
+    const ek=globeElevSig(wd)+'|'+cfgC+'|'+(wrapOn(wd)?1:0);
+    if(off.elevKey!==ek||!off.hdata){
+      let ev=await buildElevTextureCanvas(Math.min(cfg.textureRes,2048)); const ev0=ev; ev=reprojectMapToEquirect(ev, cfg);
+      off.hw=ev.width; off.hh=ev.height; off.hdata=ev.getContext('2d').getImageData(0,0,ev.width,ev.height).data; off.elevKey=ek; off.elevBuilds++; off.applied='';
+      ev.width=ev.height=0; if(ev0!==ev) ev0.width=ev0.height=0;   /* 画素は off.hdata に持つので、キャンバスは手放す */
+    }
+  }
+  const ak=sc?(off.elevKey+'|'+sc):'flat';
+  if(off.applied!==ak){ applyElevationToGeometry(off.sphere.geometry, sc?{width:off.hw,height:off.hh}:null, sc, sc?off.hdata:null); off.applied=ak; off.applies++; }
   off.sphere.rotation.y=angleY||0; off.unknown.rotation.y=angleY||0;
   off.renderer.render(off.scene, off.camera);
   const out=document.createElement('canvas'); out.width=w; out.height=h;
   out.getContext('2d').drawImage(off.renderer.domElement,0,0);
   return out;
 }
-function disposeOffscreenGlobeRenderer(off){ disposeMesh(off.sphere); disposeMesh(off.unknown); off.renderer.dispose(); }
+/* 出力の終わり・途中の失敗のどちらでも呼ばれる(startTimelapseExport の finally)。形・標高の画素・描画器を手放す */
+function disposeOffscreenGlobeRenderer(off){ if(!off) return; disposeMesh(off.sphere); disposeMesh(off.unknown); off.sphere=null; off.unknown=null; off.hdata=null; off.elevKey=''; off.applied=''; off.disposed=true; try{ off.renderer.dispose(); }catch(e){} }
 
 /* ---------- フレーム列 → GIF / 動画 / ZIP ---------- */
 function frameDelayMs(fps){ return Math.round(1000/fps); }
@@ -15337,7 +15634,7 @@ function mapDisp(w){
     style:styleOf(w), mono:monoOf(w), satSeed:satSeedOf(w), sopt:styleOpts(w)};   /* v36: 表示スタイル(既定は標準) */
 }
 function elevLt(w){ const d=mapDisp(w); return {az:d.lightAz,alt:d.lightAlt,tex:d.texture==='on'}; }
-function elevLightKey(w){ const d=mapDisp(w); return [d.elevation?d.elevMode:'off',d.lightAz,d.lightAlt,d.contour?d.contourStep:0,d.texture,d.style,JSON.stringify(d.mono),d.style==='satellite'?d.satSeed:0,JSON.stringify(d.sopt)].join('|'); }
+function elevLightKey(w){ const d=mapDisp(w); return [d.elevation?d.elevMode:'off',d.lightAz,d.lightAlt,d.contour?d.contourStep:0,d.texture,d.style,JSON.stringify(d.mono),d.style==='satellite'?d.satSeed:0,JSON.stringify(d.sopt),msKeyOf(customStyleOf(w))].join('|'); }
 /* 陰影の係数。既定(方位315°=北西・高度45°)は従来の式と完全に同じ */
 function elevShadeFn(lt){
   const az=lt?lt.az:315, alt=lt?lt.alt:45; if(az===315&&alt===45) return (gx,gy)=>(gx+gy)*0.9;
@@ -15434,7 +15731,7 @@ document.addEventListener('change',(ev)=>{
 function mapStyleHtml(d){
   const w=W(); const ro=!!(w&&w.readOnly)||(typeof roleHasPerm==='function'&&!roleHasPerm('display')); const dis=ro?'disabled':'';
   const shownMono=(k)=>{ if(d.mono[k]) return d.mono[k]; const code=k==='sea'?1:k==='lake'?2:0; const t=(w.terrainTypes||[]).find(t=>SPal.sig!==undefined&&((t.isOcean&&!(t.id==='lake'||t.name==='湖'))?1:(t.id==='lake'||t.name==='湖')?2:0)===code); return (t&&HEX6.test(t.color))?t.color:MONO_DEFAULT[k]; };
-  let h=`<div class="lp-row"><span>表示スタイル</span><select data-mstyle="style" ${dis}>${MAP_STYLES.map(([id,nm])=>`<option value="${id}" ${d.style===id?'selected':''}>${nm}</option>`).join('')}</select></div>
+  let h=`<div class="lp-row"><span>表示スタイル</span><select data-mstyle="style" ${dis}>${MAP_STYLES.map(([id,nm])=>`<option value="${id}" ${d.style===id?'selected':''}>${nm}</option>`).join('')}${msAll(w).filter(s=>!s.builtin).map(s=>`<option value="${esc(s.id)}" ${((w.mapDisplay||{}).style===s.id)?'selected':''}>${esc(s.name)}(自分のスタイル)</option>`).join('')}</select> <button class="btn small" data-mstyle="manage">スタイルを管理…</button></div>
     <div class="lp-note">地形の描き方だけを変えます(表示だけで、地形・国家・都市のデータは変わりません)。国境・都市・ラベルは、どのスタイルでも上に重なります。3D地球儀にも同じスタイルが反映されます(「3D変換 / 更新」を押さなくても、地球儀を開くと自動で描き直されます)。</div>`;
   if(d.style==='mono'){
     h+=MONO_KINDS.map(([k,nm])=>`<div class="lp-row" style="margin-left:22px;"><span>${nm}の色</span><input type="color" data-mstyle="mono-${k}" value="${shownMono(k)}" ${dis}><button class="btn small" data-mstyle="reset-${k}" ${dis}>元の地形の色に戻す</button></div>`).join('')
@@ -15476,7 +15773,7 @@ function mapStyleMutate(summary, fn){
 }
 document.addEventListener('change',(ev)=>{
   const t=ev.target; if(!t||!t.matches||!t.matches('[data-mstyle]')) return; const kind=t.dataset.mstyle;
-  if(kind==='style'){ const v=MAP_STYLES.some(s=>s[0]===t.value)?t.value:'standard';
+  if(kind==='style'){ const v=MAP_STYLES.some(s=>s[0]===t.value)?t.value:(msIsCustomId(t.value)&&msAll(W()).some(s=>s.id===t.value))?t.value:'standard';
     mapStyleMutate('地図の表示スタイル',(d,w)=>{ d.style=v; if(v==='mono'){ const m=monoOf(w); if(!m.land&&!m.sea&&!m.lake) d.mono=Object.assign({},MONO_DEFAULT); } if(v==='satellite'&&!Number.isInteger(d.satSeed)) d.satSeed=satSeedDefault(w); }); }
   else if(kind==='wrapx'){ const v=!!t.checked; mapStyleMutate('左右の端をつなげる(地図の表示)',(d)=>{ d.wrapX=v; }); }
   else if(kind==='sat-strength'){ const v=STRENGTHS.some(x=>x[0]===t.value)?t.value:'mid'; mapStyleMutate('衛星風の模様の強さ',(d)=>{ d.satStrength=v; }); }
@@ -15493,6 +15790,7 @@ document.addEventListener('click',(ev)=>{
   if(/^reset-(land|sea|lake|all)$/.test(kind)){ const k=kind.slice(6);
     mapStyleMutate('単色表示の色を元の地形の色に戻す',(d)=>{ d.mono=Object.assign({land:'',sea:'',lake:''},d.mono||{}); if(k==='all'){ d.mono={land:'',sea:'',lake:''}; } else d.mono[k]=''; }); }
   else if(kind==='wrap-preview'){ wrapPreviewOpen(); }
+  else if(kind==='manage'){ msManage(); }
   else if(kind==='par-paper-reset'){ mapStyleMutate('古地図風の紙の色を既定に戻す',(d)=>{ d.parPaper=''; }); }
   else if(kind==='par-seed'){ mapStyleMutate('古地図風の種を変更',(d,w)=>{ let n; do{ n=Math.floor(Math.random()*1000000); }while(n===styleOpts(w).parSeed); d.parSeed=n; }); }
   else if(kind==='seed'){ mapStyleMutate('衛星風の模様の種を変更',(d,w)=>{ let n; do{ n=Math.floor(Math.random()*1000000); }while(n===satSeedOf(w)); d.satSeed=n; }); }
@@ -20784,6 +21082,9 @@ function dictNormalize(w){
   w.dictPos.forEach(p=>{ if(!p.id) p.id=uid('pos'); if(typeof p.name!=='string') p.name=dictStr(p.name); });
   w.dictTables.forEach(t=>{ if(!t.id) t.id=uid('dtab'); ['lang','pos'].forEach(k=>{ if(typeof t[k]!=='string') t[k]=dictStr(t[k]); });
     ['rows','cols'].forEach(k=>{ t[k]=(Array.isArray(t[k])?t[k]:[]).filter(x=>x&&typeof x==='object').map(x=>({id:x.id?String(x.id):uid(k==='rows'?'drow':'dcol'),name:dictStr(x.name)})); }); });
+  w.dictTables.forEach(t=>{ if(t.templates===undefined) return; const rs=new Set(t.rows.map(r=>r.id)), cs=new Set(t.cols.map(c=>c.id)); const o={};   /* v58: テンプレート(あれば検査。行・列が無いもの、文字列でないもの、空は捨てる) */
+    if(t.templates&&typeof t.templates==='object'&&!Array.isArray(t.templates)) Object.keys(t.templates).forEach(k=>{ const [r,c]=k.split('|'); const v=t.templates[k]; if(rs.has(r)&&cs.has(c)&&typeof v==='string'&&v!=='') o[k]=v.slice(0,DICT_LIM.form); });
+    if(Object.keys(o).length) t.templates=o; else delete t.templates; });
   /* 権限 dictionary の既定: 管理者(常に)と編集者(国家・歴史・地図)。最初に読み込んだときに1度だけ入れる */
   if(w.permExtra&&typeof w.permExtra==='object'&&!w.permExtra.dictionarySeeded){ ['nation','history','map'].forEach(r=>{ if(!Array.isArray(w.permExtra[r])) w.permExtra[r]=[]; if(!w.permExtra[r].includes(DICT_PERM)) w.permExtra[r].push(DICT_PERM); }); w.permExtra.dictionarySeeded=true; }
 }
@@ -20809,19 +21110,39 @@ function dictCleanEntryInput(d){
   o.examples=(d.examples||[]).filter(x=>x&&((x.type==='ref'&&x.refId)||(x.type!=='ref'&&dictStr(x.text).trim()))).slice(0,DICT_LIM.examples).map(x=>({id:x.id||uid('ex'),type:x.type==='ref'?'ref':'text',kind:x.type==='ref'?dictStr(x.kind):'',refId:x.type==='ref'?dictStr(x.refId):'',text:x.type==='ref'?'':dictStr(x.text).slice(0,DICT_LIM.text)}));
   return o;
 }
+/* テンプレートの値(行・列がいまもあり、空でないものだけ。コピーして使うだけで、値は作らない) */
+function dictTemplateCells(t){ const o={}; if(!t||!t.templates||typeof t.templates!=='object') return o; const rs=new Set((t.rows||[]).map(r=>r.id)), cs=new Set((t.cols||[]).map(c=>c.id)); Object.keys(t.templates).forEach(k=>{ const [r,c]=k.split('|'); const v=t.templates[k]; if(rs.has(r)&&cs.has(c)&&typeof v==='string'&&v!=='') o[k]=v.slice(0,DICT_LIM.form); }); return o; }
+function dictTemplateCount(t,kind,id){ const c=dictTemplateCells(t); return Object.keys(c).filter(k=>{ const [r,cc]=k.split('|'); return !kind||(kind==='rows'?r===id:cc===id); }).length; }
+/* 語の活用へ、テンプレートの値をコピーする(すでに値のあるセルは上書きしない。コピー後はテンプレートと切り離される) */
+function dictApplyTemplate(e,t){ const c=dictTemplateCells(t); const ks=Object.keys(c); if(!ks.length) return 0; if(!e.inflections||typeof e.inflections!=='object') e.inflections={}; let n=0; ks.forEach(k=>{ const cur=e.inflections[t.id]; if(cur&&cur[k]!==undefined&&cur[k]!=='') return; if(!e.inflections[t.id]) e.inflections[t.id]={}; e.inflections[t.id][k]=c[k]; n++; }); return n; }
+function dictSetTemplate(tid,rowId,colId,val){
+  const w=dictW(); const t=(w.dictTables||[]).find(x=>x.id===tid); if(!t) return false;
+  if(!dictCan()){ dictDeny(); return false; }
+  if(!t.rows.some(r=>r.id===rowId)||!t.cols.some(c=>c.id===colId)) return false;
+  val=dictStr(val).slice(0,DICT_LIM.form); const k=dictCellKey(rowId,colId); if(dictStr((t.templates||{})[k])===val) return false;
+  return mutate('辞書の活用表のテンプレートを入力: '+dictLangName(t.lang,w)+'/'+dictPosName(t.pos,w),()=>{ const tt=w.dictTables.find(x=>x.id===tid); if(!tt.templates||typeof tt.templates!=='object') tt.templates={}; if(val==='') delete tt.templates[k]; else tt.templates[k]=val; if(!Object.keys(tt.templates).length) delete tt.templates; },DICT_PERM);
+}
+/* 品詞を変えたとき、新しい品詞のテンプレートをコピーするか尋ねる対象(なければ null) */
+function dictTemplateAsk(e,data,w){ w=w||dictW(); if(!e||!data||!data.pos||data.pos===e.pos) return null; const t=dictTableFor(e.lang,data.pos,w); if(!t) return null; const c=dictTemplateCells(t); const have=(e.inflections&&e.inflections[t.id])||{}; const ks=Object.keys(c).filter(k=>have[k]===undefined||have[k]==='');
+  return ks.length?{t,n:ks.length,skip:Object.keys(c).length-ks.length,pos:dictPosName(data.pos,w)}:null; }
+function dictTemplatePrompt(ask,done){
+  openModal('新しい品詞のテンプレートをコピーしますか？','<p>品詞「'+esc(ask.pos)+'」の活用表のテンプレートの値 '+ask.n+'件を、この語の活用の初期値としてコピーできます。</p><p>この語の、すでに入力されている語形は、消えも上書きもされません'+(ask.skip?'(入力済みのセル '+ask.skip+'件は、そのままです)':'')+'。コピーした値は、その後は語ごとに自由に変えられます。</p><p>既定は「コピーしない」です。</p>',
+    [{label:'保存をやめる',onClick:closeModal},{label:'コピーしないで保存',cls:'primary',onClick:()=>done(false)},{label:'コピーして保存',onClick:()=>done(true)}]);
+}
 function dictAddEntry(d){
   const w=dictW(); if(!w) return '';
   if(!dictCan()){ dictDeny(); return ''; }
   const o=dictCleanEntryInput(d); if(!dictLangById(o.lang,w)){ toast('言語を選んでください','err'); return ''; } if(!o.headword.trim()){ toast('見出し語の表記を入力してください','err'); return ''; }
   const id=uid('dict'); const e=Object.assign({id,inflections:{},translations:[]},o);
+  { const tt=dictTableFor(o.lang,o.pos,w); if(tt) dictApplyTemplate(e,tt); }   /* v58: 活用表にテンプレートがあれば、初期値としてコピー(無ければ従来どおり空) */
   const ok=mutate('辞書の見出し語を追加: '+tyPlain(o.headword),()=>{ w.dictEntries.push(e); },DICT_PERM);
   return ok?id:'';
 }
-function dictUpdateEntry(id,d){
+function dictUpdateEntry(id,d,opts){
   const w=dictW(); const e=dictEntry(id,w); if(!e) return false;
   if(!dictCan()){ dictDeny(); return false; }
   const o=dictCleanEntryInput(Object.assign({lang:e.lang},d)); if(!o.headword.trim()){ toast('見出し語の表記を入力してください','err'); return false; }
-  return mutate('辞書の見出し語を編集: '+tyPlain(o.headword),()=>{ const t=dictEntry(id,w); Object.assign(t,{headword:o.headword,reading:o.reading,pos:o.pos,notes:o.notes,meanings:o.meanings,examples:o.examples}); },DICT_PERM);
+  return mutate('辞書の見出し語を編集: '+tyPlain(o.headword),()=>{ const t=dictEntry(id,w); Object.assign(t,{headword:o.headword,reading:o.reading,pos:o.pos,notes:o.notes,meanings:o.meanings,examples:o.examples}); if(opts&&opts.copyTemplate){ const tt=dictTableFor(t.lang,o.pos,w); if(tt) dictApplyTemplate(t,tt); } },DICT_PERM);
 }
 function dictDeleteEntry(id){
   const w=dictW(); const e=dictEntry(id,w); if(!e) return false;
@@ -20864,6 +21185,7 @@ function dictTableEdit(tid,kind,op,idx,name){   /* kind: rows|cols / op: add|ren
   if(op==='rename'){ const nm=dictStr(name).slice(0,DICT_LIM.name); if(nm===it.name) return false; return mutate('辞書の活用表を編集: 名前を変更',()=>{ (w.dictTables.find(x=>x.id===tid))[kind][idx].name=nm; },DICT_PERM); }
   if(op==='delete'){ const id=it.id; return mutate('辞書の活用表を編集: '+(kind==='rows'?'行を削除':'列を削除'),()=>{
     const tt=w.dictTables.find(x=>x.id===tid); tt[kind]=tt[kind].filter(x=>x.id!==id);
+    if(tt.templates){ Object.keys(tt.templates).forEach(k=>{ const [r,c]=k.split('|'); if((kind==='rows'&&r===id)||(kind==='cols'&&c===id)) delete tt.templates[k]; }); if(!Object.keys(tt.templates).length) delete tt.templates; }
     w.dictEntries.forEach(e=>{ const m=e.inflections&&e.inflections[tid]; if(!m) return; Object.keys(m).forEach(k=>{ const [r,c]=k.split('|'); if((kind==='rows'&&r===id)||(kind==='cols'&&c===id)) delete m[k]; }); if(!Object.keys(m).length) delete e.inflections[tid]; });
   },DICT_PERM); }
   return false;
@@ -21089,9 +21411,16 @@ function dvSettingsHtml(w,lang,can){
     if(!t){ h+=`<button class="btn small" data-dv-tabnew="${esc(p.id)}" ${dis}>「${esc(p.name)}」の活用表を作る</button>`; return; }
     h+=`<div class="dv-sub">行(縦に並ぶ項目)</div>`+t.rows.map((r,i)=>`<div class="dv-row"><input type="text" data-dv-tn="${esc(t.id)}|rows|${i}" value="${esc(r.name)}" ${dis}><button class="btn small danger" data-dv-td="${esc(t.id)}|rows|${i}" ${dis}>削除</button></div>`).join('')+`<button class="btn small" data-dv-ta="${esc(t.id)}|rows" ${dis}>＋ 行を追加</button>`+
       `<div class="dv-sub">列(横に並ぶ項目)</div>`+t.cols.map((c,i)=>`<div class="dv-row"><input type="text" data-dv-tn="${esc(t.id)}|cols|${i}" value="${esc(c.name)}" ${dis}><button class="btn small danger" data-dv-td="${esc(t.id)}|cols|${i}" ${dis}>削除</button></div>`).join('')+`<button class="btn small" data-dv-ta="${esc(t.id)}|cols" ${dis}>＋ 列を追加</button>`+
-      `<div style="margin-top:6px"><button class="btn small danger" data-dv-tabdel="${esc(t.id)}" ${dis}>この活用表を削除</button></div>`;
+      dvTplHtml(t,dis)+`<div style="margin-top:6px"><button class="btn small danger" data-dv-tabdel="${esc(t.id)}" ${dis}>この活用表を削除</button></div>`;
   });
   return h+'</div></div>';
+}
+/* 活用表のテンプレートの入力欄(表と同じ行・列。語形の入力と同じ上限) */
+function dvTplHtml(t,dis){
+  if(!t.rows.length||!t.cols.length) return '';
+  return `<div class="dv-sub">テンプレート(語を追加するとき、この値が語の活用の初期値としてコピーされます)</div><div class="scrollx"><table class="tbl dv-tpl" data-dv-tpl-table="${esc(t.id)}"><thead><tr><th></th>${t.cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead><tbody>`+
+    t.rows.map(r=>`<tr><th>${esc(r.name)}</th>${t.cols.map(c=>{ const k=dictCellKey(r.id,c.id); return `<td><input type="text" data-dv-tpl="${esc(t.id)}|${esc(r.id)}|${esc(c.id)}" value="${esc((t.templates&&t.templates[k])||'')}" maxlength="${DICT_LIM.form}" ${dis}></td>`; }).join('')}</tr>`).join('')+
+    `</tbody></table></div><small class="hint">空のセルは空のままです。これから追加する語にだけコピーされ、既存の語の語形は変わりません(まとめて適用する操作はありません)。</small>`;
 }
 function dvBindSettings(root,w){
   const on=(sel,ev,fn)=>root.querySelectorAll(sel).forEach(el=>el.addEventListener(ev,fn)); const rerender=()=>renderDictionaryView();
@@ -21103,10 +21432,11 @@ function dvBindSettings(root,w){
   on('[data-dv-ta]','click',e=>{ const [t,k]=e.currentTarget.dataset.dvTa.split('|'); if(dictTableEdit(t,k,'add',0,(k==='rows'?'行':'列')+((w.dictTables.find(x=>x.id===t)||{[k]:[]})[k].length+1))) rerender(); });
   on('[data-dv-tn]','change',e=>{ const [t,k,i]=e.target.dataset.dvTn.split('|'); if(dictTableEdit(t,k,'rename',+i,e.target.value)) rerender(); });
   on('[data-dv-td]','click',e=>{ const [t,k,i]=e.currentTarget.dataset.dvTd.split('|'); const tb=w.dictTables.find(x=>x.id===t); const it=tb&&tb[k][+i]; if(!it) return;
-    const n=k==='rows'?dictCellCount(w,t,it.id,''):dictCellCount(w,t,'',it.id);
-    confirmDelete((k==='rows'?'行':'列')+'「'+it.name+'」を削除します。この'+(k==='rows'?'行':'列')+'に入力された語形 '+n+'件が消えます。よろしいですか？',()=>{ if(dictTableEdit(t,k,'delete',+i)) rerender(); }); });
+    const n=k==='rows'?dictCellCount(w,t,it.id,''):dictCellCount(w,t,'',it.id); const nt=dictTemplateCount(tb,k,it.id);
+    confirmDelete((k==='rows'?'行':'列')+'「'+it.name+'」を削除します。この'+(k==='rows'?'行':'列')+'に入力された語形 '+n+'件と、テンプレートの値 '+nt+'件が消えます。よろしいですか？',()=>{ if(dictTableEdit(t,k,'delete',+i)) rerender(); }); });
+  on('[data-dv-tpl]','change',e=>{ const [t,r,c]=e.target.dataset.dvTpl.split('|'); dictSetTemplate(t,r,c,e.target.value); });
   on('[data-dv-tabdel]','click',e=>{ const t=e.currentTarget.dataset.dvTabdel; const tb=w.dictTables.find(x=>x.id===t); if(!tb) return; const n=dictCellCount(w,t);
-    confirmDelete('「'+dictPosName(tb.pos,w)+'」の活用表を削除します。入力された語形 '+n+'件が消えます。よろしいですか？',()=>{ if(dictDeleteTable(t)) rerender(); }); });
+    confirmDelete('「'+dictPosName(tb.pos,w)+'」の活用表を削除します。入力された語形 '+n+'件と、テンプレートの値 '+dictTemplateCount(tb)+'件が消えます。よろしいですか？',()=>{ if(dictDeleteTable(t)) rerender(); }); });
 }
 
 /* ---------- 見出し語の編集 ---------- */
@@ -21136,6 +21466,8 @@ function dictEntryModal(id){
         examples:[...document.querySelectorAll('#dmExs [data-dm=x]')].map(r=>{ const k=r.querySelector('.dm-xt').value; return k==='text'?{type:'text',text:r.querySelector('.dm-xtext').value}:{type:'ref',kind:k,refId:r.querySelector('.dm-xref').value}; })};
       if(!data.headword.trim()){ toast('見出し語の表記を入力してください','err'); return; }
       const dup=dictDupOf({id:id||'',lang:langId,headword:data.headword},w).length;
+      const ask=e?dictTemplateAsk(e,data,w):null;   /* v58: 品詞を変え、新しい品詞にテンプレートがあるとき */
+      if(ask){ dictTemplatePrompt(ask,(copy)=>{ if(!dictUpdateEntry(id,data,{copyTemplate:copy})) return; closeModal(); DictView.sel=id; DictView.lang=langId; DictView.mode='list'; if(dup) toast('この言語に、同じ表記の語がすでにあります(保存はしました)','err'); renderDictionaryView(); }); return; }
       let rid='';
       if(e){ if(dictUpdateEntry(id,data)) rid=id; } else rid=dictAddEntry(Object.assign({lang:langId},data));
       if(!rid) return;   /* 権限なし・入力不備: 理由は通知済み。画面は閉じない */
@@ -25424,6 +25756,571 @@ function init(){
 AI.ui = { toggle, open:()=>toggle(true), close:()=>toggle(false), send:(text)=>{ if(!drawer) build(); $('aiInput').value=text; return send(); } };
 init();
 })();
+
+/* ===== v59: AIによる地図・歴史の計画(AiPlan) =====
+   ・AIへは画像を送らない。地図は「ブロックの要約(地形の比率・標高・隣接・国家/都市の有無)」だけを文字で送る
+   ・AIの出力は、すべて atlas-proposal-v1 の提案にする。承認するまで世界は変わらない(承認は範囲・時代ごと、1回の「元に戻す」で戻る)
+   ・送信の前に、内容の一覧とおおよその量を見せて確認を取る。送信先は、利用者が設定した接続先だけ
+   ・送受信の記録は、この端末の中だけ(閲覧・削除できる)。APIキー・トークン・クライアントIDは、送信にも記録にも提案にも入れない
+   ・既存の機能・提案の仕組みは変えず、足すだけ(新しいTool: map.rewrite_terrain / map.smooth_coast / map.get_block_summary) */
+const AiPlan=(function(){
+'use strict';
+const AI=window.AtlasAI; const H=(s)=>esc(String(s===undefined||s===null?'':s));
+const LS_SET='atlas_aiplan_v1', LS_LOG='atlas_aiplan_log_v1', LS_STAT='atlas_aiplan_stats_v1';
+const store={ get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set(k,v){ try{ localStorage.setItem(k,v); return true; }catch(e){ return false; } }, del(k){ try{ localStorage.removeItem(k); }catch(e){} } };
+const tick=()=>new Promise(r=>setTimeout(r,0));
+const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
+const trunc=(s,n)=>{ s=String(s===undefined||s===null?'':s); return s.length>n?s.slice(0,n)+'…':s; };
+function hash(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h.toString(16)+':'+s.length; }
+
+/* ---------- 設定(この端末だけ。秘密は入れない) ---------- */
+const DEF={ blockDiv:32, blockPx:0, reqChars:{'claude-artifact':16000,'openai-compatible':8000}, retry:3, eraSpan:100, riverMax:12 };
+/* 既定値の理由: ブロック=地図の長辺/32(1ブロックが約3%。AIが地形の塊を読める粗さで、1回の送信に数十ブロック入る)。
+   1回の送信上限=Claude 16000文字 / 外部・ローカルAI 8000文字(小さなモデルは長い入力で崩れやすい)。修正の依頼=最大3回(仕様の上限)。時代の幅=100年 */
+let cfg=loadCfg();
+function loadCfg(){ let o={}; try{ o=JSON.parse(store.get(LS_SET)||'{}')||{}; }catch(e){ o={}; }
+  const c=JSON.parse(JSON.stringify(DEF)); if(Number.isFinite(o.blockDiv)) c.blockDiv=clampN(Math.round(o.blockDiv),4,128); if(Number.isFinite(o.blockPx)) c.blockPx=clampN(Math.round(o.blockPx),0,1024);
+  if(o.reqChars&&typeof o.reqChars==='object') Object.keys(c.reqChars).forEach(k=>{ if(Number.isFinite(o.reqChars[k])) c.reqChars[k]=clampN(Math.round(o.reqChars[k]),1500,200000); });
+  if(Number.isFinite(o.retry)) c.retry=clampN(Math.round(o.retry),0,3); if(Number.isFinite(o.eraSpan)) c.eraSpan=clampN(Math.round(o.eraSpan),1,5000); if(Number.isFinite(o.riverMax)) c.riverMax=clampN(Math.round(o.riverMax),0,60); return c; }
+function saveCfg(){ store.set(LS_SET,JSON.stringify(cfg)); }
+
+/* ---------- 計測(数字だけ。端末内) ---------- */
+let stats={ summary:[], req:[], hits:0, builds:0 };
+try{ const o=JSON.parse(store.get(LS_STAT)||'null'); if(o&&Array.isArray(o.summary)&&Array.isArray(o.req)){ stats.summary=o.summary.slice(-60); stats.req=o.req.slice(-100); } }catch(e){}
+function saveStats(){ store.set(LS_STAT,JSON.stringify({summary:stats.summary.slice(-60), req:stats.req.slice(-100)})); }
+const avg=(a)=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+function statsReport(){ const bySize={}; stats.summary.forEach(s=>{ const k=s.w+'x'+s.h; (bySize[k]=bySize[k]||[]).push(s.ms); });
+  return { summaryMsBySize:Object.keys(bySize).map(k=>({size:k, n:bySize[k].length, avgMs:Math.round(avg(bySize[k]))})),
+    requests:stats.req.length, avgRequestChars:Math.round(avg(stats.req.map(r=>r.chars))), avgResponseMs:Math.round(avg(stats.req.filter(r=>!r.cached).map(r=>r.ms))), avgAttempts:+avg(stats.req.map(r=>r.attempts)).toFixed(2), cacheHits:stats.hits, summaryBuilds:stats.builds }; }
+
+/* ---------- 地形・地図の基本 ---------- */
+function tmeta(w){ try{ updatePalettes(w,w.currentYear); }catch(e){} const water=(typeof Pal!=='undefined'&&Pal.terrain&&Pal.terrain.water)||[];
+  const list=(w.terrainTypes||[]).map(t=>({rid:t.rid,id:t.id,name:t.name,water:!!water[t.rid]})); return {list, byRid:new Map(list.map(t=>[t.rid,t])), isWater:(rid)=>!!water[rid]}; }
+function tFind(meta,s){ s=String(s===undefined||s===null?'':s).trim(); if(!s) return null; return meta.list.find(t=>t.id===s)||meta.list.find(t=>t.name===s)||null; }
+const KIND_RE={ forest:/forest|森林|^森$/i, grass:/grass|草原|草地/i, desert:/desert|砂漠/i, wetland:/wetland|swamp|marsh|湿地|沼沢/i, jungle:/jungle|密林/i };
+function kindRid(meta,kind){ const a=meta.list.find(t=>t.id===kind); if(a) return a.rid; const re=KIND_RE[kind]; const b=re&&meta.list.find(t=>!t.water&&re.test(t.name)); return b?b.rid:0; }
+function genericLand(meta){ const s=new Set(); meta.list.forEach(t=>{ if(t.water) return; if(['plain','grass','wasteland'].includes(t.id)||/平地|平原|草原|荒野/.test(t.name)) s.add(t.rid); }); return s; }
+function fullRect(w){ return {x0:0,y0:0,x1:w.mapWidth-1,y1:w.mapHeight-1}; }
+function normRect(w,r){ if(!r) return fullRect(w); const x0=clampN(Math.floor(Number(r.x0)),0,w.mapWidth-1), y0=clampN(Math.floor(Number(r.y0)),0,w.mapHeight-1), x1=clampN(Math.floor(Number(r.x1)),0,w.mapWidth-1), y1=clampN(Math.floor(Number(r.y1)),0,w.mapHeight-1); if(!(x1>=x0&&y1>=y0)||![x0,y0,x1,y1].every(Number.isFinite)) return null; return {x0,y0,x1,y1}; }
+const rectKey=(r)=>r.x0+','+r.y0+','+r.x1+','+r.y1;
+function blockPxFor(w){ if(cfg.blockPx>0) return cfg.blockPx; return Math.max(8,Math.round(Math.max(w.mapWidth,w.mapHeight)/cfg.blockDiv)); }
+function nationRidMap(w){ const m=new Map(); (w.nations||[]).forEach(n=>{ if(n.rid) m.set(n.rid,n.id); }); return m; }
+
+/* ---------- ブロックの要約(§1)。生のピクセル配列は持たない・送らない。地図が変わったときだけ作り直す ---------- */
+let sumCache=null;
+function sumKey(w,rect,bp){ const sid=currentStateId(); const cs=(w.cities||[]).map(c=>c.id+':'+c.x+','+c.y).join(';');
+  return [sid,Store.rev,w.mapWidth,w.mapHeight,bp,rectKey(rect),w.currentYear,hash(cs),(w.terrainTypes||[]).length].join('|'); }
+async function buildSummary(w,rectIn,o){
+  o=o||{}; w=w||W(); const rect=normRect(w,rectIn); if(!rect) throw new Error('範囲が不正です'); const bp=o.blockPx>0?o.blockPx:blockPxFor(w); const key=sumKey(w,rect,bp);
+  if(!o.force&&sumCache&&sumCache.key===key){ stats.hits++; return sumCache.data; }
+  const t0=performance.now(); const meta=tmeta(w); const R=resolveState(currentStateId()); const rdT=pxReader(R,'terrain'), rdE=pxReader(R,'elev'), rdN=pxReader(R,'nation');
+  const nmap=nationRidMap(w); const P=ppu(); const stride=Math.max(1,Math.ceil(bp/32));
+  const c0=Math.floor(rect.x0/bp), c1=Math.floor(rect.x1/bp), r0=Math.floor(rect.y0/bp), r1=Math.floor(rect.y1/bp);
+  const cities=(w.cities||[]).filter(c=>Number.isFinite(c.x)&&Number.isFinite(c.y)).map(c=>({id:c.id,px:Math.round(c.x*P.x),py:Math.round(c.y*P.y)}));
+  const blocks=[], idx=new Map(); const tid=(rid)=>rid===0?'none':(meta.byRid.get(rid)||{id:'t'+rid}).id;
+  for(let r=r0;r<=r1;r++){
+    for(let c=c0;c<=c1;c++){
+      const x0=Math.max(rect.x0,c*bp), y0=Math.max(rect.y0,r*bp), x1=Math.min(rect.x1,(c+1)*bp-1), y1=Math.min(rect.y1,(r+1)*bp-1); if(x1<x0||y1<y0) continue;
+      const cnt=new Map(), nat=new Map(); let n=0, wn=0, es=0, emin=255, emax=0;
+      for(let y=y0;y<=y1;y+=stride){ for(let x=x0;x<=x1;x+=stride){ const t=rdT(x,y), e=rdE(x,y), nr=rdN(x,y); n++; cnt.set(t,(cnt.get(t)||0)+1); if(t!==0&&meta.isWater(t)) wn++; es+=e; if(e<emin) emin=e; if(e>emax) emax=e; if(nr) nat.set(nr,(nat.get(nr)||0)+1); } }
+      const top=[...cnt.entries()].sort((a,b)=>b[1]-a[1]||a[0]-b[0]).slice(0,3).map(([t,k])=>[tid(t),Math.round(k/n*100)/100]);
+      const nids=[...nat.entries()].sort((a,b)=>b[1]-a[1]).map(([rid])=>nmap.get(rid)).filter(Boolean).slice(0,3);
+      const cids=cities.filter(q=>q.px>=x0&&q.px<=x1&&q.py>=y0&&q.py<=y1).map(q=>q.id).slice(0,5);
+      const b={c,r,x0,y0,x1,y1,t:top,wr:Math.round(wn/n*100)/100,em:Math.round(es/n),en:emin,ex:emax,nat:nids,city:cids,nb:{},bd:'inland',nbd:0}; idx.set(c+','+r,b); blocks.push(b);
+    }
+    if((r-r0)%4===3) await tick();
+  }
+  const waterDom=(b)=>b&&b.t.length&&b.t[0][0]!=='none'&&meta.list.some(t=>t.id===b.t[0][0]&&t.water);
+  blocks.forEach(b=>{ const N=idx.get(b.c+','+(b.r-1)), E=idx.get(b.c+1+','+b.r), S=idx.get(b.c+','+(b.r+1)), Wb=idx.get(b.c-1+','+b.r);
+    const nm=(q)=>q?(q.t[0]?q.t[0][0]:'none'):'-'; b.nb={n:nm(N),e:nm(E),s:nm(S),w:nm(Wb)};
+    const ns=[N,E,S,Wb].filter(Boolean); const selfWater=waterDom(b);
+    if(b.wr>=0.95) b.bd='ocean'; else if(b.wr>0.03||ns.some(q=>waterDom(q)!==selfWater)) b.bd='coast'; else b.bd='inland';
+    b.nbd=ns.some(q=>(q.nat[0]||'')!==(b.nat[0]||''))?1:0; });
+  const data={ bp, cols:Math.ceil(w.mapWidth/bp), rows:Math.ceil(w.mapHeight/bp), rect, mapW:w.mapWidth, mapH:w.mapHeight, stride, blocks, terrains:meta.list.map(t=>({id:t.id,name:t.name,water:t.water})), builtAt:Date.now() };
+  const ms=Math.round(performance.now()-t0); data.ms=ms; sumCache={key,data}; stats.builds++; stats.summary.push({w:w.mapWidth,h:w.mapHeight,bp,blocks:blocks.length,ms,at:Date.now()}); saveStats();
+  return data;
+}
+/* 要約の1ブロックを、AIに送る短い文字にする(座標は ブロック番号 [列,行]) */
+function blockToText(b){ const o={b:[b.c,b.r],t:b.t.map(x=>x[0]+':'+x[1]).join(','),w:b.wr,e:[b.em,b.en,b.ex],nb:'N='+b.nb.n+',E='+b.nb.e+',S='+b.nb.s+',W='+b.nb.w,k:b.bd+(b.nbd?'+国境':'')}; if(b.nat.length) o.n=b.nat; if(b.city.length) o.c=b.city; return JSON.stringify(o); }
+function summaryHeader(sm){ return `地図の大きさ ${sm.mapW}x${sm.mapH}px / ブロック ${sm.bp}px 四方(列0〜${sm.cols-1}, 行0〜${sm.rows-1}) / 各ブロック: b=[列,行] t=地形の比率(上位) w=水域の割合 e=[標高の平均,最小,最大(0〜255)] nb=隣のブロックの主な地形 k=海岸(coast)/内陸(inland)/海(ocean)(+国境) n=国家ID c=都市ID`; }
+function terrainListText(sm){ return sm.terrains.map(t=>`${t.id}(${t.name}${t.water?'・水域':''})`).join(', '); }
+
+/* ---------- 送信先・安全(§7) ---------- */
+function dest(){ const s=AI.settings.get(); if(s.provider==='openai-compatible'){ const base=AI.normBase(s.openai.baseUrl); return {kind:'openai', pid:'openai-compatible', base, url:base+'/chat/completions', model:s.openai.model||'', label:base||'(未設定)'}; }
+  return {kind:'claude', pid:'claude-artifact', label:'Claude(このページを開いているあなたのアカウント)'}; }
+function checkDestination(url){ const s=AI.settings.get(); if(s.provider!=='openai-compatible') return {ok:false, reason:'いまの接続先はClaudeです。URLへの送信は行いません'};
+  let u,b; try{ u=new URL(String(url)); b=new URL(AI.normBase(s.openai.baseUrl)); }catch(e){ return {ok:false, reason:'URLが不正です'}; }
+  if(!/^https?:$/.test(u.protocol)||!/^https?:$/.test(b.protocol)) return {ok:false, reason:'http/https以外のURLには送りません'};
+  if(u.username||u.password) return {ok:false, reason:'URLに認証情報を含められません'};
+  const bp=b.pathname.replace(/\/+$/,''); if(u.origin!==b.origin||!(u.pathname===bp||u.pathname.startsWith(bp+'/'))) return {ok:false, reason:`あなたが設定した接続先(${b.origin}${bp})の範囲外のURLには送りません`};
+  return {ok:true, reason:''}; }
+const hasSecret=(t)=>{ try{ const s=String(t); return AI.redact(s)!==s; }catch(e){ return true; } };
+function safeLogText(t,n){ const s=trunc(t,n); return hasSecret(s)?'[秘密情報の疑いがあるため、記録しません]':AI.redact(s); }
+/* AIの返事の検査: スクリプト・外部URLを含むものは受け付けない(値だけを採用する) */
+function sanitizeResponse(text){ const t=String(text||''); const bad=[];
+  if(t.length>400000) bad.push('返事が大きすぎます');
+  if(/<\s*script|<\s*iframe|<\s*object|<\s*embed|<\s*svg|<\s*img/i.test(t)) bad.push('スクリプトやHTMLの要素');
+  if(/javascript\s*:|data\s*:\s*text\/html|vbscript\s*:/i.test(t)) bad.push('スクリプトのURL');
+  if(/\bon[a-z]{3,}\s*=/i.test(t)) bad.push('イベント属性');
+  if(/(?:https?:)?\/\/[A-Za-z0-9._-]+\.[A-Za-z]{2,}/i.test(t)||/\bhttps?:\/\//i.test(t)) bad.push('外部URL');
+  return {ok:bad.length===0, reasons:bad}; }
+function parseJsonLoose(text){ const t=String(text||'').replace(/<think>[\s\S]*?(<\/think>|$)/g,'').replace(/```(?:json)?/g,''); const i=t.indexOf('{'), j=t.lastIndexOf('}'); if(i<0||j<i) throw new Error('JSONが見つかりません'); return JSON.parse(t.slice(i,j+1)); }
+
+/* ---------- 端末内の送受信ログ(§0/§7) ---------- */
+let logArr=null;
+function logLoad(){ if(logArr) return logArr; logArr=[]; try{ const a=JSON.parse(store.get(LS_LOG)||'[]'); if(Array.isArray(a)) a.forEach(e=>logArr.push(e)); }catch(e){} return logArr; }
+function logAdd(e){ const a=logLoad(); a.unshift(e); if(a.length>60) a.length=60; store.set(LS_LOG,JSON.stringify(a)); }
+const log={ list:()=>logLoad(), clear:()=>{ logLoad().length=0; store.del(LS_LOG); } };
+
+/* ---------- 同じ依頼のキャッシュ(§6)。内容が同じなら再送しない ---------- */
+const reqCache=new Map(); const REQ_CACHE_MAX=80;
+function cacheGet(k){ if(!reqCache.has(k)) return null; const v=reqCache.get(k); reqCache.delete(k); reqCache.set(k,v); return v; }
+function cacheDel(k){ reqCache.delete(k); }
+function cacheSet(k,v){ reqCache.set(k,v); while(reqCache.size>REQ_CACHE_MAX) reqCache.delete(reqCache.keys().next().value); }
+
+/* ---------- 送信(1回分) ---------- */
+async function transport(url,payload,signal){
+  const c=checkDestination(url); if(!c.ok){ const e=new Error(c.reason); e.code='dest_refused'; throw e; }
+  let resp; try{ resp=await fetch(url,{method:'POST',signal,headers:Object.assign({'Content-Type':'application/json'},AI.settings.authHeader()),body:JSON.stringify(payload)}); }
+  catch(e){ if(signal&&signal.aborted){ const x=new Error('中止しました'); x.code='cancelled'; throw x; } const x=new Error(AI.redact('接続できませんでした: '+(e&&e.message||e))); x.code='upstream'; throw x; }
+  if(!resp.ok){ let b=''; try{ b=await resp.text(); }catch(e){} const x=new Error(AI.redact(`HTTP ${resp.status}: ${trunc(b,160)}`)); x.code='upstream'; throw x; }
+  let j; try{ j=await resp.json(); }catch(e){ const x=new Error('返事をJSONとして読めませんでした'); x.code='upstream'; throw x; }
+  const m=j&&j.choices&&j.choices[0]&&j.choices[0].message; const text=m&&typeof m.content==='string'?m.content:''; if(!text){ const x=new Error('モデルから文章が返りませんでした'); x.code='upstream'; throw x; } return text;
+}
+/* 1回の依頼。確認済みの内容だけを送る(確認は、ジョブの先頭で1度)。 kind=ログの種類 */
+async function complete(o){
+  const d=dest(); const system=String(o.system||''), user=String(o.user||''); const chars=system.length+user.length; const t0=performance.now();
+  const entry={t:new Date().toISOString(), kind:o.kind||'plan', dest:d.label, sentChars:chars, recvChars:0, ms:0, status:'', attempt:o.attempt||0, cached:false, sent:safeLogText(user,5000), recv:''};
+  if(hasSecret(system)||hasSecret(user)){ entry.status='refused'; entry.note='秘密情報に見える文字列を含むため、送信しませんでした'; logAdd(entry); const e=new Error(entry.note); e.code='secret'; throw e; }
+  const key=hash([d.kind,d.url||'',d.model||'',system,user].join('\u0001')); const hit=cacheGet(key);
+  if(hit!==null){ stats.hits++; entry.cached=true; entry.status='cache'; entry.recv=safeLogText(hit,5000); entry.recvChars=hit.length; logAdd(entry); stats.req.push({chars,ms:0,attempts:o.attempt||0,cached:true,ok:1,at:Date.now()}); return {text:hit,cached:true,chars,ms:0}; }
+  let text;
+  try{
+    if(o.signal&&o.signal.aborted){ const e=new Error('中止しました'); e.code='cancelled'; throw e; }
+    if(d.kind==='openai'){ if(!d.model) { const e=new Error('モデル名が未設定です(AIの設定を確認してください)'); e.code='config'; throw e; } text=await transport(d.url,{model:d.model,messages:[{role:'system',content:system},{role:'user',content:user}],temperature:0.2,stream:false},o.signal); }
+    else { if(!window.claude||typeof window.claude.use!=='function'){ const e=new Error('Claude連携を利用できません(Claudeのアーティファクトとして開いてください)'); e.code='config'; throw e; } const sample=await window.claude.use('sample'); if(!sample){ const e=new Error('Claude連携を利用できません'); e.code='config'; throw e; }
+      const r=await sample([{role:'user',content:system+'\n\n'+user}],{signal:o.signal,modelTier:AI.settings.get().tier||'default'}); text=r&&r.text||''; if(!text){ const e=new Error('モデルから文章が返りませんでした'); e.code='upstream'; throw e; } }
+  }catch(e){ entry.ms=Math.round(performance.now()-t0); entry.status=e.code==='cancelled'?'cancelled':'error'; entry.note=AI.redact(String(e.message||e)); logAdd(entry); throw e; }
+  const ms=Math.round(performance.now()-t0); entry.ms=ms; entry.status='ok'; entry.recvChars=text.length; entry.recv=safeLogText(text,5000); logAdd(entry); stats.req.push({chars,ms,attempts:o.attempt||0,cached:false,ok:1,at:Date.now()}); saveStats();
+  cacheSet(key,text); return {text,cached:false,chars,ms,key};
+}
+/* 返事を検査して、だめなら直すように頼む(最大 cfg.retry 回)。validate(obj)→[{loc,reason}] */
+class PlanError extends Error{ constructor(msg,errors,extra){ super(msg); this.errors=errors||[]; Object.assign(this,extra||{}); } }
+async function askJson(o){
+  let user=o.user; let lastErrors=[]; let lastText=''; const maxTry=1+cfg.retry; let attempts=0;
+  for(let a=0;a<maxTry;a++){
+    attempts=a+1; if(o.signal&&o.signal.aborted){ throw Object.assign(new Error('中止しました'),{code:'cancelled'}); }
+    const r=await complete({system:o.system,user,kind:o.kind,signal:o.signal,attempt:a}); lastText=r.text; let errs=[]; let obj=null;
+    const san=sanitizeResponse(r.text); if(!san.ok) errs=san.reasons.map(x=>({loc:'返事全体',reason:`${x}が含まれています。値(文字・数・ID)だけを返してください`}));
+    else { try{ obj=parseJsonLoose(r.text); }catch(e){ errs=[{loc:'返事全体',reason:'JSONとして読めません('+(e.message||e)+')。JSONだけを返してください'}]; } }
+    if(!errs.length&&obj){ try{ errs=o.validate(obj)||[]; }catch(e){ errs=[{loc:'検査',reason:String(e.message||e)}]; } }
+    if(!errs.length){ if(stats.req.length) stats.req[stats.req.length-1].attempts=a; saveStats(); return {obj,attempts:a,text:r.text}; }
+    lastErrors=errs; cacheDel(r.key); /* 検査に通らなかった返事は、キャッシュに残さない(同じ依頼でも、もう一度AIに聞く) */ if(stats.req.length) stats.req[stats.req.length-1].ok=0;
+    user=o.user+'\n\n【前回の出力の問題】\n'+errs.slice(0,12).map(e=>'- '+e.loc+': '+e.reason).join('\n')+'\n\n【前回の出力】\n'+trunc(lastText,3000)+'\n\n上の問題をすべて直した JSON だけを、もう一度返してください。';
+  }
+  throw new PlanError('AIの出力が検査に通りませんでした(修正の依頼を '+cfg.retry+' 回までしました)',lastErrors,{attempts:cfg.retry});
+}
+
+/* ---------- 範囲の絵(ブロックの番号の範囲)・チャンク分け(§6) ---------- */
+function packBlocks(blocks,budget){ const chunks=[]; let cur=[], n=0; blocks.forEach(b=>{ const s=blockToText(b).length+2; if(cur.length&&n+s>budget){ chunks.push(cur); cur=[]; n=0; } cur.push(b); n+=s; }); if(cur.length) chunks.push(cur); return chunks; }
+const reqBudget=()=>{ const d=dest(); return cfg.reqChars[d.pid]||8000; };
+
+/* =========================================================
+   Tool: 地形の書き換え / 海岸線の整え / ブロック要約(追加のみ)
+   ========================================================= */
+const LAND_KINDS=['forest','grass','desert','wetland'];
+let climCache=null;
+function climateCtx(w,R,meta){
+  const key=[currentStateId(),Store.rev,w.mapWidth,w.mapHeight].join('|'); if(climCache&&climCache.key===key) return climCache;
+  const rdT=pxReader(R,'terrain'), rdE=pxReader(R,'elev'); const side=Math.max(w.mapWidth,w.mapHeight); const cs=Math.max(8,Math.round(side/128)); const gw=Math.ceil(w.mapWidth/cs), gh=Math.ceil(w.mapHeight/cs);
+  const INF=1e9; const d=new Float32Array(gw*gh); for(let gy=0;gy<gh;gy++) for(let gx=0;gx<gw;gx++){ const t=rdT(Math.min(w.mapWidth-1,gx*cs+(cs>>1)),Math.min(w.mapHeight-1,gy*cs+(cs>>1))); d[gy*gw+gx]=(t!==0&&meta.isWater(t))?0:INF; }
+  const A=1, B=1.4142; for(let gy=0;gy<gh;gy++) for(let gx=0;gx<gw;gx++){ let v=d[gy*gw+gx]; if(gx>0) v=Math.min(v,d[gy*gw+gx-1]+A); if(gy>0){ v=Math.min(v,d[(gy-1)*gw+gx]+A); if(gx>0) v=Math.min(v,d[(gy-1)*gw+gx-1]+B); if(gx<gw-1) v=Math.min(v,d[(gy-1)*gw+gx+1]+B); } d[gy*gw+gx]=v; }
+  for(let gy=gh-1;gy>=0;gy--) for(let gx=gw-1;gx>=0;gx--){ let v=d[gy*gw+gx]; if(gx<gw-1) v=Math.min(v,d[gy*gw+gx+1]+A); if(gy<gh-1){ v=Math.min(v,d[(gy+1)*gw+gx]+A); if(gx<gw-1) v=Math.min(v,d[(gy+1)*gw+gx+1]+B); if(gx>0) v=Math.min(v,d[(gy+1)*gw+gx-1]+B); } d[gy*gw+gx]=v; }
+  const hist=new Float64Array(256); let tot=0; const st=Math.max(1,Math.floor(side/256)); for(let y=0;y<w.mapHeight;y+=st) for(let x=0;x<w.mapWidth;x+=st){ const t=rdT(x,y); if(t===0||meta.isWater(t)) continue; hist[rdE(x,y)]++; tot++; }
+  const cdf=new Float64Array(256); let acc=0; for(let i=0;i<256;i++){ acc+=hist[i]; cdf[i]=tot?acc/tot:0; }
+  climCache={key,cs,gw,gh,d,cdf,side,H:w.mapHeight}; return climCache;
+}
+function climateAt(cc,rdE,x,y,kinds){
+  const e=rdE(x,y); const eq=cc.cdf[e]; const lat=Math.abs(2*(y+0.5)/cc.H-1); const gx=Math.min(cc.gw-1,(x/cc.cs)|0), gy=Math.min(cc.gh-1,(y/cc.cs)|0); const ds=cc.d[gy*cc.gw+gx]*cc.cs/cc.side;
+  if(eq>0.8) return null;
+  if(kinds.wetland&&eq<=0.12&&ds<=0.05&&lat<0.8) return 'wetland';
+  if(kinds.jungle&&lat<0.18&&ds<=0.25&&eq<=0.6) return 'jungle';
+  if(kinds.desert&&lat>=0.18&&lat<=0.5&&ds>=0.12&&eq<=0.7) return 'desert';
+  if(kinds.forest&&lat<0.8&&ds<=0.2&&eq>=0.08&&eq<=0.75) return 'forest';
+  if(kinds.grass) return 'grass';
+  return null;
+}
+const CLIM_WHY={wetland:'標高が低く、海に近い低地のため湿地',jungle:'赤道に近く、海に近い低地のため密林',desert:'中緯度の乾燥しやすい帯で、海から遠いため砂漠',forest:'海に近く、標高が中程度で水を得やすいため森林',grass:'海から遠いか標高が高めで、森林になりにくいため草原'};
+/* 地形の書き換えの計画(適用と、提案の差分表示で、同じ関数を使う)。emit(x,y,新しい地形rid) を、変わる画素ごとに呼ぶ。返り値: 種類ごとの件数 */
+function planRewrite(w,R,meta,a,emit){
+  const rect=normRect(w,a.rect); const rdT=pxReader(R,'terrain'); const by={}; if(!rect) return by; const bump=(k)=>{ by[k]=(by[k]||0)+1; };
+  if(a.mode==='climate'){
+    const kinds={}; (a.kinds||LAND_KINDS).forEach(k=>{ kinds[k]=!!kindRid(meta,k); }); kinds.jungle=!!kindRid(meta,'jungle')&&(a.kinds||[]).includes('jungle');
+    const only=new Set((a.only&&a.only.length?a.only.map(s=>{ const t=tFind(meta,s); return t&&t.rid; }).filter(Boolean):[...genericLand(meta)])); if(!only.size) return by;
+    const cc=climateCtx(w,R,meta); const rdE=pxReader(R,'elev'); const rid={}; Object.keys(kinds).forEach(k=>{ rid[k]=kindRid(meta,k); });
+    for(let y=rect.y0;y<=rect.y1;y++) for(let x=rect.x0;x<=rect.x1;x++){ const v=rdT(x,y); if(!only.has(v)) continue; const k=climateAt(cc,rdE,x,y,kinds); if(!k||!rid[k]||rid[k]===v) continue; emit(x,y,rid[k]); bump(k); }
+    return by;
+  }
+  const to=tFind(meta,a.to); if(!to) return by; const from=a.from&&a.from.length?new Set(a.from.map(s=>{ const t=tFind(meta,s); return t&&t.rid; }).filter(Boolean)):null; const prot=new Set((a.protect||[]).map(s=>{ const t=tFind(meta,s); return t&&t.rid; }).filter(Boolean));
+  for(let y=rect.y0;y<=rect.y1;y++) for(let x=rect.x0;x<=rect.x1;x++){ const v=rdT(x,y); if(v===0||v===to.rid) continue; if(from&&!from.has(v)) continue; if(prot.has(v)) continue; if(a.keepWater&&meta.isWater(v)!==to.water) continue; emit(x,y,to.rid); bump(to.water?'toWater':(meta.isWater(v)?'toLand':'other')); }
+  return by;
+}
+function planCoast(w,R,meta,a,emit){
+  const rect=normRect(w,a.rect); const by={coast:0}; if(!rect) return by; const rdT=pxReader(R,'terrain'); const W0=w.mapWidth,H0=w.mapHeight;
+  for(let y=rect.y0;y<=rect.y1;y++) for(let x=rect.x0;x<=rect.x1;x++){
+    const v=rdT(x,y); if(v===0) continue; const self=meta.isWater(v); let same=0, other=0; const oc=new Map();
+    for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ if(!dx&&!dy) continue; const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=W0||ny>=H0) { continue; } const q=rdT(nx,ny); if(q===0) continue; if(meta.isWater(q)===self) same++; else { other++; oc.set(q,(oc.get(q)||0)+1); } }
+    if(other>=6&&same<=1){ const best=[...oc.entries()].sort((p,q)=>q[1]-p[1]||p[0]-q[0])[0]; if(best&&best[0]!==v){ emit(x,y,best[0]); by.coast++; } }
+  }
+  return by;
+}
+function writeChanges(plan,label){
+  if(!Stroke.begin(label)) throw new AI.AiError(AI.ERR.INTERNAL,'地図状態を取得できませんでした(閲覧専用の可能性があります)');
+  let changed=0; const tiles=new Map();
+  try{ plan((x,y,rid)=>{ const tx=x>>8, ty=y>>8; const k=ty*256+tx; let t=tiles.get(k); if(t===undefined){ t=Stroke.tile('terrain',k,true); tiles.set(k,t); } if(!t) return; const i=((y&255)<<8)|(x&255); if(t[i]!==rid){ t[i]=rid; changed++; } }); }
+  finally{ Stroke.end(); }
+  return changed;
+}
+const RECT_SCHEMA={type:'object',properties:{x0:{type:'integer',minimum:0},y0:{type:'integer',minimum:0},x1:{type:'integer',minimum:0},y1:{type:'integer',minimum:0}},required:['x0','y0','x1','y1'],additionalProperties:false};
+AI.registerTool({
+  id:'map.rewrite_terrain', name:'地形を書き換える(範囲・条件)', category:'map', kind:'write', permissions:['map.edit','data.write'],
+  description:'範囲(地図のピクセル座標 rect)の地形を書き換える。mode=set: from の地形(省略時は塗られている全ての地形)を to に変える(protect の地形は変えない / keepWater=true なら水域と陸地の入れ替えはしない)。mode=climate: 標高・緯度・海からの距離から、平地・草原・荒野などを森林・草原・砂漠・湿地に推定して変える(kinds で種類、only で対象の地形)。画素ごとの配列は受け取らない。',
+  tags:['地形','書き換え','地図','forest','desert','climate','AI提案'],
+  inputSchema:{type:'object',properties:{rect:RECT_SCHEMA,mode:{type:'string',enum:['set','climate']},to:{type:'string'},from:{type:'array',items:{type:'string'},maxItems:40},protect:{type:'array',items:{type:'string'},maxItems:40},keepWater:{type:'boolean'},kinds:{type:'array',items:{type:'string',enum:['forest','grass','desert','wetland','jungle']},maxItems:5},only:{type:'array',items:{type:'string'},maxItems:40}},required:['rect','mode'],additionalProperties:false},
+  summaryFor:()=>'地形を書き換え',
+  describeCall:(a)=>`地形を書き換え(${a.mode==='climate'?'気候からの推定':'→ '+a.to}): x ${a.rect&&a.rect.x0}〜${a.rect&&a.rect.x1}, y ${a.rect&&a.rect.y0}〜${a.rect&&a.rect.y1}`,
+  handler:(a,ctx)=>{
+    const w=W(); if(MapView.busy) throw new AI.AiError(AI.ERR.CONFLICT,'地図が処理中です。少し待ってから再実行してください');
+    const rect=normRect(w,a.rect); if(!rect||a.rect.x1>=w.mapWidth||a.rect.y1>=w.mapHeight) throw new AI.AiError(AI.ERR.OUT_OF_BOUNDS,`rect が地図の範囲外です(0〜${w.mapWidth-1}, 0〜${w.mapHeight-1})`);
+    if(a.mode==='set'){ const meta0=tmeta(w); if(!tFind(meta0,a.to)) throw new AI.AiError(AI.ERR.INVALID_REFERENCE,`to の地形が見つかりません: ${a.to}`,'地形タイプのIDか名前を指定してください'); }
+    updatePalettes(w,w.currentYear); const meta=tmeta(w); const R=resolveState(currentStateId()); const rev0=Store.rev, ck=climCache&&climCache.key;
+    let by={}; const changed=writeChanges((put)=>{ by=planRewrite(w,R,meta,Object.assign({},a,{rect}),put); },'AI: 地形を書き換え');
+    if(ctx&&ctx.budgetPixels) ctx.budgetPixels(changed);
+    if(climCache&&ck&&climCache.key===ck&&Store.rev!==rev0) climCache.key=[currentStateId(),Store.rev,w.mapWidth,w.mapHeight].join('|');   /* 植生だけの変更では、気候の下地(標高・水域)は変わらない */
+    if(typeof Store!=='undefined') Store.rev++; sumCache=null;
+    if(currentView==='map'){ try{ renderMap(); }catch(e){} }
+    return AI.envelope({result:{pixelsChanged:changed,by}, updated:changed?[{collection:'map',id:currentStateId()+':terrain',label:`地形を ${changed.toLocaleString()}px 変更`}]:[], warnings:changed?[]:['変更された画素がありませんでした'], summary:`地形を ${changed.toLocaleString()}px 書き換え`});
+  },
+});
+AI.registerTool({
+  id:'map.smooth_coast', name:'海岸線を整える(範囲)', category:'map', kind:'write', permissions:['map.edit','data.write'],
+  description:'範囲(地図のピクセル座標 rect)で、周りを反対側(海/陸)に囲まれた孤立した画素を、周りと同じ地形にして海岸線のギザギザを整える。1回の処理で、画素ごとの配列は受け取らない。',
+  tags:['海岸線','整える','孤立','coast'],
+  inputSchema:{type:'object',properties:{rect:RECT_SCHEMA},required:['rect'],additionalProperties:false},
+  summaryFor:()=>'海岸線を整える', describeCall:(a)=>`海岸線を整える: x ${a.rect&&a.rect.x0}〜${a.rect&&a.rect.x1}, y ${a.rect&&a.rect.y0}〜${a.rect&&a.rect.y1}`,
+  handler:(a,ctx)=>{
+    const w=W(); if(MapView.busy) throw new AI.AiError(AI.ERR.CONFLICT,'地図が処理中です。少し待ってから再実行してください');
+    const rect=normRect(w,a.rect); if(!rect||a.rect.x1>=w.mapWidth||a.rect.y1>=w.mapHeight) throw new AI.AiError(AI.ERR.OUT_OF_BOUNDS,`rect が地図の範囲外です(0〜${w.mapWidth-1}, 0〜${w.mapHeight-1})`);
+    updatePalettes(w,w.currentYear); const meta=tmeta(w); const R=resolveState(currentStateId());
+    const buf=[]; planCoast(w,R,meta,{rect},(x,y,rid)=>buf.push([x,y,rid]));   /* 先に全部決めてから書く(書きながら読むと結果が順序に左右される) */
+    const changed=writeChanges((put)=>buf.forEach(q=>put(q[0],q[1],q[2])),'AI: 海岸線を整える'); if(ctx&&ctx.budgetPixels) ctx.budgetPixels(changed);
+    Store.rev++; sumCache=null; if(currentView==='map'){ try{ renderMap(); }catch(e){} }
+    return AI.envelope({result:{pixelsChanged:changed}, updated:changed?[{collection:'map',id:currentStateId()+':terrain',label:`海岸線を ${changed}px 整えた`}]:[], warnings:changed?[]:['整える画素がありませんでした'], summary:`海岸線を ${changed}px 整えた`});
+  },
+});
+AI.registerTool({
+  id:'map.get_block_summary', name:'地図のブロック要約を取得', category:'map', kind:'read', permissions:['world.read'],
+  description:'地図の画像ではなく、ブロックごとの要約(地形の比率・標高・隣接・国家/都市の有無)を文字で返す。大きな地図は maxBlocks 件まで(range で範囲を絞る)。画素の配列は返さない。',
+  tags:['地図','要約','ブロック','summary','地形'],
+  inputSchema:{type:'object',properties:{rect:RECT_SCHEMA,maxBlocks:{type:'integer',minimum:1,maximum:200}},additionalProperties:false},
+  summaryFor:()=>'地図のブロック要約',
+  handler:async(a)=>{ const w=W(); const sm=await buildSummary(w,a&&a.rect||null); const n=Math.min(a&&a.maxBlocks||60,200); const rows=sm.blocks.slice(0,n).map(blockToText);
+    return AI.envelope({result:{header:summaryHeader(sm),terrains:terrainListText(sm),total:sm.blocks.length,returned:rows.length,blocks:rows}, summary:`ブロック要約 ${rows.length}/${sm.blocks.length}件`}); },
+});
+
+/* =========================================================
+   提案の入れ物・ジョブ(地形のAI提案 / 仕組みの推定 / 歴史の予測)
+   ========================================================= */
+const pending=[]; let pendSeq=0; const listeners=new Set(); const notify=()=>{ listeners.forEach(f=>{ try{ f(); }catch(e){} }); try{ if(currentView==='map') renderOverlayOnly(); }catch(e){} };
+const KIND_COLOR={toWater:'#3b8cff',toLand:'#ff9f3b',other:'#ffd23b',forest:'#2f9e44',grass:'#a7d948',desert:'#e8c170',wetland:'#20c5b0',jungle:'#1b7f4a',coast:'#b36bff',river:'#2cc7ff',range:'#a0522d'};
+const KIND_LABEL={toWater:'陸→水域',toLand:'水域→陸',other:'地形の変更',forest:'森林',grass:'草原',desert:'砂漠',wetland:'湿地',jungle:'密林',coast:'海岸線の整え',river:'河川',range:'山脈'};
+const oneLine=(s,n)=>trunc(String(s||'').replace(/[\r\n]+/g,' ').trim(),n||120);
+function mkProposal(goal,ops,cautions){ const w=W(); return {format:'atlas-proposal-v1',worldId:w.id,baseRevision:Number(w.revision)||0,createdBy:'アプリ内AI(計画)',goal:trunc(goal,200),operations:ops,cautions:(cautions||[]).slice(0,14)}; }
+function addPending(rec){ rec.id='aip'+(++pendSeq); rec.status='pending'; rec.sel=new Set(rec.proposal.operations.map((_,i)=>i)); pending.push(rec); notify(); return rec; }
+/* 提案の分割: 1つの提案は AI.PROPOSAL_CAP 件まで */
+function splitOps(items){ const cap=AI.PROPOSAL_CAP||200; const out=[]; for(let i=0;i<items.length;i+=cap) out.push(items.slice(i,i+cap)); return out; }
+function finishProposals(job,label,items,cautions,extra){
+  /* items: [{op, ov:{kind,rect|pts,count}}] → 検査して、提案として保持 */
+  const made=[]; const parts=splitOps(items);
+  parts.forEach((part,i)=>{ const P=mkProposal(parts.length>1?`${label}(${i+1}/${parts.length})`:label,part.map(x=>x.op),cautions); const v=AtlasProposal.validate(P,true);
+    if(!v.ok){ job.failures.push({label:`${label}(${i+1}/${parts.length})`,errors:v.errors.slice(0,8).map(e=>({loc:(e.index>=0?'操作'+(e.index+1)+' ':'')+(e.path||''),reason:e.message}))}); return; }
+    made.push(addPending(Object.assign({job:job.kind,label:P.goal,proposal:P,ov:part.map(x=>x.ov||null)},extra||{}))); });
+  return made;
+}
+
+/* ---------- 進行状況(§6) ---------- */
+let curJob=null;
+function newJob(kind,total){ const j={id:'job'+Date.now().toString(36),kind,total,done:0,startedAt:Date.now(),status:'run',ctl:new AbortController(),failures:[],notes:[],made:0,label:''}; curJob=j; notify(); return j; }
+function stopJob(){ if(curJob&&curJob.status==='run'){ curJob.status='stopping'; curJob.ctl.abort(); notify(); } }
+function etaSec(j){ const per=j.done?(Date.now()-j.startedAt)/j.done:(avg(stats.req.filter(r=>!r.cached).map(r=>r.ms))||15000); return Math.max(0,Math.round(per*(j.total-j.done)/1000)); }
+function finishJob(j,status){ j.status=status; j.endedAt=Date.now(); notify(); }
+const isCancel=(e)=>e&&(e.code==='cancelled'||(e.name==='AbortError'));
+
+/* ---------- 送信前の確認(§0/§7) ---------- */
+function confirmSend(spec){
+  const d=dest(); const total=spec.items.reduce((s,x)=>s+x.chars,0); const tok=Math.round(total/1.6); const est=Math.round(spec.requests*(avg(stats.req.filter(r=>!r.cached).map(r=>r.ms))||15000)/1000);
+  const html=`<div class="aip-conf" data-aip-confirm="1"><div><b>この内容を、次の送信先へ送ります。</b></div>
+    <div class="aip-dim">送信先: <b data-aip-dest="1">${H(d.label)}</b>${d.kind==='openai'?'(あなたが設定した接続先)':''}</div>
+    <table class="aip-tbl"><tr><th>送るもの</th><th>量(文字)</th></tr>${spec.items.map(x=>`<tr><td>${H(x.name)}${x.detail?`<div class="aip-dim">${H(x.detail)}</div>`:''}</td><td style="text-align:right">${x.chars.toLocaleString()}</td></tr>`).join('')}
+    <tr><td><b>合計(約${tok.toLocaleString()}トークン)</b></td><td style="text-align:right"><b data-aip-total="1">${total.toLocaleString()}</b></td></tr></table>
+    <div class="aip-dim">依頼の回数: ${spec.requests}回(1回あたりの上限 ${reqBudget().toLocaleString()}文字で分割)・目安の時間: 約${est}秒。検査に通らないときは、最大${cfg.retry}回まで修正を頼みます(その分の送信が増えます)。</div>
+    <ul class="aip-dim"><li>画像は送りません。地図は、ブロックごとの要約(文字)だけです。</li><li>APIキー・トークン・クライアントIDは、送りません。</li><li>AIの返事は「提案」になり、あなたが承認するまで世界は変わりません。</li><li>送った内容と返事は、この端末の中の記録にだけ残ります。</li></ul></div>`;
+  return atlasConfirm('AIに送る内容の確認',html,'送信する',{cancelLabel:'送信しない'});
+}
+
+/* ---------- 地形のAI提案(§2) ---------- */
+function condText(c){ const meta=tmeta(W()); const nm=(a)=>(a||[]).map(s=>{ const t=tFind(meta,s); return t?t.id+'('+t.name+')':s; }).join(', ');
+  const L=[]; if(c.allowTo&&c.allowTo.length) L.push('変更後(to)にしてよい地形は次だけ: '+nm(c.allowTo)); if(c.protect&&c.protect.length) L.push('次の地形は、変えてはいけない(from にも含めない): '+nm(c.protect)); if(c.keepWater) L.push('水域と陸地の入れ替えはしない'); if(c.maxRatioPct<100) L.push(`変更してよいブロックは、送ったブロックの ${c.maxRatioPct}% まで`); if(c.text) L.push('利用者の指示: '+c.text); return L.join('\n')||'(特別な条件なし。ただし、不要な変更はしない)'; }
+const TERRAIN_SYS='あなたは架空世界の地図の編集を手伝います。画像ではなく、ブロックごとの要約(文字)だけが渡されます。各ブロックについて、地形を変えるべきものだけを選び、次のJSONだけを返してください(説明文・コードブロックは不要、URLやHTMLは含めない)。\n{"changes":[{"block":[列,行],"to":"変更後の地形ID","from":["変える対象の地形ID"(省略可。省略時は、そのブロックの塗られている全地形)],"reason":"根拠を1行で(120文字以内)"}]}\n条件を守ること。変える必要がなければ changes は空の配列にする。';
+function terrainPrompt(sm,chunk,cond){ return {system:TERRAIN_SYS, user:[summaryHeader(sm),'使える地形: '+terrainListText(sm),'【条件】\n'+condText(cond),'【ブロック(この依頼の分)】\n'+chunk.map(blockToText).join('\n')].join('\n\n')}; }
+function validateTerrain(obj,chunk,cond,meta,sm){
+  const errs=[]; const E=(loc,reason)=>errs.push({loc,reason}); const set=new Map(chunk.map(b=>[b.c+','+b.r,b])); if(!obj||!Array.isArray(obj.changes)){ E('changes','changes は配列にしてください'); return errs; }
+  const allow=cond.allowTo&&cond.allowTo.length?new Set(cond.allowTo.map(s=>{ const t=tFind(meta,s); return t&&t.id; })):null; const prot=new Set((cond.protect||[]).map(s=>{ const t=tFind(meta,s); return t&&t.id; }));
+  const seen=new Set(); obj.changes.forEach((c,i)=>{ const P=`changes[${i}]`; if(!c||typeof c!=='object'){ E(P,'オブジェクトにしてください'); return; }
+    const bl=Array.isArray(c.block)&&c.block.length===2&&c.block.every(Number.isInteger)?c.block:null; if(!bl){ E(P+'.block','[列,行] の整数2つにしてください'); } else { const k=bl[0]+','+bl[1]; if(!set.has(k)) E(P+'.block',`ブロック [${bl}] は、この依頼で送った範囲にありません(範囲外)`); else if(seen.has(k)) E(P+'.block',`ブロック [${bl}] が重複しています`); seen.add(k); }
+    const to=tFind(meta,c.to); if(!to) E(P+'.to',`地形「${c.to}」は存在しません`); else { if(allow&&!allow.has(to.id)) E(P+'.to',`「${to.name}」は、利用者が許可した変更後の地形ではありません`); if(prot.has(to.id)) E(P+'.to',`「${to.name}」は、変えてはいけない地形に指定されています`); }
+    if(c.from!==undefined){ if(!Array.isArray(c.from)) E(P+'.from','配列にしてください'); else c.from.forEach((f,j)=>{ const t=tFind(meta,f); if(!t) E(`${P}.from[${j}]`,`地形「${f}」は存在しません`); else if(prot.has(t.id)) E(`${P}.from[${j}]`,`「${t.name}」は、変えてはいけない地形に指定されています`); }); }
+    if(typeof c.reason!=='string'||!c.reason.trim()) E(P+'.reason','根拠(1行)が必要です'); else if(/[\r\n]/.test(c.reason.trim())||c.reason.length>120) E(P+'.reason','根拠は、改行なしの120文字以内の1行にしてください'); });
+  const lim=Math.floor(chunk.length*cond.maxRatioPct/100+1e-9); if(obj.changes.length>Math.max(lim,0)&&cond.maxRatioPct<100) E('changes',`変更が${obj.changes.length}ブロックあります。条件の上限は${lim}ブロック(送ったブロックの${cond.maxRatioPct}%)です`);
+  return errs;
+}
+const DEF_COND={allowTo:[],protect:[],keepWater:false,maxRatioPct:100,text:''};
+function normCond(c){ c=Object.assign({},DEF_COND,c||{}); c.maxRatioPct=clampN(Math.round(Number(c.maxRatioPct)||100),1,100); c.text=oneLine(c.text||'',600); c.allowTo=(c.allowTo||[]).map(String); c.protect=(c.protect||[]).map(String); c.keepWater=!!c.keepWater; return c; }
+async function terrainAiJob(o){
+  o=o||{}; const w=W(); if(!w) throw new Error('世界が開かれていません'); const cond=normCond(o.cond); const meta=tmeta(w); const sm=await buildSummary(w,o.rect||null);
+  const chunks=packBlocks(sm.blocks,reqBudget()-1800); const prompts=chunks.map(ch=>terrainPrompt(sm,ch,cond));
+  const sysChars=TERRAIN_SYS.length*chunks.length; const condChars=cond.text.length+condText(cond).length*chunks.length; const mapChars=prompts.reduce((s,p)=>s+p.user.length,0)-condChars;
+  const ok=await confirmSend({requests:chunks.length,items:[{name:`地図の要約(ブロック${sm.blocks.length}件・${chunks.length}回に分割)`,detail:'地形の比率・標高・隣接・国家/都市のIDだけ。画像・画素の配列は含みません',chars:Math.max(0,mapChars)},{name:'あなたの条件',detail:oneLine(condText(cond),160),chars:condChars},{name:'指示文(出力の形式)',chars:sysChars}]});
+  if(!ok) return {sent:false,proposals:[],job:null};
+  const job=newJob('terrain',chunks.length); job.label='地形のAI提案'; const items=[]; const cautions=[];
+  for(let i=0;i<chunks.length;i++){
+    if(job.ctl.signal.aborted) break;
+    try{ const r=await askJson({system:prompts[i].system,user:prompts[i].user,kind:'terrain',signal:job.ctl.signal,validate:(obj)=>validateTerrain(obj,chunks[i],cond,meta,sm)});
+      const R=resolveState(currentStateId());
+      r.obj.changes.forEach(c=>{ const b=chunks[i].find(q=>q.c===c.block[0]&&q.r===c.block[1]); const to=tFind(meta,c.to); const args={rect:{x0:b.x0,y0:b.y0,x1:b.x1,y1:b.y1},mode:'set',to:to.id}; if(c.from&&c.from.length) args.from=c.from.map(f=>tFind(meta,f).id); if(cond.protect.length) args.protect=cond.protect.map(f=>tFind(meta,f).id); if(cond.keepWater) args.keepWater=true;
+        let n=0; const by=planRewrite(w,R,meta,args,()=>{ n++; }); if(!n){ cautions.push(`ブロック[${c.block}]は、変わる画素が無いため除きました`); return; }
+        const kind=by.toWater?'toWater':(by.toLand?'toLand':'other'); items.push({op:{op:'tool',tool:'map.rewrite_terrain',args,reason:oneLine(c.reason,200)},ov:{kind,rect:args.rect,count:n,block:c.block}}); });
+      job.done++; job.made=items.length; notify();
+    }catch(e){ if(isCancel(e)){ break; } job.failures.push({label:`依頼 ${i+1}/${chunks.length}`,errors:e.errors&&e.errors.length?e.errors:[{loc:'通信',reason:String(e.message||e)}]}); job.done++; notify(); }
+  }
+  const made=items.length?finishProposals(job,'地形の書き換え(AI提案)',items,cautions,{meta:{cond:cond}}):[];
+  finishJob(job,job.ctl.signal.aborted?'stopped':(job.failures.length?'partial':'done')); return {sent:true,proposals:made,job};
+}
+
+/* ---------- 仕組みの推定(§3。この端末の中だけで計算。AIへは送らない) ---------- */
+function coarse(w,R,meta){ const cc=climateCtx(w,R,meta); const rdT=pxReader(R,'terrain'), rdE=pxReader(R,'elev'); const {cs,gw,gh}=cc; const el=new Uint8Array(gw*gh), wat=new Uint8Array(gw*gh);
+  for(let gy=0;gy<gh;gy++) for(let gx=0;gx<gw;gx++){ const x=Math.min(w.mapWidth-1,gx*cs+(cs>>1)), y=Math.min(w.mapHeight-1,gy*cs+(cs>>1)); const t=rdT(x,y); el[gy*gw+gx]=rdE(x,y); wat[gy*gw+gx]=(t!==0&&meta.isWater(t))?1:(t===0?2:0); }
+  return {cs,gw,gh,el,wat,cdf:cc.cdf}; }
+function heapPush(h,k,v){ h.push([k,v]); let i=h.length-1; while(i>0){ const p=(i-1)>>1; if(h[p][0]<=h[i][0]) break; [h[p],h[i]]=[h[i],h[p]]; i=p; } }
+function heapPop(h){ const t=h[0], l=h.pop(); if(h.length){ h[0]=l; let i=0; for(;;){ let a=2*i+1,b=a+1,m=i; if(a<h.length&&h[a][0]<h[m][0]) m=a; if(b<h.length&&h[b][0]<h[m][0]) m=b; if(m===i) break; [h[m],h[i]]=[h[i],h[m]]; i=m; } } return t; }
+function computeRivers(w,R,meta,rect,max){
+  const g=coarse(w,R,meta); const {gw,gh,cs,el,wat}=g; const N=gw*gh; const dir=new Int32Array(N).fill(-1), done=new Uint8Array(N), lvl=new Float32Array(N); const order=[]; const h=[];
+  for(let i=0;i<N;i++) if(wat[i]===1){ done[i]=1; lvl[i]=el[i]; heapPush(h,el[i],i); }
+  const nb=[[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[1,-1],[-1,1],[1,1]];
+  while(h.length){ const [,c]=heapPop(h); order.push(c); const cx=c%gw, cy=(c/gw)|0; for(const [dx,dy] of nb){ const nx=cx+dx, ny=cy+dy; if(nx<0||ny<0||nx>=gw||ny>=gh) continue; const n=ny*gw+nx; if(done[n]||wat[n]===2) continue; done[n]=1; dir[n]=c; lvl[n]=Math.max(el[n],lvl[c]); heapPush(h,lvl[n]+(dx&&dy?0.001:0),n); } }
+  const acc=new Float32Array(N); for(let i=0;i<N;i++) if(wat[i]===0) acc[i]=1; for(let k=order.length-1;k>=0;k--){ const c=order[k]; const p=dir[c]; if(p>=0&&wat[c]===0) acc[p]+=acc[c]; }
+  const T=Math.max(10,Math.round(N*0.0012)); const ups=new Int32Array(N); for(let i=0;i<N;i++){ if(dir[i]>=0&&wat[i]===0&&acc[i]>=T) ups[dir[i]]++; }
+  const P=ppu(); const used=new Uint8Array(N); const exist=[]; R.lines.forEach(l=>{ if(l&&l.kind==='river'&&Array.isArray(l.points)) l.points.forEach(p=>exist.push([p.x*P.x,p.y*P.y])); });
+  const heads=[]; for(let i=0;i<N;i++) if(wat[i]===0&&acc[i]>=T&&ups[i]===0) heads.push(i); heads.sort((a,b)=>el[b]-el[a]||a-b);
+  const out=[]; const cell=(i)=>({x:(i%gw)*cs+cs/2,y:((i/gw)|0)*cs+cs/2});
+  const inR=(p)=>p.x>=rect.x0&&p.x<=rect.x1&&p.y>=rect.y0&&p.y<=rect.y1;
+  for(const hd of heads){ const path=[]; let c=hd, guard=0; while(c>=0&&guard++<N){ path.push(c); if(wat[c]===1) break; if(used[c]){ break; } used[c]=1; c=dir[c]; }
+    if(path.length<6) continue; let near=0; path.forEach(i=>{ const q=cell(i); if(exist.some(e=>Math.abs(e[0]-q.x)<cs*1.5&&Math.abs(e[1]-q.y)<cs*1.5)) near++; }); if(near>path.length/2) continue;
+    let pts=path.map(cell); const sub=pts.filter((_,k)=>k%2===0||k===pts.length-1); const clip=sub.filter(inR); if(clip.length<3) continue;
+    out.push({pts:clip,len:path.length,elev:el[hd],acc:Math.round(acc[path[path.length-1]]||acc[path[0]])}); }
+  out.sort((a,b)=>b.len-a.len); return out.slice(0,max).map(r=>({points:r.pts.map(p=>({x:Math.round(p.x/P.x*100)/100,y:Math.round(p.y/P.y*100)/100})),len:r.len,elev:r.elev,px:r.pts})); }
+function computeRanges(w,R,meta,rect,max){
+  const g=coarse(w,R,meta); const {gw,gh,cs,el,wat,cdf}=g; const N=gw*gh; const hi=new Uint8Array(N); for(let i=0;i<N;i++) if(wat[i]===0&&cdf[el[i]]>=0.85) hi[i]=1;
+  const seen=new Uint8Array(N); const comps=[]; for(let i=0;i<N;i++){ if(!hi[i]||seen[i]) continue; const st=[i], cl=[]; seen[i]=1; while(st.length){ const c=st.pop(); cl.push(c); const cx=c%gw, cy=(c/gw)|0; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const nx=cx+dx, ny=cy+dy; if(nx<0||ny<0||nx>=gw||ny>=gh) continue; const n=ny*gw+nx; if(hi[n]&&!seen[n]){ seen[n]=1; st.push(n); } } } if(cl.length>=5) comps.push(cl); }
+  comps.sort((a,b)=>b.length-a.length); const P=ppu(); const res=[];
+  for(const cl of comps.slice(0,max)){ const pts=cl.map(i=>({x:(i%gw)*cs+cs/2,y:((i/gw)|0)*cs+cs/2})); const mx=avg(pts.map(p=>p.x)), my=avg(pts.map(p=>p.y)); let sxx=0,syy=0,sxy=0; pts.forEach(p=>{ sxx+=(p.x-mx)**2; syy+=(p.y-my)**2; sxy+=(p.x-mx)*(p.y-my); });
+    const th=0.5*Math.atan2(2*sxy,sxx-syy); const ux=Math.cos(th), uy=Math.sin(th); const proj=pts.map(p=>({p,t:(p.x-mx)*ux+(p.y-my)*uy})).sort((a,b)=>a.t-b.t); const bins=Math.min(10,Math.max(3,Math.round(proj.length/3))); const line=[];
+    for(let b=0;b<bins;b++){ const part=proj.slice(Math.floor(b*proj.length/bins),Math.floor((b+1)*proj.length/bins)); if(!part.length) continue; line.push({x:avg(part.map(q=>q.p.x)),y:avg(part.map(q=>q.p.y))}); }
+    const clip=line.filter(p=>p.x>=rect.x0&&p.x<=rect.x1&&p.y>=rect.y0&&p.y<=rect.y1); if(clip.length<3) continue;
+    res.push({points:clip.map(p=>({x:Math.round(p.x/P.x*100)/100,y:Math.round(p.y/P.y*100)/100})),cells:cl.length,px:clip}); }
+  return res; }
+async function mechanismJob(o){
+  o=o||{}; const w=W(); if(!w) throw new Error('世界が開かれていません'); const rect=normRect(w,o.rect); if(!rect) throw new Error('範囲が不正です'); const want=Object.assign({rivers:true,veg:true,coast:true,ranges:true},o.want||{});
+  updatePalettes(w,w.currentYear); const meta=tmeta(w); const R=resolveState(currentStateId()); const job=newJob('mech',1+(want.veg?1:0)+(want.coast?1:0)); job.label='仕組みの推定(この端末の中で計算。AIへは送りません)'; const cautions=[]; const made=[];
+  const bp=blockPxFor(w); const bl=[]; for(let r=Math.floor(rect.y0/bp);r<=Math.floor(rect.y1/bp);r++) for(let c=Math.floor(rect.x0/bp);c<=Math.floor(rect.x1/bp);c++){ const x0=Math.max(rect.x0,c*bp), y0=Math.max(rect.y0,r*bp), x1=Math.min(rect.x1,(c+1)*bp-1), y1=Math.min(rect.y1,(r+1)*bp-1); if(x1>=x0&&y1>=y0) bl.push({c,r,rect:{x0,y0,x1,y1}}); }
+  try{
+    const lines=[]; if(want.rivers&&cfg.riverMax>0){ computeRivers(w,R,meta,rect,cfg.riverMax).forEach((rv,i)=>lines.push({op:{op:'tool',tool:'map.add_line',args:{kind:'river',points:rv.points,name:'',smooth:true},reason:`標高の勾配に沿って、高地(標高${rv.elev})から海まで低い方へ流れる経路(約${rv.len}マス)`},ov:{kind:'river',pts:rv.px,count:rv.len}})); }
+    if(want.ranges){ computeRanges(w,R,meta,rect,8).forEach(rg=>lines.push({op:{op:'tool',tool:'map.add_line',args:{kind:'range',points:rg.points,name:'',smooth:true},reason:`標高が高い側の上位15%の地点が連なる帯(約${rg.cells}マス)を山脈の線にした`},ov:{kind:'range',pts:rg.px,count:rg.cells}})); }
+    job.done++; await tick(); if(lines.length) made.push(...finishProposals(job,'河川・山脈の推定',lines,[]));
+    if(want.veg&&!job.ctl.signal.aborted){ const items=[]; const kinds=(o.kinds&&o.kinds.length?o.kinds:LAND_KINDS).filter(k=>kindRid(meta,k)); if(!kinds.length) cautions.push('森林・草原・砂漠・湿地の地形タイプが無いため、植生の推定はしませんでした');
+      let k=0; for(const b of (kinds.length?bl:[])){ const args={rect:b.rect,mode:'climate',kinds}; if(o.only&&o.only.length) args.only=o.only; const by=planRewrite(w,R,meta,args,()=>{}); const tot=Object.values(by).reduce((s,x)=>s+x,0); if(tot){ const top=Object.entries(by).sort((a,b2)=>b2[1]-a[1])[0]; items.push({op:{op:'tool',tool:'map.rewrite_terrain',args,reason:oneLine(`${CLIM_WHY[top[0]]||'気候から推定'}(${top[0]==='wetland'?'湿地':KIND_LABEL[top[0]]||top[0]}が主。計${tot}px)`,200)},ov:{kind:top[0],rect:b.rect,count:tot,block:[b.c,b.r]}}); } if(++k%8===0) await tick(); }
+      job.done++; if(items.length) made.push(...finishProposals(job,'植生の推定(標高・緯度・海からの距離・既存の地形)',items,cautions)); else if(kinds.length) job.notes.push('植生を変える場所はありませんでした'); }
+    if(want.coast&&!job.ctl.signal.aborted){ const items=[]; let k=0; for(const b of bl){ const n=planCoast(w,R,meta,{rect:b.rect},()=>{}).coast; if(n){ items.push({op:{op:'tool',tool:'map.smooth_coast',args:{rect:b.rect},reason:`海岸線の孤立した画素 ${n}個を、周りと同じ地形にして整える`},ov:{kind:'coast',rect:b.rect,count:n,block:[b.c,b.r]}}); } if(++k%8===0) await tick(); }
+      job.done++; if(items.length) made.push(...finishProposals(job,'海岸線の整え',items,[])); else job.notes.push('整える海岸線はありませんでした'); }
+  }catch(e){ job.failures.push({label:'推定',errors:[{loc:'計算',reason:String(e.message||e)}]}); }
+  finishJob(job,job.failures.length?'partial':'done'); return {proposals:made,job};
+}
+
+/* ---------- 歴史の予測(§4) ---------- */
+const yr=(v)=>(v===''||v===null||v===undefined||!Number.isFinite(Number(v)))?null:Number(v);
+const H_COLL=['nations','wars','relations','statistics','events'];
+function makeEras(a,b,span){ const out=[]; for(let s=a;s<=b;s+=span) out.push({a:s,b:Math.min(b,s+span-1)}); return out; }
+function checkHistory(ops,era,ctx){
+  const w=ctx.w, errs=[]; const nat=new Map(); (w.nations||[]).forEach(n=>nat.set(n.id,{name:n.name,founded:yr(n.founded),ended:yr(n.ended)})); ctx.prior.forEach((v,k)=>nat.set(k,Object.assign({},v)));
+  const inEra=(y)=>Number.isFinite(y)&&y>=era.a&&y<=era.b; const label=(op,i)=>{ const d=op.data||{}; return `操作${i+1}(${op.collection}${d.name||d.title?'「'+(d.name||d.title)+'」':(op.id?' '+op.id:'')})`; };
+  const E=(i,op,path,reason)=>errs.push({index:i,loc:label(op,i)+(path?'.'+path:''),reason});
+  ops.forEach((op,i)=>{ if(!op||typeof op!=='object'){ errs.push({index:i,loc:`操作${i+1}`,reason:'オブジェクトにしてください'}); return; }
+    if(!H_COLL.includes(op.collection)){ E(i,op,'collection',`歴史の予測で扱えるのは ${H_COLL.join('/')} だけです(実際: ${op.collection})`); return; }
+    if(!['create','update','delete'].includes(op.op)){ E(i,op,'op','op は create/update/delete のどれかです'); return; }
+    if(op.op==='delete'&&op.collection==='nations'){ E(i,op,'op','国家の削除は提案できません(滅亡は ended の更新で表します)'); return; }
+    if(typeof op.reason!=='string'||!op.reason.trim()) E(i,op,'reason','根拠(reason)が必要です');
+    const d=op.data||{}; if(op.collection==='nations'){
+      if(op.op==='create'){ const f=yr(d.founded); if(!inEra(f)) E(i,op,'data.founded',`建国年 ${d.founded} は、この時代(${era.a}〜${era.b}年)の外です`); const e=yr(d.ended); if(e!==null){ if(f!==null&&e<f) E(i,op,'data.ended',`滅亡年 ${e} が建国年 ${f} より前です(年の順序が逆)`); if(e>ctx.end) E(i,op,'data.ended',`滅亡年 ${e} が、予測の終了年 ${ctx.end} より後です`); }
+        const dup=[...nat.entries()].find(([id,v])=>v.name===d.name&&id!==op.id&&(v.ended===null||v.ended>=(f===null?-1e9:f))); if(dup) E(i,op,'data.name',`同名の国家「${d.name}」が、その時期にすでにあります(${dup[0]})`); nat.set(op.id,{name:d.name,founded:f,ended:e}); }
+      else { const n=nat.get(op.id); if(!n){ E(i,op,'id',`存在しない国家 ${op.id} を更新しようとしています`); return; } ['founded','name'].forEach(k=>{ if(k in d) E(i,op,'data.'+k,'既存の国家の建国年・名前は、予測では変えられません'); }); if('ended' in d){ const e=yr(d.ended); if(!inEra(e)) E(i,op,'data.ended',`滅亡年 ${d.ended} は、この時代(${era.a}〜${era.b}年)の外です`); else if(n.founded!==null&&e<n.founded) E(i,op,'data.ended',`滅亡年 ${e} が建国年 ${n.founded} より前です(年の順序が逆)`); else n.ended=e; } } } });
+  const active=(id,y)=>{ const n=nat.get(id); if(!n) return {ok:false,why:`存在しない国家 ${id} を参照しています`}; if(n.founded!==null&&y!==null&&y<n.founded) return {ok:false,why:`国家「${n.name}」が建国される前(${n.founded}年)の ${y}年に登場しています`}; if(n.ended!==null&&y!==null&&y>n.ended) return {ok:false,why:`国家「${n.name}」が滅亡した後(${n.ended}年)の ${y}年に登場しています`}; return {ok:true}; };
+  ops.forEach((op,i)=>{ if(!op||!H_COLL.includes(op.collection)||op.op==='delete'||op.collection==='nations') return; const d=op.data||{};
+    if(op.collection==='wars'){ const s=yr(d.start), e=yr(d.end); if(op.op==='create'&&!inEra(s)) E(i,op,'data.start',`開始年 ${d.start} は、この時代(${era.a}〜${era.b}年)の外です`); if(e!==null&&s!==null&&e<s) E(i,op,'data.end',`終了年 ${e} が開始年 ${s} より前です(年の順序が逆)`);
+      if(op.op==='create'){ const ps=Array.isArray(d.participants)?d.participants:[]; if(ps.length<2) E(i,op,'data.participants','戦争には2か国以上の参加国が必要です'); ps.forEach((p,j)=>{ const a=active(p&&p.nationId,s); if(!a.ok) E(i,op,`data.participants[${j}]`,a.why); }); } }
+    if(op.collection==='relations'){ const s=yr(d.start), e=yr(d.end); if(op.op==='create'){ if(!inEra(s)) E(i,op,'data.start',`開始年 ${d.start} は、この時代(${era.a}〜${era.b}年)の外です`); ['nationA','nationB'].forEach(k=>{ const a=active(d[k],s); if(!a.ok) E(i,op,'data.'+k,a.why); });
+        const dup=(w.relations||[]).find(r=>r.type===d.type&&((r.nationA===d.nationA&&r.nationB===d.nationB)||(r.nationA===d.nationB&&r.nationB===d.nationA))&&(yr(r.end)===null||s===null||yr(r.end)>=s)&&(e===null||yr(r.start)===null||yr(r.start)<=e)); if(dup) E(i,op,'data.type',`同じ国同士の「${d.type}」が、その期間にすでにあります(${dup.id})`); }
+      if(e!==null&&s!==null&&e<s) E(i,op,'data.end',`終了年 ${e} が開始年 ${s} より前です(年の順序が逆)`); }
+    if(op.collection==='statistics'){ const y=yr(d.year); if(op.op==='create'&&!inEra(y)) E(i,op,'data.year',`年 ${d.year} は、この時代(${era.a}〜${era.b}年)の外です`); if(op.op==='create'&&d.entityType==='nation'){ const a=active(d.entityId,y); if(!a.ok) E(i,op,'data.entityId',a.why); } }
+    if(op.collection==='events'){ const y=yr(d.year); if(op.op==='create'&&!inEra(y)) E(i,op,'data.year',`発生年 ${d.year} は、この時代(${era.a}〜${era.b}年)の外です`); (d.relatedNations||[]).forEach((id,j)=>{ const a=active(id,y); if(!a.ok) E(i,op,`data.relatedNations[${j}]`,a.why); }); } });
+  return errs; }
+function historyDigest(w,budget){ const L=[]; L.push('【国家】'+(w.nations||[]).slice(0,60).map(n=>`${n.id}:${n.name}(${n.founded===''?'?':n.founded}〜${n.ended===''?'現存':n.ended})`).join(' / '));
+  L.push('【戦争】'+(w.wars||[]).slice(0,30).map(x=>`${x.id}:${x.name}(${x.start}〜${x.end===''?'継続':x.end})[${(x.participants||[]).map(p=>p.nationId).join(',')}]`).join(' / ')); L.push('【外交関係】'+(w.relations||[]).slice(0,30).map(r=>`${r.nationA}-${r.nationB}:${r.type}(${r.start}〜${r.end===''?'':r.end})`).join(' / '));
+  L.push('【統計指標】'+(w.metrics||[]).slice(0,12).map(m=>`${m.id}:${m.name}`).join(' / ')); return trunc(L.join('\n'),budget); }
+const HIST_SYS='あなたは架空世界の年表の予測を手伝います。指定された時代の中だけについて、国家の建国・滅亡、戦争、外交関係、人口などの統計の変化を予測し、次のJSONだけを返してください(説明文・コードブロックは不要、URLやHTMLは含めない)。\n{"operations":[{"op":"create|update|delete","collection":"nations|wars|relations|statistics|events","id":"create は ai_ で始まる英数字の新しいID、update/delete は既存のID","data":{...},"reason":"根拠(300文字以内)"}]}\n守ること: ①年は、指定された時代の範囲内 ②参照する国家は、既存の国家か、ここまでに予測した国家だけ ③建国前・滅亡後の国家を登場させない ④既存の記録は、原則として消さない(国家は削除しない) ⑤すべての操作に根拠を書く。';
+async function historyJob(o){
+  o=o||{}; const w=W(); if(!w) throw new Error('世界が開かれていません'); const a=Number(o.start), b=Number(o.end), span=Math.round(Number(o.span)||cfg.eraSpan);
+  if(!Number.isInteger(a)||!Number.isInteger(b)) throw new Error('開始年と終了年は整数で指定してください'); if(b<a) throw new Error('終了年が開始年より前です(年の順序が逆)'); if(b-a>5000) throw new Error('期間が長すぎます(5000年まで)');
+  const eras=makeEras(a,b,clampN(span,1,5000)); const hint=oneLine(o.hint||'',600); const budget=reqBudget(); const digest=historyDigest(w,Math.max(1500,Math.floor(budget*0.45)));
+  const prompt=(era,i,prior)=>({system:HIST_SYS,user:[`予測する時代: ${era.a}〜${era.b}年(全体の期間 ${a}〜${b}年)`,'IDの付け方: ai_e'+i+'_1, ai_e'+i+'_2 …','【いまの年表の要約】\n'+digest,prior.size?'【前の時代で予測された国家】\n'+[...prior.entries()].map(([id,v])=>`${id}:${v.name}(${v.founded}〜${v.ended===null?'':v.ended})`).join(' / '):'','【利用者の指示】\n'+(hint||'(なし)')].filter(Boolean).join('\n\n')});
+  const est=eras.map((e,i)=>prompt(e,i,new Map())); const ok=await confirmSend({requests:eras.length,items:[{name:`年表の要約(国家・戦争・外交・統計指標のID・名前・年だけ。${eras.length}回分)`,chars:est.reduce((s,p)=>s+digest.length,0)},{name:`時代の指定(${eras.length}時代: ${eras.map(e=>e.a+'–'+e.b).slice(0,6).join(', ')}${eras.length>6?' …':''})と、あなたの指示`,detail:hint?oneLine(hint,120):'',chars:est.reduce((s,p)=>s+p.user.length-digest.length,0)},{name:'指示文(出力の形式)',chars:HIST_SYS.length*eras.length}]});
+  if(!ok) return {sent:false,proposals:[],job:null};
+  const job=newJob('history',eras.length); job.label=`歴史の予測 ${a}〜${b}年`; const prior=new Map(); const priorCreates=[]; const made=[];
+  for(let i=0;i<eras.length;i++){
+    if(job.ctl.signal.aborted) break; const era=eras[i]; const p=prompt(era,i,prior); const offset=priorCreates.length; let result=null;
+    try{ result=await askJson({system:p.system,user:p.user,kind:'history',signal:job.ctl.signal,validate:(obj)=>{ if(!obj||!Array.isArray(obj.operations)) return [{loc:'operations',reason:'operations は配列にしてください'}]; if(!obj.operations.length) return [];
+        const ops=obj.operations; if(ops.length>(AI.PROPOSAL_CAP||200)) return [{loc:'operations',reason:`操作が${ops.length}件あります。${AI.PROPOSAL_CAP||200}件までにしてください`}];
+        const errs=checkHistory(ops,era,{w,prior,end:b}).map(e=>({loc:e.loc,reason:e.reason})); if(errs.length) return errs;
+        const Pc=mkProposal('検査',priorCreates.concat(ops),[]); const v=AtlasProposal.validate(Pc,false); return v.ok?[]:v.errors.filter(e=>e.index>=offset||e.index<0).map(e=>({loc:e.index>=0?checkLoc(ops[e.index-offset],e.index-offset,e.path):'提案全体',reason:e.message})); }});
+    }catch(e){ if(isCancel(e)) break; job.failures.push({label:`${era.a}〜${era.b}年`,errors:e.errors&&e.errors.length?e.errors:[{loc:'通信',reason:String(e.message||e)}],stopped:true}); job.done++; notify(); continue; }
+    const ops=result.obj.operations; job.done++; if(!ops.length){ job.notes.push(`${era.a}〜${era.b}年: 予測する変化はありませんでした`); notify(); continue; }
+    const deps=[]; const refIds=new Set(); ops.forEach(op=>{ const s=JSON.stringify(op.data||{}); prior.forEach((v,k)=>{ if(s.includes('"'+k+'"')) refIds.add(k); }); });
+    pending.forEach(r=>{ if(r.job==='history'&&r.jobId===job.id&&r.creates&&[...refIds].some(id=>r.creates.includes(id))) deps.push(r.id); });
+    const P=mkProposal(`歴史の予測 ${era.a}〜${era.b}年`,ops,[`根拠は、各操作の「理由」に記録しています`,`${era.a}〜${era.b}年の時代の範囲だけを予測しています`]);
+    const rec=addPending({job:'history',jobId:job.id,label:P.goal,proposal:P,ov:ops.map(()=>null),era,deps,creates:ops.filter(x=>x.op==='create'&&x.collection==='nations').map(x=>x.id),meta:{attempts:result.attempts}}); made.push(rec);
+    ops.forEach(op=>{ if(op.op==='create'&&op.collection==='nations'){ const d=op.data||{}; prior.set(op.id,{name:d.name,founded:yr(d.founded),ended:yr(d.ended)}); priorCreates.push(op); } });
+    job.made=made.length; notify();
+  }
+  finishJob(job,job.ctl.signal.aborted?'stopped':(job.failures.length?'partial':'done')); return {sent:true,proposals:made,job};
+}
+function checkLoc(op,i,path){ const d=(op&&op.data)||{}; return `操作${i+1}(${op&&op.collection}${d.name||d.title?'「'+(d.name||d.title)+'」':''})${path?'.'+String(path).replace(/^operations\[\d+\]\./,''):''}`; }
+function Pc2(P,priorCreates){ return Object.assign({},P,{operations:priorCreates.concat(P.operations)}); }
+
+/* ---------- 承認・却下(世界を変えるのは、承認だけ。範囲・時代ごと。1回の「元に戻す」で戻る) ---------- */
+async function approve(id,indices){
+  const rec=pending.find(r=>r.id===id); if(!rec||rec.status!=='pending') return {ok:false,message:'この提案は、もう処理済みです'};
+  const blockedBy=(rec.deps||[]).map(d=>pending.find(r=>r.id===d)).filter(r=>r&&r.status!=='approved'); if(blockedBy.length) return {ok:false,code:'dep',message:`前の時代の提案(${blockedBy.map(r=>r.label).join(', ')})を先に承認してください。この時代は、その提案で作る国家を参照しています`};
+  const idx=indices||[...rec.sel]; const r=await AtlasProposal.apply(rec.proposal,idx,{confirmDelete:(info)=>AtlasProposal.confirmDeleteDialog(info)});
+  if(r.ok){ rec.status='approved'; rec.approved=idx.length; sumCache=null; try{ if(typeof renderMap==='function'&&currentView==='map') renderMap(); }catch(e){} }
+  notify(); return r; }
+function reject(id){ const rec=pending.find(r=>r.id===id); if(!rec||rec.status!=='pending') return false; rec.status='rejected'; notify(); return true; }
+function clearDone(){ for(let i=pending.length-1;i>=0;i--) if(pending[i].status!=='pending') pending.splice(i,1); notify(); }
+
+/* =========================================================
+   地図への差分の重ね表示(承認前の提案。色は変更の種類ごと)
+   ========================================================= */
+let overlayOn=true;
+function planOverlay(){
+  if(!overlayOn||currentView!=='map') return; const cv=document.getElementById('overlaycanvas'); if(!cv||!W()) return; const P=ppu(); const ctx=cv.getContext('2d'); ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+  const sx=(x,y)=>unitToScreen(x/P.x,y/P.y);
+  pending.forEach(rec=>{ if(rec.status!=='pending') return; rec.ov.forEach((ov,i)=>{ if(!ov) return; const col=KIND_COLOR[ov.kind]||'#ffd23b'; const on=rec.sel.has(i);
+    if(ov.rect){ const a=sx(ov.rect.x0,ov.rect.y0), b=sx(ov.rect.x1+1,ov.rect.y1+1); ctx.globalAlpha=on?0.38:0.12; ctx.fillStyle=col; ctx.fillRect(a.x,a.y,b.x-a.x,b.y-a.y); ctx.globalAlpha=1; ctx.strokeStyle=col; ctx.lineWidth=on?2:1; ctx.setLineDash(on?[]:[4,3]); ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y); ctx.setLineDash([]); }
+    else if(ov.pts&&ov.pts.length>1){ ctx.strokeStyle=col; ctx.lineWidth=on?3.5:1.5; ctx.setLineDash(on?[]:[4,3]); ctx.lineJoin='round'; ctx.beginPath(); ov.pts.forEach((p,k)=>{ const q=sx(p.x,p.y); k?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); }); ctx.stroke(); ctx.setLineDash([]); } }); });
+  ctx.restore();
+}
+(function(){ const o=renderOverlay; renderOverlay=function(){ o.apply(this,arguments); try{ planOverlay(); }catch(e){ console.warn('aiplan overlay',e); } }; })();
+
+/* =========================================================
+   画面(AIドロワーに「地図・歴史の計画」ボタン → 右下のパネル)
+   ========================================================= */
+const UI_STYLE=`<style id="aipStyle">#aipPanel{position:fixed;right:12px;bottom:12px;width:430px;max-width:calc(100vw - 24px);max-height:74vh;overflow:auto;z-index:9000;background:var(--panel,#222);color:var(--text,#eee);border:1px solid var(--line,#555);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.45);font-size:12.5px}
+#aipPanel[hidden]{display:none}#aipPanel .aip-head{display:flex;gap:6px;align-items:center;padding:6px 8px;border-bottom:1px solid var(--line-soft,#444);position:sticky;top:0;background:inherit;z-index:1}#aipPanel .aip-head b{flex:1}
+#aipPanel .aip-tabs{display:flex;gap:2px;padding:4px 8px}#aipPanel .aip-tabs button{padding:2px 8px;border:1px solid var(--line-soft,#555);background:transparent;color:inherit;border-radius:10px;cursor:pointer}#aipPanel .aip-tabs button.on{background:var(--accent,#3b6fb0);color:#fff}
+#aipPanel .aip-body{padding:8px}#aipPanel fieldset{border:1px solid var(--line-soft,#444);border-radius:6px;margin:0 0 8px;padding:6px 8px}#aipPanel legend{font-weight:bold;padding:0 4px}
+#aipPanel .aip-dim,.aip-conf .aip-dim{opacity:.75;font-size:11.5px}#aipPanel label{display:inline-flex;gap:3px;align-items:center;margin:1px 6px 1px 0}#aipPanel input[type=number]{width:70px}#aipPanel textarea{width:100%;box-sizing:border-box}
+#aipPanel .aip-bar{height:8px;background:var(--line-soft,#444);border-radius:4px;overflow:hidden;margin:4px 0}#aipPanel .aip-bar i{display:block;height:100%;background:#3b8f5a}
+#aipPanel .aip-card{border:1px solid var(--line-soft,#444);border-radius:6px;margin:6px 0;padding:6px 8px}#aipPanel .aip-op{display:flex;gap:4px;align-items:flex-start;padding:2px 0;border-top:1px dotted var(--line-soft,#444)}#aipPanel .aip-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-top:3px;flex:none}
+#aipPanel .aip-err{color:#e9786f}#aipPanel .aip-ok{color:#6fcf8a}.aip-tbl{border-collapse:collapse;width:100%;margin:6px 0}.aip-tbl td,.aip-tbl th{border-bottom:1px solid var(--line-soft,#444);padding:3px 4px;text-align:left}
+#aipPanel pre{white-space:pre-wrap;word-break:break-all;max-height:140px;overflow:auto;background:rgba(0,0,0,.2);padding:4px;border-radius:4px;margin:2px 0}</style>`;
+let panel=null, ptab='run', rectMode='all';
+const $q=(s)=>panel&&panel.querySelector(s);
+function terrainChecks(name,sel){ const meta=tmeta(W()); return meta.list.map(t=>`<label><input type="checkbox" data-aip-${name}="${H(t.id)}" ${sel&&sel.includes(t.id)?'checked':''}>${H(t.name)}</label>`).join(''); }
+function readRect(){ const w=W(); if(rectMode==='all') return fullRect(w); if(rectMode==='view'){ const cv=document.getElementById('overlaycanvas'); const P=ppu(); if(!cv) return fullRect(w); const a=screenToUnit(0,0), b=screenToUnit(cv.width,cv.height); return normRect(w,{x0:Math.max(0,a.x*P.x),y0:Math.max(0,a.y*P.y),x1:Math.min(w.mapWidth-1,b.x*P.x),y1:Math.min(w.mapHeight-1,b.y*P.y)}); }
+  const g=(k)=>Number(($q(`[data-aip-r="${k}"]`)||{}).value); return normRect(w,{x0:g('x0'),y0:g('y0'),x1:g('x1'),y1:g('y1')}); }
+function readCond(){ const chk=(n)=>[...panel.querySelectorAll(`[data-aip-${n}]:checked`)].map(e=>e.getAttribute('data-aip-'+n)); return normCond({allowTo:chk('allow'),protect:chk('prot'),keepWater:!!($q('[data-aip-keepwater]')||{}).checked,maxRatioPct:Number(($q('[data-aip-maxr]')||{}).value)||100,text:($q('[data-aip-text]')||{}).value||''}); }
+function runTab(){ const w=W(); if(!w) return '<div class="aip-dim">世界が開かれていません</div>'; const d=dest();
+  return `<div class="aip-dim">送信先: ${H(d.label)}。AIへ送る前に、内容の一覧を確認します。AIの返事は「提案」になり、承認するまで世界は変わりません。</div>
+  <fieldset><legend>範囲(地図のピクセル。地図 ${w.mapWidth}×${w.mapHeight})</legend><label><input type="radio" name="aipR" data-aip-rm="all" ${rectMode==='all'?'checked':''}>地図全体</label><label><input type="radio" name="aipR" data-aip-rm="view" ${rectMode==='view'?'checked':''}>いま見えている範囲</label><label><input type="radio" name="aipR" data-aip-rm="num" ${rectMode==='num'?'checked':''}>数値で指定</label>
+   <div ${rectMode==='num'?'':'hidden'}>x <input type="number" data-aip-r="x0" value="0">〜<input type="number" data-aip-r="x1" value="${w.mapWidth-1}"> y <input type="number" data-aip-r="y0" value="0">〜<input type="number" data-aip-r="y1" value="${w.mapHeight-1}"></div></fieldset>
+  <fieldset><legend>① 地形をAIに提案させる</legend><div class="aip-dim">変更後にしてよい地形(未選択=制限なし)</div><div>${terrainChecks('allow')}</div><div class="aip-dim">変えない地形</div><div>${terrainChecks('prot')}</div>
+   <label><input type="checkbox" data-aip-keepwater>水域と陸地の入れ替えはしない</label> <label>変更ブロックの上限 <input type="number" data-aip-maxr value="100" min="1" max="100">%</label>
+   <textarea rows="2" data-aip-text maxlength="600" placeholder="例: 内陸の平地は、標高が高い所だけ丘陵にする"></textarea><button class="btn small primary" data-aip-run="terrain">地形を提案させる…</button></fieldset>
+  <fieldset><legend>② 仕組みから推定する(この端末で計算・AIへは送りません)</legend><label><input type="checkbox" data-aip-want="rivers" checked>河川(標高の勾配)</label><label><input type="checkbox" data-aip-want="veg" checked>森林・草原・砂漠・湿地</label><label><input type="checkbox" data-aip-want="coast" checked>海岸線を整える</label><label><input type="checkbox" data-aip-want="ranges" checked>山脈</label><br><button class="btn small primary" data-aip-run="mech">推定して提案にする</button></fieldset>
+  <fieldset><legend>③ 歴史を予測する</legend>開始年 <input type="number" data-aip-h="start" value="${w.currentYear}"> 終了年 <input type="number" data-aip-h="end" value="${(Number(w.currentYear)||0)+200}"> 時代の幅 <input type="number" data-aip-h="span" value="${cfg.eraSpan}" min="1"> 年
+   <textarea rows="2" data-aip-h="hint" maxlength="600" placeholder="例: 北方の国は少しずつ弱っていく"></textarea><button class="btn small primary" data-aip-run="history">歴史を予測させる…</button></fieldset>`; }
+function jobBox(){ const j=curJob; if(!j) return ''; const pct=j.total?Math.round(j.done/j.total*100):0; const st={run:'実行中',stopping:'停止しています…',done:'完了',partial:'一部が失敗',stopped:'停止(ここまでの結果は提案として残しています)'}[j.status]||j.status;
+  return `<div class="aip-card" data-aip-job="1"><b>${H(j.label)}</b> <span data-aip-jstate="1">${H(st)}</span><div class="aip-bar"><i style="width:${pct}%"></i></div><div class="aip-dim">${j.done}/${j.total} 件 ・ 提案にした操作 ${j.made}${j.status==='run'?` ・ 残り約${etaSec(j)}秒`:''}</div>
+   ${j.status==='run'?'<button class="btn small danger" data-aip-stop="1">停止(ここまでを提案として残す)</button>':''}${j.notes.map(n=>`<div class="aip-dim">${H(n)}</div>`).join('')}
+   ${j.failures.map(f=>`<div class="aip-err" data-aip-fail="1"><b>${H(f.label)}: 提案にできませんでした</b>${f.errors.slice(0,8).map(e=>`<div>・${H(e.loc)}: ${H(e.reason)}</div>`).join('')}</div>`).join('')}</div>`; }
+function opLine(rec,op,i){ const w=W(); const S=AtlasProposal.schema(); const ov=rec.ov[i]; let head='';
+  if(op.op==='tool'){ const t=AI.registry.get(op.tool); head=`${H(t?t.name:op.tool)}${ov&&ov.block?` [${ov.block}]`:''} ${ov?`(${KIND_LABEL[ov.kind]||ov.kind}${ov.count?' 約'+ov.count+(ov.kind==='river'||ov.kind==='range'?'マス':'px'):''})`:''}`; }
+  else { const c=S.collections[op.collection]; const before=c&&(w[c.path]||[]).find(x=>x.id===op.id); const dd=c?AtlasProposal.Core.diffOperation(op,before,c):{title:op.id}; head=`<b>${{create:'追加',update:'変更',delete:'削除'}[op.op]}</b> ${H(c?c.noun:op.collection)}「${H(dd.title)}」`+(op.op!=='delete'?` <span class="aip-dim">${H(trunc(JSON.stringify(op.data||{}),110))}</span>`:''); }
+  return `<div class="aip-op"><input type="checkbox" data-aip-sel="${rec.id}|${i}" ${rec.sel.has(i)?'checked':''} ${rec.status!=='pending'?'disabled':''}><span class="aip-sw" style="background:${ov?(KIND_COLOR[ov.kind]||'#999'):(op.op==='delete'?'#c0504d':'#3b8f5a')}"></span><div>${head}<div class="aip-dim" data-aip-why="1">根拠: ${H(op.reason||'')}</div></div></div>`; }
+function propTab(){ if(!pending.length) return '<div class="aip-dim">提案はまだありません</div>'; const stl={pending:'承認待ち',approved:'承認済み',rejected:'却下'};
+  return `<label><input type="checkbox" data-aip-ovl="1" ${overlayOn?'checked':''}>地図に差分を重ねる</label> <button class="btn small" data-aip-clear="1">処理済みを消す</button><div class="aip-dim">色: ${Object.keys(KIND_LABEL).map(k=>`<span class="aip-sw" style="background:${KIND_COLOR[k]}"></span>${KIND_LABEL[k]}`).join(' ')}</div>`+
+   pending.map(rec=>{ const cnt=rec.proposal.operations.length; const dep=(rec.deps||[]).length?`<div class="aip-dim">前の時代の提案に依存: ${(rec.deps||[]).map(d=>H((pending.find(r=>r.id===d)||{}).label||d)).join(', ')}</div>`:'';
+    return `<div class="aip-card" data-aip-prop="${rec.id}" data-status="${rec.status}"><b>${H(rec.label)}</b> <span class="${rec.status==='approved'?'aip-ok':''}">[${stl[rec.status]}${rec.status==='approved'?' '+rec.approved+'件':''}]</span><div class="aip-dim">${cnt}件${rec.era?` ・ 時代 ${rec.era.a}〜${rec.era.b}年`:''}</div>${dep}
+     ${rec.status==='pending'?`<div class="aip-dim">チェックした操作だけが世界に入ります(1回の「元に戻す」で戻る)。外したものは却下されます。</div>`:''}<div>${rec.proposal.operations.map((op,i)=>opLine(rec,op,i)).join('')}</div>
+     ${rec.status==='pending'?`<button class="btn small primary" data-aip-ap="${rec.id}">選んだ操作を承認</button> <button class="btn small" data-aip-rj="${rec.id}">却下</button>`:''}</div>`; }).join(''); }
+function setTab(){ const w=W(); const n=(cfg.reqChars); return `<fieldset><legend>設定(この端末だけ)</legend><label>ブロックの大きさ: 地図の長辺 ÷ <input type="number" data-aip-c="blockDiv" value="${cfg.blockDiv}" min="4" max="128"></label><br><label>または、ブロックの辺(px。0=自動) <input type="number" data-aip-c="blockPx" value="${cfg.blockPx}" min="0" max="1024"></label><br>
+   <label>1回の送信の上限(文字) Claude <input type="number" data-aip-c="rc-claude-artifact" value="${n['claude-artifact']}" step="1000"></label><br><label>外部・ローカルAI <input type="number" data-aip-c="rc-openai-compatible" value="${n['openai-compatible']}" step="1000"></label><br>
+   <label>検査に通らないときの修正の依頼(最大3回) <input type="number" data-aip-c="retry" value="${cfg.retry}" min="0" max="3"></label><br><label>歴史の時代の幅(年) <input type="number" data-aip-c="eraSpan" value="${cfg.eraSpan}" min="1"></label> <label>河川の最大本数 <input type="number" data-aip-c="riverMax" value="${cfg.riverMax}" min="0" max="60"></label></fieldset>
+   <fieldset><legend>計測(この端末)</legend><pre data-aip-stats="1">${H(JSON.stringify(statsReport(),null,1))}</pre></fieldset>`; }
+function logTab(){ const a=log.list(); return `<div class="aip-dim">AIへ送った内容と返事の記録です(この端末の中だけ。秘密情報は記録しません)。 <button class="btn small danger" data-aip-logclear="1">すべて削除</button></div>`+(a.length?a.map((e,i)=>`<details class="aip-card" data-aip-log="${i}"><summary>${H(e.t.slice(11,19))} ${H(e.kind)} ・ ${H(e.status)}${e.cached?'(キャッシュ)':''} ・ 送信${e.sentChars}字/受信${e.recvChars}字/${e.ms}ms</summary><div class="aip-dim">送信先: ${H(e.dest)}${e.note?' ・ '+H(e.note):''}</div><div>送った内容(先頭):</div><pre>${H(e.sent)}</pre><div>返事(先頭):</div><pre>${H(e.recv)}</pre></details>`).join(''):'<div class="aip-dim">記録はありません</div>'); }
+function render(){ if(!panel||panel.hidden) return; const keep=panel.querySelector('.aip-body'); const st=keep?keep.scrollTop:0; const ph=ptab==='run'?runTab():ptab==='prop'?propTab():ptab==='set'?setTab():logTab();
+  const act=document.activeElement; const typing=act&&panel.contains(act)&&/INPUT|TEXTAREA/.test(act.tagName)&&ptab==='run'&&curJob&&curJob.status!=='run'?false:false; void typing;
+  if(ptab==='run'&&panel.querySelector('[data-aip-text]')){ /* 入力中の内容を消さない: 実行タブは、進行の部分だけ更新 */ const box=panel.querySelector('#aipJob'); if(box){ box.innerHTML=jobBox(); return; } }
+  panel.querySelector('.aip-body').innerHTML=(ptab==='run'?'<div id="aipJob">'+jobBox()+'</div>':'')+ph; panel.querySelector('.aip-body').scrollTop=st;
+  panel.querySelectorAll('.aip-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===ptab)); }
+function openPanel(tab){ if(!document.getElementById('aipStyle')) document.head.insertAdjacentHTML('beforeend',UI_STYLE);
+  if(!panel){ panel=document.createElement('div'); panel.id='aipPanel'; panel.setAttribute('aria-label','AIの地図・歴史の計画'); panel.innerHTML=`<div class="aip-head"><b>AIの地図・歴史の計画</b><button class="btn small" data-aip-close="1">閉じる</button></div><div class="aip-tabs">${[['run','実行'],['prop','提案'],['set','設定'],['log','送受信の記録']].map(([k,l])=>`<button data-t="${k}">${l}</button>`).join('')}</div><div class="aip-body"></div>`; document.body.appendChild(panel); bind(); listeners.add(render); }
+  panel.hidden=false; if(tab) ptab=tab; panel.querySelector('.aip-body').innerHTML=''; ptab=tab||ptab; const pb=panel.querySelector('.aip-body'); pb.innerHTML=(ptab==='run'?'<div id="aipJob">'+jobBox()+'</div>':'')+(ptab==='run'?runTab():ptab==='prop'?propTab():ptab==='set'?setTab():logTab()); panel.querySelectorAll('.aip-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===ptab)); notify(); }
+function closePanel(){ if(panel) panel.hidden=true; }
+async function guarded(fn){ try{ const r=await fn(); if(r&&r.job&&(r.proposals||[]).length) { ptab='prop'; render(); } return r; }catch(e){ toast(String(e&&e.message||e),'err'); } }
+function bind(){
+  panel.addEventListener('click',async(e)=>{ const t=e.target.closest('button,input[data-aip-ovl]'); if(!t) return; const d=t.dataset;
+    if(d.aipClose){ closePanel(); return; } if(d.t){ ptab=d.t; openPanel(d.t); return; } if(d.aipStop){ stopJob(); return; } if(d.aipClear){ clearDone(); return; }
+    if(d.aipLogclear){ log.clear(); openPanel('log'); return; }
+    if(d.aipRun==='terrain'){ const rect=readRect(); if(!rect){ toast('範囲が不正です','err'); return; } guarded(()=>terrainAiJob({rect,cond:readCond()})); return; }
+    if(d.aipRun==='mech'){ const rect=readRect(); if(!rect){ toast('範囲が不正です','err'); return; } const want={}; panel.querySelectorAll('[data-aip-want]').forEach(c=>{ want[c.getAttribute('data-aip-want')]=c.checked; }); guarded(()=>mechanismJob({rect,want})); return; }
+    if(d.aipRun==='history'){ const g=(k)=>(panel.querySelector(`[data-aip-h="${k}"]`)||{}).value; guarded(()=>historyJob({start:Number(g('start')),end:Number(g('end')),span:Number(g('span')),hint:g('hint')})); return; }
+    if(d.aipAp){ const rec=pending.find(r=>r.id===d.aipAp); const r=await approve(d.aipAp,[...rec.sel]); if(r.ok) toast(`承認しました(${r.count}件)。1回の「元に戻す」で戻ります`); else toast(r.message,'err'); return; }
+    if(d.aipRj){ reject(d.aipRj); toast('却下しました(世界は変わっていません)'); return; } });
+  panel.addEventListener('change',(e)=>{ const t=e.target; const d=t.dataset||{};
+    if(d.aipRm){ rectMode=d.aipRm; openPanel('run'); return; } if(d.aipOvl!==undefined){ overlayOn=t.checked; notify(); return; }
+    if(d.aipSel){ const [id,i]=d.aipSel.split('|'); const rec=pending.find(r=>r.id===id); if(rec){ const k=Number(i); const deps=AtlasProposal.Core.dependencies(rec.proposal.operations); if(t.checked){ AtlasProposal.Core.closeSelection(deps,[k]).forEach(j=>rec.sel.add(j)); } else { rec.sel.delete(k); AtlasProposal.Core.dependents(deps,k).forEach(j=>rec.sel.delete(j)); } notify(); } return; }
+    if(d.aipC){ const k=d.aipC; const v=Number(t.value); if(!Number.isFinite(v)) return; if(k.startsWith('rc-')) cfg.reqChars[k.slice(3)]=clampN(Math.round(v),1500,200000); else cfg[k]=v; cfg=(function(){ const s=JSON.stringify(cfg); store.set(LS_SET,s); return loadCfg(); })(); sumCache=null; openPanel('set'); } });
+}
+/* AIドロワーへボタンを足す(既存の画面は変えず、足すだけ) */
+function inject(){ const tabs=document.querySelector('#aiDrawer .ai-tabs'); if(!tabs||document.getElementById('aipOpen')) return; const b=document.createElement('button'); b.id='aipOpen'; b.className='ai-tab'; b.type='button'; b.textContent='地図・歴史の計画'; b.title='地形の提案・仕組みの推定・歴史の予測'; b.addEventListener('click',()=>openPanel('run')); tabs.appendChild(b); }
+try{ new MutationObserver(inject).observe(document.body,{childList:true,subtree:false}); inject(); }catch(e){}
+window.addEventListener('beforeunload',()=>{}); 
+
+const api={ cfg:()=>cfg, saveCfg:()=>saveCfg(), setCfg:(o)=>{ Object.assign(cfg,o); saveCfg(); sumCache=null; }, buildSummary, blockToText, summaryHeader, blockPxFor, complete, askJson, transport, checkDestination, sanitizeResponse, dest,
+  log, stats:statsReport, rawStats:()=>stats, jobs:{terrain:terrainAiJob,mechanism:mechanismJob,history:historyJob}, pending, approve, reject, stop:stopJob, job:()=>curJob, open:openPanel, close:closePanel, checkHistory, planRewrite, planCoast, computeRivers, tmeta,
+  cacheSize:()=>reqCache.size, clearCache:()=>{ reqCache.clear(); }, resetSummaryCache:()=>{ sumCache=null; }, summaryCacheKey:()=>sumCache&&sumCache.key, setOverlay:(v)=>{ overlayOn=!!v; notify(); }, makeEras, validateTerrain, normCond, DEFAULTS:DEF };
+return api;
+})();
+window.AiPlan=AiPlan;
 
 /* file:// で開いたとき、href="#" のリンクやフォーム送信が自分自身のURLへの移動になりブラウザに拒否されるのを防ぐ */
 document.addEventListener('click', (e)=>{
