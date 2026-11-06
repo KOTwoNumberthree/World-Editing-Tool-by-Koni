@@ -9281,7 +9281,13 @@ function renderMapRightPanel(){
 
 
 /* ---------- 年代スライダー / タイムラプス ---------- */
-const TL = {playing:false, raf:0, last:0, yf:0, acc:0, from:null, to:null, loop:false, mode:'years'};
+const TL = {playing:false, raf:0, last:0, yf:0, acc:0, from:null, to:null, loop:false, mode:'years', fromUser:false, toUser:false, wid:null};
+/* 範囲(開始年・終了年)を、世界を開いたときの初期値に戻す。開始年の初期値は「現在の年代」(世界の開始年ではない) */
+function tlResetRange(){ TL.from=null; TL.to=null; TL.fromUser=false; TL.toUser=false; TL.wid=null; }
+/* 利用者が手で入力した範囲だけを、この端末の設定に覚える(世界データには入れない。世界ごと)。自動の初期値は覚えない */
+const TL_LS='atlas_timelapse_range_v1';
+function tlSavedAll(){ try{ const o=JSON.parse(localStorage.getItem(TL_LS)||'{}'); return (o&&typeof o==='object'&&!Array.isArray(o))?o:{}; }catch(e){ return {}; } }
+function tlSaveUser(){ const w=W(); if(!w) return; try{ const all=tlSavedAll(); const e={}; if(TL.fromUser&&Number.isFinite(TL.from)) e.from=TL.from; if(TL.toUser&&Number.isFinite(TL.to)) e.to=TL.to; if(Object.keys(e).length) all[w.id]=e; else delete all[w.id]; const ks=Object.keys(all); while(ks.length>50) delete all[ks.shift()]; localStorage.setItem(TL_LS,JSON.stringify(all)); }catch(e){} }
 function wireMapTimeline(){
   const range=document.getElementById('tlRange');
   range.addEventListener('input',()=>{ stopTimelapse(); setCurrentYear(Number(range.value)); });
@@ -9294,8 +9300,8 @@ function wireMapTimeline(){
   document.getElementById('tlLineSel').addEventListener('change',(e)=>{ mutate('メイン世界線(地図)を変更', ()=>{ W().mainLineId=e.target.value; }); MapView.pinnedStateId=null; renderMap(); renderMapRightPanel(); syncTimelineControls(); });
   document.getElementById('tlMode').addEventListener('change',(e)=>{ TL.mode=e.target.value; });
   document.getElementById('tlLoop').addEventListener('change',(e)=>{ TL.loop=e.target.checked; });
-  document.getElementById('tlFrom').addEventListener('change',(e)=>{ TL.from=Number(e.target.value); });
-  document.getElementById('tlTo').addEventListener('change',(e)=>{ TL.to=Number(e.target.value); });
+  document.getElementById('tlFrom').addEventListener('change',(e)=>{ TL.from=Number(e.target.value); TL.fromUser=true; tlSaveUser(); });
+  document.getElementById('tlTo').addEventListener('change',(e)=>{ TL.to=Number(e.target.value); TL.toUser=true; tlSaveUser(); });
   document.getElementById('tlMarks').addEventListener('click',(e)=>{ const m=e.target.closest('[data-sid]'); if(m){ stopTimelapse(); viewState(m.dataset.sid); } });
   document.getElementById('tlExportBtn').addEventListener('click',()=> openTimelapseExportModal());
 }
@@ -9307,7 +9313,10 @@ function syncTimelineControls(){
   const S=curState(); const wl=S?worldlineById(S.lineId):null;
   document.getElementById('tlStateLab').innerHTML = S? `地図: <b>${esc(dateLabel(w,S.year,(S.month>1||S.day>1)?S.month:0,S.day))}</b> ${esc(wl?wl.name:'')}${MapView.pinnedStateId?' 📌固定':''}` : '';
   const sel=document.getElementById('tlLineSel'); sel.innerHTML=w.worldlines.map(l=>`<option value="${l.id}" ${l.id===w.mainLineId?'selected':''}>${esc(l.name)}</option>`).join('');
-  if(TL.from===null||isNaN(TL.from)) TL.from=w.startYear; if(TL.to===null||isNaN(TL.to)) TL.to=w.endYear;
+  if(TL.wid!==w.id){ tlResetRange(); TL.wid=w.id; }   /* 別の世界を開いたときだけ、初期値に戻す(年代が変わっても、範囲は上書きしない) */
+  if(TL.from===null||isNaN(TL.from)){ const sv=tlSavedAll()[w.id]; if(sv&&Number.isFinite(sv.from)){ TL.from=sv.from; TL.fromUser=true; } else { TL.from=w.currentYear; TL.fromUser=false; } }
+  if(TL.to===null||isNaN(TL.to)){ const sv=tlSavedAll()[w.id]; if(sv&&Number.isFinite(sv.to)){ TL.to=sv.to; TL.toUser=true; } else { TL.to=w.endYear; TL.toUser=false; } }
+  if(!TL.toUser&&TL.to<=TL.from) TL.to=TL.from+1;   /* 初期値どうしで、終了年が開始年以下になるときは、終了年を開始年の1年後にする */
   document.getElementById('tlFrom').value=TL.from; document.getElementById('tlTo').value=TL.to;
   const span=(w.endYear-w.startYear)||1; const seq=lineSequence(w,w.mainLineId);
   const pct=(y)=> clamp((y-w.startYear)/span*100,0,100);
@@ -9333,7 +9342,8 @@ function startTimelapse(fromStart){
   if(TL.to<=TL.from){ toast('終了年は開始年より後にしてください','err'); return; }
   MapView.pinnedStateId=null;
   TL.unit=document.getElementById('tlUnit').value;
-  if(fromStart || w.currentYear<TL.from || w.currentYear>=TL.to) setCurrentDate(TL.from,1,1,{quiet:true});
+  /* 「▶ タイムラプス再生」も下の「▶」も同じ規則: 現在の年代が範囲(開始年以上・終了年未満)の中なら、そこから再生。外なら、開始年へ移動してから再生 */
+  if(w.currentYear<TL.from || w.currentYear>=TL.to) setCurrentDate(TL.from,1,1,{quiet:true});
   TL.yf=w.currentYear; TL.df=dateOrd(w.currentYear,w.currentMonth||1,w.currentDay||1); TL.acc=0; TL.last=performance.now(); TL.playing=true; TL.rightAt=0;
   syncTimelineControls(); TL.raf=requestAnimationFrame(tlTick);
 }
@@ -10965,7 +10975,7 @@ function onGlobeClick(e){
 const G3DExport = {running:false};
 function openTimelapseExportModal(){
   const w=W();
-  const defFrom = (TL.from!==null && !isNaN(TL.from)) ? TL.from : w.startYear;
+  const defFrom = (TL.fromUser && TL.from!==null && !isNaN(TL.from)) ? TL.from : w.startYear;   /* 出力の初期値は従来どおり(自動の開始年=現在の年代は使わない) */
   const defTo = (TL.to!==null && !isNaN(TL.to)) ? TL.to : w.endYear;
   const defStep = Number(document.getElementById('tlStep') && document.getElementById('tlStep').value) || 10;
   const mode3dOk = !!w.geo3d.configured;
@@ -11457,7 +11467,7 @@ async function switchWorld(id){
   if(id!==DB.currentWorldId && typeof voDropViewWorld==='function') voDropViewWorld();
   DB.currentWorldId = id;
   await Store.loadWorld(id);
-  History.clear();
+  History.clear(); tlResetRange();
   mapInitialized = false;
   MapView.selection=null; MapView.selectedNationId=null; MapView.selectedRegionId=null; MapView._neverFit=false; MapView.pinnedStateId=null; MapView.stats=null; MapView.clip=null; MapView.rectSel=null;
   persist();
