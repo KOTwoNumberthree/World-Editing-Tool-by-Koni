@@ -853,6 +853,8 @@ select.uvc{max-width:70px;}
               <input type="range" id="g3dElevExag" min="0" max="0.5" step="0.005" style="width:90px;">
               <b id="g3dElevExagV" style="font-family:var(--font-mono);min-width:38px;display:inline-block;"></b>
             </label>
+            <button class="btn small" id="g3dCloudBtn" data-tip="雲|3D地球儀の雲の設定(量・柔らかさ・種・色・影・動き)。2D(衛星風)の雲も、この設定で決まります">☁ 雲</button>
+            <span id="g3dElevNote" style="display:none;font-size:12px;color:var(--warn,#e0a040);margin-right:6px;"></span>
             <button class="icon-btn" id="g3dYearPrev" data-tip="前の年代|1ステップ分、年代を戻します">◀◀</button>
             <div class="yrlab" id="g3dYearLab" style="font-family:var(--font-mono);color:var(--brass);min-width:70px;text-align:center;"></div>
             <button class="icon-btn" id="g3dYearNext" data-tip="次の年代|1ステップ分、年代を進めます">▶▶</button>
@@ -3718,6 +3720,7 @@ function normalizeWorld(w){
     elevExaggeration:0.04, /* 3D標高高さ倍率(3D高さ=2D標高値[0-255]×この倍率)。2D標高データ自体は変更しない */
     textureRes:2048, configured:false }, w.geo3d||{});
   if(!Number.isFinite(w.geo3d.elevExaggeration) || w.geo3d.elevExaggeration<0) w.geo3d.elevExaggeration=0.04;
+  cloudMigrate(w);   /* v62: 雲の設定(geo3d.clouds)。無い世界は、2Dの satClouds・satSeed を値を変えずに引き継ぐ */
   if(!Array.isArray(w.terrainTypes) || !w.terrainTypes.length) w.terrainTypes = deepClone(DEFAULT_TERRAIN);
   if(!Array.isArray(w.travelModes) || !w.travelModes.length) w.travelModes = deepClone(DEFAULT_TRAVEL_MODES);
   w.travelModes.forEach(m=>{
@@ -10339,7 +10342,7 @@ function satSeedDefault(w){ const s=String((w&&(w.id||w.name))||'atlas'); let h=
 const PAPER_DEFAULT='#e9dcb8', WAVE_GAPS=[4,6,8,10,12,16], STRENGTHS=[['weak','弱'],['mid','中'],['strong','強']];
 function parSeedDefault(w){ return 20260; }   /* 世界に依らない固定値(取り込みでも同じ見た目になる) */
 function styleOpts(w){ w=w||W(); const d=(w&&w.mapDisplay)||{}; const ps=d.parSeed;
-  return { clouds:d.satClouds===true, strength:STRENGTHS.some(x=>x[0]===d.satStrength)?d.satStrength:'mid',
+  return { clouds:cloudCfgOf(w).on, strength:STRENGTHS.some(x=>x[0]===d.satStrength)?d.satStrength:'mid',
     paper:(typeof d.parPaper==='string'&&HEX6.test(d.parPaper))?d.parPaper.toLowerCase():PAPER_DEFAULT, burn:d.parBurn!==false, deco:d.parDeco!==false,
     wave:WAVE_GAPS.includes(Number(d.parWave))?Number(d.parWave):6, parSeed:(Number.isInteger(ps)&&ps>=0&&ps<=999999999)?ps:parSeedDefault(w) }; }
 function satSeedOf(w){ w=w||W(); const v=w&&w.mapDisplay&&w.mapDisplay.satSeed; return (Number.isInteger(v)&&v>=0&&v<=999999999)?v:satSeedDefault(w); }
@@ -10380,7 +10383,7 @@ const DIGKEY={0:'p',6:'p',1:'w',2:'f',3:'d',4:'m',5:'m'};
 function bakeTerrainStyled(tile, elevTile, lod, emode, lt, org, style, w){
   if(!style||style==='standard') return bakeTerrain(tile, elevTile, lod, emode, lt, org);
   w=w||W(); const P=Pal.terrain, SP=stylePal(w); emode=emode||'shade'; if(emode==='off'||style==='digital'||style==='mono') elevTile=null;
-  const mono=style==='mono'?monoOf(w):null, seed=style==='satellite'?satSeedOf(w):0, SOPT=styleOpts(w), skey=style==='satellite'?(SOPT.strength+(SOPT.clouds?'c':'n')):style==='parchment'?[SOPT.paper,SOPT.burn?1:0,SOPT.wave,SOPT.parSeed].join(','):'';
+  const mono=style==='mono'?monoOf(w):null, seed=style==='satellite'?satSeedOf(w):0, SOPT=styleOpts(w), skey=style==='satellite'?(SOPT.strength+cloudBakeSig(w)):style==='parchment'?[SOPT.paper,SOPT.burn?1:0,SOPT.wave,SOPT.parSeed].join(','):'';
   const T9=[]; let nbSig=''; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ const a=(dx===0&&dy===0)?tile:((STYLE_NEEDS_NB[style]&&org&&org.nb)?(org.nb(dx,dy)||null):null); T9.push(a); if(STYLE_NEEDS_NB[style]&&!(dx===0&&dy===0)) nbSig+=arrId(a)+','; }
   const key=[style,mono?(mono.land+mono.sea+mono.lake):'',seed,skey,SP.ver,P.ver,emode,ltKey(lt),arrId(elevTile),nbSig].join('|');
   let e=Bake.styled.get(tile); if(!e||e.key!==key){ e={key,lods:{}}; Bake.styled.set(tile,e); }
@@ -10554,7 +10557,7 @@ function satPaint(E){
     base[bi*3]=r; base[bi*3+1]=g; base[bi*3+2]=b;
   }
   /* 3) 海と陸の境界は輪郭線ではなく、数画素の色の移り変わり(5×5の平均)。地形タイプの境目もなめらか */
-  const cw=(o.clouds), cs=seed+50;
+  const cw=(o.clouds&&!CloudCtl.suppress), CP=cw?cloudTilePrep(E.w,ox,oy,n,s):null;   /* v62: 雲は球面の濃さを地図の座標へ写したもの */
   for(let py=0;py<n;py++) for(let px=0;px<n;px++){
     const x=px*s, y=py*s, idx=(y<<8)|x, v=tile[idx]; if(!v||!has[v]) continue;
     const bi=(py+rr)*BN+(px+rr), oi=(py*n+px)*4, X=ox+x, Y=oy+y; let r=base[bi*3], g=base[bi*3+1], b=base[bi*3+2];
@@ -10564,7 +10567,7 @@ function satPaint(E){
       if(el){ const eL=elevTile[x>=s?idx-s:idx], eU=elevTile[y>=s?idx-(s<<8):idx], k=kind[v];
         if(emode==='bands'){ if(!k){ const bc=elevBandColor(el); r=r*0.55+bc[0]*0.45; g=g*0.55+bc[1]*0.45; b=b*0.55+bc[2]*0.45; } }
         else { let sh=shadeFn(el-eL,el-eU); sh=sh<-45?-45:sh>45?45:sh; const lift=el*0.10; r+=sh+lift; g+=sh+lift; b+=sh+lift*0.8; } } }
-    if(cw){ const c=0.6*vnoise(X/160,Y/160,cs)+0.3*vnoise(X/55,Y/55,cs+1)+0.1*vnoise(X/18,Y/18,cs+2); let a=(c-0.58)/0.2; a=a<0?0:a>1?1:a; a=a*a*(3-2*a)*0.6; if(a>0){ r=r*(1-a)+250*a; g=g*(1-a)+252*a; b=b*(1-a)+255*a; } }
+    if(cw){ CP.at(px,py); if(CP.sh>0){ const k=1-CP.sh; r*=k; g*=k; b*=k; } const a=CP.a; if(a>0){ r=r*(1-a)+CP.cr*a; g=g*(1-a)+CP.cg*a; b=b*(1-a)+CP.cb*a; } }
     d[oi]=r; d[oi+1]=g; d[oi+2]=b; d[oi+3]=255;
   }
 }
@@ -10755,8 +10758,8 @@ function initGlobe3DScene(){
   const camera=new THREE.PerspectiveCamera(45,1,0.1,4000); camera.position.set(0,0,260);
   const controls=new THREE.OrbitControls(camera, canvas);
   controls.enableDamping=true; controls.dampingFactor=0.08; controls.minDistance=110; controls.maxDistance=900; controls.rotateSpeed=0.6;
-  scene.add(new THREE.AmbientLight(0xffffff,0.6));
-  const sun=new THREE.DirectionalLight(0xfff2df,0.85); sun.position.set(3,2,4); scene.add(sun); Globe3D.sun=sun; globeApplyLight(sun);
+  const amb=new THREE.AmbientLight(0xffffff,0.6); scene.add(amb); Globe3D.amb=amb;
+  const sun=new THREE.DirectionalLight(0xfff2df,0.85); sun.position.set(3,2,4); scene.add(sun); Globe3D.sun=sun; globeApplyLight(sun); globeApplyRelief(amb,sun);
   // 「未設定の惑星表面」を表す下地の球。地図データが無い部分はこれがそのまま透けて見える(常時表示)。
   const unknownSphere=new THREE.Mesh(new THREE.SphereGeometry(99.4,64,48), new THREE.MeshPhongMaterial({color:0x11212c}));
   scene.add(unknownSphere);
@@ -10778,6 +10781,7 @@ function globeLoop(){
   Globe3D.raf=requestAnimationFrame(globeLoop);
   const auto=document.getElementById('g3dAutoRotate');
   if(auto && auto.checked && Globe3D.sphere){ const dir=(W()&&W().geo3d&&W().geo3d.rotationDir===-1)?-1:1; Globe3D.sphere.rotation.y+=0.0025*dir; Globe3D.unknownSphere.rotation.y+=0.0025*dir; }
+  globeCloudsRotate(Globe3D, Globe3D.sphere?Globe3D.sphere.rotation.y:0);
   Globe3D.controls && Globe3D.controls.update();
   Globe3D.renderer.render(Globe3D.scene, Globe3D.camera);
 }
@@ -10786,7 +10790,7 @@ function globeLoop(){
    全球フレームを用意し、地図データの無い部分を透明にすることでカバー範囲を表現する。 */
 function fullSphereGeometry(){
   const THREE=window.THREE;
-  const geo = new THREE.SphereGeometry(100, 128, 96);
+  const geo = new THREE.SphereGeometry(100, 192, 144);   /* v61: 小さな山が角ばらないよう、分割を1.5倍に(画面と出力で共通) */
   geo.userData.baseRadius = 100;
   return geo;
 }
@@ -10836,13 +10840,13 @@ function applyElevationToGeometry(geometry, heightCanvas, exaggeration, hdataIn)
     const nx=pos.getX(i), ny=pos.getY(i), nz=pos.getZ(i); const len=Math.hypot(nx,ny,nz)||1;
     const nxN=nx/len, nyN=ny/len, nzN=nz/len;
     const u=uv.getX(i), v=uv.getY(i);
-    const hx=GW?(((Math.floor(u*hw))%hw)+hw)%hw:clamp(Math.floor(u*hw),0,hw-1), hy=clamp(Math.floor((1-v)*hh),0,hh-1);
+    const fx=u*hw-0.5, fy=(1-v)*hh-0.5, ix=Math.floor(fx), iy=Math.floor(fy), tx=fx-ix, ty=fy-iy;   /* v61: 4画素の補間(最近傍だと、小さな山が角ばって見える) */
     // 注: 球ジオメトリのUV.yは北極=1・南極=0(three.jsのSphereGeometryの仕様)だが、
     // 色テクスチャはCanvasTexture既定のflipY=trueでGPUへアップロードされるため、
     // 実際に描画される内容はキャンバスの行=(1-UV.y)*高さに対応する。標高テクスチャも
     // 同じ対応関係でサンプリングしないと、2D標高データと3D凹凸の位置がずれてしまう。
-    const di=(hy*hw+hx)*4;
-    const elevRaw = hdata[di+3]>0 ? hdata[di] : 0; // 未設定領域(alpha=0)は標高0扱い
+    const sm=(x,y)=>{ x=GW?(((x%hw)+hw)%hw):clamp(x,0,hw-1); y=clamp(y,0,hh-1); const d=(y*hw+x)*4; return hdata[d+3]>0?hdata[d]:0; };   // 未設定領域(alpha=0)は標高0扱い
+    const elevRaw = (sm(ix,iy)*(1-tx)+sm(ix+1,iy)*tx)*(1-ty)+(sm(ix,iy+1)*(1-tx)+sm(ix+1,iy+1)*tx)*ty;
     const height = elevRaw*exaggeration;
     const r=base+height;
     pos.setXYZ(i, nxN*r, nyN*r, nzN*r);
@@ -10856,14 +10860,14 @@ function applyElevationToGeometry(geometry, heightCanvas, exaggeration, hdataIn)
 function updateGlobeElevationOnly(){
   if(!Globe3D.sphere) return;
   const w=W();
-  applyElevationToGeometry(Globe3D.sphere.geometry, Globe3D.heightCanvas, globeElevScale(w)); Globe3D.elevScaleApplied=globeElevScale(w);
+  applyElevationToGeometry(Globe3D.sphere.geometry, Globe3D.heightCanvas, globeElevScale(w)); Globe3D.elevScaleApplied=globeElevScale(w); globeApplyRelief(Globe3D.amb,Globe3D.sun); globeCloudsSync(Globe3D,w); globeElevNoteUpdate();
 }
 async function updateGlobeTexture(){
   const w=W(); const cfg=w.geo3d;
   const prog=showProgress('3D用テクスチャを生成中…');
   await new Promise(r=>setTimeout(r,10));
   try{
-    let cv=await buildMapTextureCanvas(Math.min(cfg.textureRes,4096));
+    let cv; CloudCtl.suppress++; try{ cv=await buildMapTextureCanvas(Math.min(cfg.textureRes,4096)); } finally { CloudCtl.suppress--; }   /* v62: 地表の絵に、2Dの雲は入れない(雲は殻で描く) */
     cv=reprojectMapToEquirect(cv, cfg); // 常に全球フレームへ変換(正距円筒でも、地図が全球の一部だけを覆う場合があるため)
     let elevCv=await buildElevTextureCanvas(Math.min(cfg.textureRes,2048));
     elevCv=reprojectMapToEquirect(elevCv, cfg); // 標高も色テクスチャと全く同じ再投影処理を共有する
@@ -10887,12 +10891,14 @@ function wireGlobe3DToolbar(){
     if(!Globe3D.camera) return; Globe3D.camera.position.set(0,0,260); Globe3D.controls.target.set(0,0,0); Globe3D.controls.update();
   });
   document.getElementById('g3dExportBtn').addEventListener('click', ()=> openTimelapseExportModal());
+  { const cb=document.getElementById('g3dCloudBtn'); if(cb) cb.addEventListener('click', ()=> openCloudSettings()); }
   const exagEl=document.getElementById('g3dElevExag'), exagV=document.getElementById('g3dElevExagV');
   const syncExagLabel=()=>{ exagV.textContent=Number(exagEl.value).toFixed(3); };
   exagEl.addEventListener('input', ()=>{
     syncExagLabel();
     mutate('3D標高高さ倍率を変更', ()=>{ W().geo3d.elevExaggeration=Number(exagEl.value); });
     updateGlobeElevationOnly(); // テクスチャは再生成せず、頂点の高さだけを即座に更新する
+    globeElevNoteUpdate();
   });
 }
 async function renderGlobe3DView(){
@@ -10908,13 +10914,15 @@ async function renderGlobe3DView(){
   catch(e){ toast('3D表示ライブラリの読み込みに失敗しました(ネット接続を確認してください)','err'); return; }
   if(currentView!=='globe3d') return; // 読み込み待ちの間に画面が切り替わっていた場合は中断
   if(!Globe3D.inited) initGlobe3DScene();
-  const key=w.currentYear+'|'+JSON.stringify(Object.assign({},w.geo3d,{elevExaggeration:0}))+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(w)+'|wrap:'+(wrapOn(w)?1:0)+'|'+w.mapWidth;
+  const key=w.currentYear+'|'+JSON.stringify(Object.assign({},w.geo3d,{elevExaggeration:0,clouds:0}))+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(w)+'|wrap:'+(wrapOn(w)?1:0)+'|'+w.mapWidth;
   if(Globe3D.lastKey!==key || Globe3D.forceRebuild){
     Globe3D.forceRebuild=false;
     await updateGlobeTexture();
     Globe3D.lastKey=key;
   }
   globeApplyLight(Globe3D.sun); globeSyncElevation();
+  try{ globeCloudsSync(Globe3D,W()); globeCloudsRotate(Globe3D, Globe3D.sphere?Globe3D.sphere.rotation.y:0); }catch(e){ console.error(e); }   /* v62: 3Dの雲(殻)。標高を反映したあとの半径に合わせる */
+  globeElevNoteUpdate();
   globeEdgeNote();
   resizeGlobe3D();
   if(!Globe3D.raf) globeLoop();
@@ -11009,6 +11017,7 @@ function openTimelapseExportModal(){
       <div id="texGifDither"><label>ディザリング</label><select id="texDither"><option value="1" selected>あり</option><option value="0">なし</option></select></div>
       <div id="texVidOpt" style="display:none"><label>動画の画質</label><select id="texVq"><option value="0.1">低</option><option value="0.15" selected>標準</option><option value="0.2">高</option></select></div>
     </div>
+    <div class="view-sub" id="texElevNote" style="display:none"></div>
     <div class="view-sub" id="texEst"></div>
     <small class="hint">フレーム数が多い/解像度が高いほど時間がかかります。最大500フレームまで。生成中はこのウィンドウを閉じないでください。動画はフレームごとの表示時間を正確に指定して書き出します(実時間では再生しません)。</small>
     <div id="texProgWrap" style="display:none;margin-top:10px;"><div class="view-sub" id="texProgLabel">準備中…</div></div>
@@ -11018,6 +11027,8 @@ function openTimelapseExportModal(){
     {label:'書き出し開始', cls:'primary', onClick: startTimelapseExport},
   ]);
   tlWireExportModal();
+  const upd=()=>{ const n=document.getElementById('texElevNote'), m=document.getElementById('texMode'); if(!n||!m) return; if(m.value!=='3d'){ n.style.display='none'; return; } const i=globeElevInfo(W()); const t=globeElevText(W()); n.textContent='標高の反映(3D地球儀): '+(t?t.replace('標高は表示されません','出力にも標高は反映されません')+'。':'反映されます(高さ倍率 '+Number(i.strength).toFixed(3)+')。'); n.style.display=''; };
+  const m=document.getElementById('texMode'); if(m){ m.addEventListener('change',upd); upd(); }
 }
 async function startTimelapseExport(){
   if(G3DExport.running) return;
@@ -11095,18 +11106,18 @@ function createOffscreenGlobeRenderer(w,h){
   renderer.setSize(w,h,false);
   const scene=new THREE.Scene(); scene.background=new THREE.Color(0x05070a);
   const camera=new THREE.PerspectiveCamera(45,w/h,0.1,4000); camera.position.set(0,0,260);
-  scene.add(new THREE.AmbientLight(0xffffff,0.6));
+  const amb=new THREE.AmbientLight(0xffffff,0.6); scene.add(amb);
   const sun=new THREE.DirectionalLight(0xfff2df,0.85); sun.position.set(3,2,4); scene.add(sun); globeApplyLight(sun);
-  return {renderer,scene,camera,lastKey:'',sphere:null,unknown:null,hdata:null,hw:0,hh:0,elevKey:'',applied:'',elevBuilds:0,applies:0,disposed:false};
+  return {amb,sun,renderer,scene,camera,lastKey:'',sphere:null,unknown:null,hdata:null,hw:0,hh:0,elevKey:'',applied:'',elevBuilds:0,applies:0,disposed:false};
 }
 /* 標高の画像の更新を表す印(いまの年代の標高タイルの識別子と、タイルの変更の番号) */
 function globeElevSig(w){ w=w||W(); let sid; try{ sid=currentStateId(); }catch(e){ return ''; } const R=resolveState(sid); if(!R) return ''; const a=[]; R.layers.elev.forEach((t,k)=>a.push(k+':'+arrId(t))); a.sort(); return sid+'|'+a.join(',')+'|'+Store.rev; }
 async function renderOffscreenGlobeFrame(off, w, h, angleY){
   const wd=W(); const cfg=wd.geo3d; const THREE=window.THREE;
-  const cfgC=JSON.stringify(Object.assign({},cfg,{elevExaggeration:0}));   /* 標高の強さは色の絵に関係しない(画面の鍵と同じ) */
+  const cfgC=JSON.stringify(Object.assign({},cfg,{elevExaggeration:0,clouds:0}));   /* 標高の強さは色の絵に関係しない(画面の鍵と同じ) */
   const key=wd.currentYear+'|'+cfgC+'|'+JSON.stringify(MapView.activeLayers)+'|'+elevLightKey(wd)+'|wrap:'+(wrapOn(wd)?1:0)+'|'+wd.mapWidth+'|'+globeElevSig(wd);   /* 標高の画像の更新(描き換え)も鍵に含める */
   if(off.lastKey!==key){
-    let cv=await buildMapTextureCanvas(Math.min(cfg.textureRes,2048));
+    let cv; CloudCtl.suppress++; try{ cv=await buildMapTextureCanvas(Math.min(cfg.textureRes,2048)); } finally { CloudCtl.suppress--; }
     cv=reprojectMapToEquirect(cv, cfg); // 常に全球フレームへ変換
     disposeMesh(off.sphere); if(off.sphere) off.scene.remove(off.sphere);
     const tex=new THREE.CanvasTexture(cv); tex.needsUpdate=true; if(geoWrapOn(cfg,wd)) tex.wrapS=THREE.RepeatWrapping;
@@ -11128,14 +11139,15 @@ async function renderOffscreenGlobeFrame(off, w, h, angleY){
   }
   const ak=sc?(off.elevKey+'|'+sc):'flat';
   if(off.applied!==ak){ applyElevationToGeometry(off.sphere.geometry, sc?{width:off.hw,height:off.hh}:null, sc, sc?off.hdata:null); off.applied=ak; off.applies++; }
-  off.sphere.rotation.y=angleY||0; off.unknown.rotation.y=angleY||0;
+  off.sphere.rotation.y=angleY||0; off.unknown.rotation.y=angleY||0; globeApplyRelief(off.amb,off.sun,wd);
+  globeCloudsSync(off,wd); globeCloudsRotate(off,angleY||0);   /* v62: 3Dの雲(殻)。模様は同じ設定と種のあいだ作り直さない */   /* 画面と同じ陰影の強さ */
   off.renderer.render(off.scene, off.camera);
   const out=document.createElement('canvas'); out.width=w; out.height=h;
   out.getContext('2d').drawImage(off.renderer.domElement,0,0);
   return out;
 }
 /* 出力の終わり・途中の失敗のどちらでも呼ばれる(startTimelapseExport の finally)。形・標高の画素・描画器を手放す */
-function disposeOffscreenGlobeRenderer(off){ if(!off) return; disposeMesh(off.sphere); disposeMesh(off.unknown); off.sphere=null; off.unknown=null; off.hdata=null; off.elevKey=''; off.applied=''; off.disposed=true; try{ off.renderer.dispose(); }catch(e){} }
+function disposeOffscreenGlobeRenderer(off){ if(!off) return; cloudDropMesh(off,'cloudMesh'); cloudDropMesh(off,'shadowMesh'); disposeMesh(off.sphere); disposeMesh(off.unknown); off.sphere=null; off.unknown=null; off.hdata=null; off.elevKey=''; off.applied=''; off.disposed=true; try{ off.renderer.dispose(); }catch(e){} }
 
 /* ---------- フレーム列 → GIF / 動画 / ZIP ---------- */
 function frameDelayMs(fps){ return Math.round(1000/fps); }
@@ -15644,7 +15656,7 @@ function mapDisp(w){
     style:styleOf(w), mono:monoOf(w), satSeed:satSeedOf(w), sopt:styleOpts(w)};   /* v36: 表示スタイル(既定は標準) */
 }
 function elevLt(w){ const d=mapDisp(w); return {az:d.lightAz,alt:d.lightAlt,tex:d.texture==='on'}; }
-function elevLightKey(w){ const d=mapDisp(w); return [d.elevation?d.elevMode:'off',d.lightAz,d.lightAlt,d.contour?d.contourStep:0,d.texture,d.style,JSON.stringify(d.mono),d.style==='satellite'?d.satSeed:0,JSON.stringify(d.sopt),msKeyOf(customStyleOf(w))].join('|'); }
+function elevLightKey(w){ const d=mapDisp(w); return [d.elevation?d.elevMode:'off',d.lightAz,d.lightAlt,d.contour?d.contourStep:0,d.texture,d.style,JSON.stringify(d.mono),d.style==='satellite'?d.satSeed:0,JSON.stringify(Object.assign({},d.sopt,{clouds:0})),msKeyOf(customStyleOf(w))].join('|'); }
 /* 陰影の係数。既定(方位315°=北西・高度45°)は従来の式と完全に同じ */
 function elevShadeFn(lt){
   const az=lt?lt.az:315, alt=lt?lt.alt:45; if(az===315&&alt===45) return (gx,gy)=>(gx+gy)*0.9;
@@ -15750,8 +15762,8 @@ function mapStyleHtml(d){
   }
   const so=d.sopt||styleOpts(w);
   if(d.style==='satellite') h+=`<div class="lp-row" style="margin-left:22px;"><span>模様の強さ</span><select data-mstyle="sat-strength" ${dis}>${STRENGTHS.map(([id,nm])=>`<option value="${id}" ${so.strength===id?'selected':''}>${nm}</option>`).join('')}</select></div>
-    <div class="lp-row" style="margin-left:22px;"><label><input type="checkbox" data-mstyle="sat-clouds" ${so.clouds?'checked':''} ${dis}> 雲を重ねる</label></div>
-    <div class="lp-row" style="margin-left:22px;"><button class="btn small" data-mstyle="seed" ${dis}>模様・雲の種を変える</button><span class="lp-note">種=${d.satSeed}</span></div>
+    <div class="lp-row" style="margin-left:22px;"><label><input type="checkbox" data-cloud-ro="1" disabled ${so.clouds?'checked':''}> 雲を重ねる</label><span class="lp-note">3D地球儀の設定で変更します</span><button class="btn small" data-mstyle="cloud-goto">3D地球儀の雲の設定へ</button></div>
+    <div class="lp-row" style="margin-left:22px;"><button class="btn small" data-mstyle="seed" ${dis}>模様の種を変える</button><span class="lp-note">種=${d.satSeed}</span></div>
     <div class="lp-note" style="margin-left:22px;">陸は地形タイプごとの揺らぎ、海は海岸からの距離で色が変わります(海岸に近いほど明るい青緑)。</div>`;
   h+=wrapSettingHtml(dis);
   if(d.style==='parchment') h+=`<div class="lp-row" style="margin-left:22px;"><span>紙の色</span><input type="color" data-mstyle="par-paper" value="${so.paper}" ${dis}><button class="btn small" data-mstyle="par-paper-reset" ${dis}>既定の色に戻す</button></div>
@@ -15787,7 +15799,6 @@ document.addEventListener('change',(ev)=>{
     mapStyleMutate('地図の表示スタイル',(d,w)=>{ d.style=v; if(v==='mono'){ const m=monoOf(w); if(!m.land&&!m.sea&&!m.lake) d.mono=Object.assign({},MONO_DEFAULT); } if(v==='satellite'&&!Number.isInteger(d.satSeed)) d.satSeed=satSeedDefault(w); }); }
   else if(kind==='wrapx'){ const v=!!t.checked; mapStyleMutate('左右の端をつなげる(地図の表示)',(d)=>{ d.wrapX=v; }); }
   else if(kind==='sat-strength'){ const v=STRENGTHS.some(x=>x[0]===t.value)?t.value:'mid'; mapStyleMutate('衛星風の模様の強さ',(d)=>{ d.satStrength=v; }); }
-  else if(kind==='sat-clouds'){ const v=!!t.checked; mapStyleMutate('衛星風の雲',(d)=>{ d.satClouds=v; }); }
   else if(kind==='par-paper'){ const v=String(t.value||'').toLowerCase(); if(!HEX6.test(v)) return; mapStyleMutate('古地図風の紙の色',(d)=>{ d.parPaper=v; }); }
   else if(kind==='par-burn'){ const v=!!t.checked; mapStyleMutate('古地図風の焼け・染み',(d)=>{ d.parBurn=v; }); }
   else if(kind==='par-deco'){ const v=!!t.checked; mapStyleMutate('古地図風の装飾',(d)=>{ d.parDeco=v; }); }
@@ -15799,6 +15810,7 @@ document.addEventListener('click',(ev)=>{
   const t=ev.target&&ev.target.closest?ev.target.closest('button[data-mstyle]'):null; if(!t||t.disabled) return; const kind=t.dataset.mstyle;
   if(/^reset-(land|sea|lake|all)$/.test(kind)){ const k=kind.slice(6);
     mapStyleMutate('単色表示の色を元の地形の色に戻す',(d)=>{ d.mono=Object.assign({land:'',sea:'',lake:''},d.mono||{}); if(k==='all'){ d.mono={land:'',sea:'',lake:''}; } else d.mono[k]=''; }); }
+  else if(kind==='cloud-goto'){ cloudGoto(); }
   else if(kind==='wrap-preview'){ wrapPreviewOpen(); }
   else if(kind==='manage'){ msManage(); }
   else if(kind==='par-paper-reset'){ mapStyleMutate('古地図風の紙の色を既定に戻す',(d)=>{ d.parPaper=''; }); }
@@ -15819,6 +15831,171 @@ document.addEventListener('change',(ev)=>{
 document.addEventListener('click',(ev)=>{ const t=ev.target; if(!t||!t.matches||!t.matches('button[data-elev2="lreset"]')) return; t.dispatchEvent(new Event('change',{bubbles:true})); });
 
 /* ---- 3D地球儀: 標高の連動・光源 ---- */
+/* v61: 標高が地球儀に反映されるかどうか(標高レイヤーのオンオフ・標高のデータの有無・強さ)。画面の案内と、出力のダイアログで共通 */
+let _ehd={k:'',v:false};
+/* =========================================================
+   v62: 雲(球面の3Dノイズ)
+   ・雲の設定は w.geo3d.clouds(on/amount/soft/seed/color/shadow/shadowStrength/speed)。雲の模様そのものは保存しない
+   ・濃さは「球面上の単位ベクトル(x,y,z)」の3Dノイズ(5つの大きさ)で決める。平面の座標は使わない(極でも引き延ばされない)
+   ・3D地球儀は薄い殻(球)に模様を一度だけ貼り、回転だけで動かす。2Dは、地図の各画素を緯度経度(=球面の点)に戻して同じ濃さを求める
+   ・年代による動きは、球面の自転軸まわりの回転(経度のずれ)
+   ========================================================= */
+const CloudCtl={suppress:0}, CLOUD_ALPHA=0.8, CLOUD_TEX_W=1280, CLOUD_TEX_H=640, CloudCache=new Map(), CLOUD_D2R=Math.PI/180;
+function cloudDefaults(w){ return {on:false,amount:0.45,soft:0.5,seed:satSeedDefault(w),color:'#ffffff',shadow:false,shadowStrength:0.35,speed:0}; }
+function cloudCfgNormalize(c,w){
+  w=w||(typeof W==='function'?W():null); const D=cloudDefaults(w), o=(c&&typeof c==='object')?c:{};
+  const num=(v,lo,hi,d)=>{ v=Number(v); return (v===v&&isFinite(v))?Math.min(hi,Math.max(lo,v)):d; };
+  return { on:o.on===true, amount:num(o.amount,0,1,D.amount), soft:num(o.soft,0,1,D.soft),
+    seed:(Number.isInteger(o.seed)&&o.seed>=0&&o.seed<=999999999)?o.seed:D.seed,
+    color:(typeof o.color==='string'&&/^#[0-9a-fA-F]{6}$/.test(o.color))?o.color.toLowerCase():D.color,
+    shadow:o.shadow===true, shadowStrength:num(o.shadowStrength,0,1,D.shadowStrength), speed:num(o.speed,0,2,0) };
+}
+/* 読み込み(正規化)のときに呼ぶ。雲の設定がまだ無い世界は、既存の2Dの設定(satClouds・satSeed)を、値を変えずに引き継ぐ */
+function cloudMigrate(w){
+  const g=w&&w.geo3d; if(!g) return;
+  if(!g.clouds||typeof g.clouds!=='object'){ const d=w.mapDisplay||{}; g.clouds=cloudCfgNormalize({on:d.satClouds===true,seed:Number.isInteger(d.satSeed)?d.satSeed:undefined},w); }
+  else g.clouds=cloudCfgNormalize(g.clouds,w);
+}
+function cloudCfgOf(w){ w=w||W(); const g=w&&w.geo3d; if(g&&g.clouds&&typeof g.clouds==='object') return cloudCfgNormalize(g.clouds,w); const d=(w&&w.mapDisplay)||{}; return cloudCfgNormalize({on:d.satClouds===true,seed:Number.isInteger(d.satSeed)?d.satSeed:undefined},w); }
+/* ---- 3Dの値のノイズ ---- */
+function cloudHash3(x,y,z,s){ let h=(Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(z|0,1274126177)+Math.imul(s|0,2246822519))|0; h=Math.imul(h^(h>>>13),1274126177); h=Math.imul(h^(h>>>16),2246822519); h^=h>>>13; return (h>>>0)/4294967296; }
+function cloudVNoise3(x,y,z,s){
+  const ix=Math.floor(x), iy=Math.floor(y), iz=Math.floor(z); let fx=x-ix, fy=y-iy, fz=z-iz; fx=fx*fx*(3-2*fx); fy=fy*fy*(3-2*fy); fz=fz*fz*(3-2*fz);
+  const a=cloudHash3(ix,iy,iz,s), b=cloudHash3(ix+1,iy,iz,s), c=cloudHash3(ix,iy+1,iz,s), d=cloudHash3(ix+1,iy+1,iz,s), e=cloudHash3(ix,iy,iz+1,s), f=cloudHash3(ix+1,iy,iz+1,s), g=cloudHash3(ix,iy+1,iz+1,s), h=cloudHash3(ix+1,iy+1,iz+1,s);
+  const x1=a+(b-a)*fx, x2=c+(d-c)*fx, x3=e+(f-e)*fx, x4=g+(h-g)*fx, y1=x1+(x2-x1)*fy, y2=x3+(x4-x3)*fy; return y1+(y2-y1)*fz;
+}
+/* 大きな塊(約12°)から細かい縁(約0.7°)まで、5つの大きさを重ねる。大きさごとに座標を回して、格子の向きの癖を消す */
+function cloudFbm(x,y,z,seed){
+  let sum=0, tot=0, amp=0.5, f=4.5;
+  for(let o=0;o<5;o++){
+    sum+=amp*cloudVNoise3(x*f+o*17.31,y*f+o*5.77,z*f+o*11.13,seed+o*131); tot+=amp; amp*=0.5; f*=2.03;
+    const nx=0.36*x+0.48*y-0.8*z, ny=-0.8*x+0.6*y, nz=0.48*x+0.64*y+0.6*z; x=nx; y=ny; z=nz;
+  }
+  return sum/tot;
+}
+/* 雲の量=閾値、柔らかさ=閾値の周りの幅 */
+function cloudThr(c){ return 0.655-0.26*c.amount; }
+function cloudDensity(x,y,z,c){
+  const wd=0.02+0.22*c.soft, t=cloudThr(c); let a=(cloudFbm(x,y,z,c.seed)-(t-wd/2))/wd; a=a<0?0:a>1?1:a; return a*a*(3-2*a);
+}
+function cloudDensityLL(lat,lon,c){ const la=lat*CLOUD_D2R, lo=lon*CLOUD_D2R, cl=Math.cos(la); return cloudDensity(cl*Math.cos(lo), Math.sin(la), -cl*Math.sin(lo), c); }
+/* 雲の影: 光の方向(地図の光の設定)の反対側へ、雲より少しずれた位置に落ちる。球面の経度・緯度のずれで表す */
+function cloudShadowOffset(w){ const d=mapDisp(w), b=(d.lightAz+180)*CLOUD_D2R, delta=Math.min(3,Math.max(0.6,1.4/Math.tan(Math.max(15,d.lightAlt)*CLOUD_D2R))); return {dlat:delta*Math.cos(b), dlon:delta*Math.sin(b)}; }
+function cloudShadowDensityLL(lat,lon,c,off){ return cloudDensityLL(lat-off.dlat, lon-off.dlon/Math.max(0.25,Math.cos(lat*CLOUD_D2R)), c); }
+function cloudDriftDeg(c,w){ w=w||W(); const y=Number(w&&w.currentYear)||0; return (c.speed*y)%360; }
+/* ---- 3D地球儀の殻の模様(全球・正距円筒。同じ設定と種のあいだは一度だけ作り、画面と出力で共有する) ---- */
+function cloudTexKey(c,kind,w){ return kind+'|'+c.amount+','+c.soft+','+c.seed+(kind==='s'?'|'+(function(){ const o=cloudShadowOffset(w); return o.dlat.toFixed(4)+','+o.dlon.toFixed(4); })():''); }
+function cloudTextureCanvas(c,kind,w){
+  w=w||W(); const key=cloudTexKey(c,kind,w); const hit=CloudCache.get(key); if(hit) return hit;
+  const TW=CLOUD_TEX_W, TH=CLOUD_TEX_H, cv=document.createElement('canvas'); cv.width=TW; cv.height=TH; const ctx=cv.getContext('2d'), img=ctx.createImageData(TW,TH), d=img.data;
+  const cLo=new Float64Array(TW), sLo=new Float64Array(TW); for(let i=0;i<TW;i++){ const lo=(-180+(i+0.5)/TW*360)*CLOUD_D2R; cLo[i]=Math.cos(lo); sLo[i]=Math.sin(lo); }
+  const off=(kind==='s')?cloudShadowOffset(w):null;
+  for(let j=0;j<TH;j++){
+    const latD=90-(j+0.5)/TH*180, la=latD*CLOUD_D2R, cla=Math.cos(la), sla=Math.sin(la);
+    for(let i=0;i<TW;i++){
+      const v=off?cloudShadowDensityLL(latD,-180+(i+0.5)/TW*360,c,off):cloudDensity(cla*cLo[i],sla,-cla*sLo[i],c);
+      const b=Math.round(v*255), o=(j*TW+i)*4; d[o]=b; d[o+1]=b; d[o+2]=b; d[o+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0); CloudCache.set(key,cv); while(CloudCache.size>4) CloudCache.delete(CloudCache.keys().next().value);
+  return cv;
+}
+function cloudDropMesh(h,k){ const m=h&&h[k]; if(!m) return; try{ h.scene.remove(m); m.geometry&&m.geometry.dispose(); if(m.material){ m.material.alphaMap&&m.material.alphaMap.dispose(); m.material.dispose(); } }catch(e){} h[k]=null; h[k+'Key']=''; }
+/* 殻の半径は、いまの球の頂点の最大の半径(標高の最大の高さ)より 1.5 だけ外側。標高が平ら(オフ・強さ0)なら 101.5 */
+function cloudShellRadius(w,h){ let m2=10000; const g=h&&h.sphere&&h.sphere.geometry; if(g&&g.attributes&&g.attributes.position){ const p=g.attributes.position.array; for(let i=0;i<p.length;i+=3){ const r=p[i]*p[i]+p[i+1]*p[i+1]+p[i+2]*p[i+2]; if(r>m2) m2=r; } } return Math.sqrt(m2)+1.5; }
+function globeCloudsSync(h,w){
+  if(!h||!h.scene||!window.THREE) return; w=w||W(); if(!w||!w.geo3d) return; const THREE=window.THREE, c=cloudCfgOf(w);
+  if(!c.on){ cloudDropMesh(h,'cloudMesh'); cloudDropMesh(h,'shadowMesh'); h.cloudDrift=0; return; }
+  const R=cloudShellRadius(w,h), ck=cloudTexKey(c,'c',w);
+  if(!h.cloudMesh||h.cloudMeshKey!==ck){
+    cloudDropMesh(h,'cloudMesh'); const tx=new THREE.CanvasTexture(cloudTextureCanvas(c,'c',w)); tx.wrapS=THREE.RepeatWrapping; tx.needsUpdate=true;
+    const mesh=new THREE.Mesh(new THREE.SphereGeometry(100,96,64), new THREE.MeshLambertMaterial({color:c.color, emissive:c.color, emissiveIntensity:0.3, alphaMap:tx, transparent:true, opacity:CLOUD_ALPHA, depthWrite:false}));
+    mesh.renderOrder=3; h.scene.add(mesh); h.cloudMesh=mesh; h.cloudMeshKey=ck; h.cloudBuilds=(h.cloudBuilds||0)+1;
+  }
+  h.cloudMesh.material.color.set(c.color); h.cloudMesh.material.emissive.set(c.color); h.cloudMesh.scale.setScalar(R/100);
+  if(c.shadow){
+    const sk=cloudTexKey(c,'s',w);
+    if(!h.shadowMesh||h.shadowMeshKey!==sk){
+      cloudDropMesh(h,'shadowMesh'); const tx=new THREE.CanvasTexture(cloudTextureCanvas(c,'s',w)); tx.wrapS=THREE.RepeatWrapping; tx.needsUpdate=true;
+      const mesh=new THREE.Mesh(new THREE.SphereGeometry(100,96,64), new THREE.MeshBasicMaterial({color:0x000000, alphaMap:tx, transparent:true, opacity:c.shadowStrength*0.6, depthWrite:false}));
+      mesh.renderOrder=2; h.scene.add(mesh); h.shadowMesh=mesh; h.shadowMeshKey=sk;
+    }
+    h.shadowMesh.material.opacity=c.shadowStrength*0.6; h.shadowMesh.scale.setScalar((R-0.3)/100);
+  } else cloudDropMesh(h,'shadowMesh');
+  h.cloudDrift=cloudDriftDeg(c,w)*CLOUD_D2R;
+}
+function globeCloudsRotate(h,ry){ if(!h) return; const d=(h.cloudDrift||0)+(ry||0); if(h.cloudMesh) h.cloudMesh.rotation.y=d; if(h.shadowMesh) h.shadowMesh.rotation.y=d; }
+/* ---- 2Dへの変換: 地図の各画素 → 緯度経度(投影の逆変換) → 球面の点 → 雲の濃さ ---- */
+function cloudBakeSig(w){
+  w=w||W(); const c=cloudCfgOf(w); if(!c.on||CloudCtl.suppress) return 'n'; const g=w.geo3d||{}, dm=mapDisp(w);
+  return 'c'+[c.amount,c.soft,c.seed,c.color,c.shadow?c.shadowStrength:0,c.shadow?(dm.lightAz+'/'+dm.lightAlt):'',cloudDriftDeg(c,w).toFixed(3),g.projection,g.latMin,g.latMax,g.lonMin,g.lonMax,g.baseX,g.baseY,g.baseLat,g.baseLon,g.stdParallel1,g.stdParallel2,g.planetRadiusKm,geoWrapOn(g,w)?1:0,w.mapWidth,w.mapHeight,w.kmPerUnit].join(',');
+}
+function cloudMapLL(w,X,Y){   /* 地図の画素(X,Y) → {lat,lon}(度)。点検・測定用 */
+  const cfg=geoWrapCfg(w.geo3d,w); return projOf(cfg).inverse((X+0.5)/w.mapWidth,(Y+0.5)/w.mapHeight,cfg);
+}
+function cloudTilePrep(w,ox,oy,n,s){
+  const c=cloudCfgOf(w), cfg=geoWrapCfg(w.geo3d,w), proj=projOf(cfg), WW=w.mapWidth, HH=w.mapHeight, dr=cloudDriftDeg(c,w), col=hexToRgb(c.color);
+  const sOff=c.shadow?cloudShadowOffset(w):null, shK=c.shadowStrength*0.6, t=cfg.projection||'equirectangular', cyl=(t==='equirectangular'||t==='mercator');
+  const P={a:0,sh:0,cr:col[0],cg:col[1],cb:col[2]};
+  const dens=(latD,lonD)=>{ lonD-=dr; const la=latD*CLOUD_D2R, lo=lonD*CLOUD_D2R, cl=Math.cos(la); return cloudDensity(cl*Math.cos(lo),Math.sin(la),-cl*Math.sin(lo),c); };
+  const shad=(latD,lonD)=>cloudShadowDensityLL(latD,lonD-dr,c,sOff);
+  if(cyl){
+    const lonA=new Float64Array(n), latA=new Float64Array(n), cLo=new Float64Array(n), sLo=new Float64Array(n), cLa=new Float64Array(n), sLa=new Float64Array(n);
+    for(let i=0;i<n;i++){ lonA[i]=proj.inverse((ox+i*s+0.5)/WW,0.5,cfg).lon; const lo=(lonA[i]-dr)*CLOUD_D2R; cLo[i]=Math.cos(lo); sLo[i]=Math.sin(lo);
+      latA[i]=proj.inverse(0.5,(oy+i*s+0.5)/HH,cfg).lat; const la=latA[i]*CLOUD_D2R; cLa[i]=Math.cos(la); sLa[i]=Math.sin(la); }
+    P.at=(px,py)=>{ P.a=cloudDensity(cLa[py]*cLo[px],sLa[py],-cLa[py]*sLo[px],c)*CLOUD_ALPHA; P.sh=sOff?shad(latA[py],lonA[px])*shK:0; };
+  } else {
+    P.at=(px,py)=>{ const q=proj.inverse((ox+px*s+0.5)/WW,(oy+py*s+0.5)/HH,cfg); if(!q||!isFinite(q.lat)||!isFinite(q.lon)){ P.a=0; P.sh=0; return; } P.a=dens(q.lat,q.lon)*CLOUD_ALPHA; P.sh=sOff?shad(q.lat,q.lon)*shK:0; };
+  }
+  return P;
+}
+/* ---- 設定の画面(3D地球儀の「☁ 雲」) ---- */
+function cloudCanEdit(){ const w=W(); return !!w&&!w.readOnly&&!(typeof isViewOnly==='function'&&isViewOnly())&&!(typeof roleHasPerm==='function'&&!roleHasPerm('display')); }
+function cloudMutate(summary,fn){
+  const ok=mutate(summary,()=>{ const w=W(); const c=cloudCfgNormalize(w.geo3d.clouds,w); fn(c); w.geo3d.clouds=cloudCfgNormalize(c,w);
+    w.mapDisplay=Object.assign({elevation:true,elevMode:'shade'},w.mapDisplay||{}); w.mapDisplay.satClouds=w.geo3d.clouds.on; },'display');   /* satClouds は、古い版との互換のため同じ値に揃える */
+  if(ok) cloudRefresh(); return ok;
+}
+function cloudRefresh(){
+  try{ if(Globe3D.inited) globeCloudsSync(Globe3D,W()); }catch(e){ console.error(e); }
+  try{ renderMapLayerPanel(); }catch(e){} try{ renderMap(); }catch(e){}
+}
+function openCloudSettings(){
+  const w=W(); if(!w) return; const c=cloudCfgOf(w), dis=cloudCanEdit()?'':'disabled';
+  const row=(label,body)=>`<div class="lp-row" style="gap:8px;align-items:center;"><span style="min-width:96px;">${label}</span>${body}</div>`;
+  const rng=(k,min,max,step,v,unit)=>`<input type="range" data-cl="${k}" min="${min}" max="${max}" step="${step}" value="${v}" ${dis} style="width:160px;"><b data-cl-v="${k}" style="font-family:var(--font-mono);min-width:56px;display:inline-block;">${v}${unit||''}</b>`;
+  const html=`<div id="cloudPanel">
+    ${row('雲を表示',`<label><input type="checkbox" data-cl="on" ${c.on?'checked':''} ${dis}> 3D地球儀と、2D(衛星風)の地図に重ねる</label>`)}
+    ${row('雲の量',rng('amount',0,1,0.01,c.amount))}
+    ${row('雲の柔らかさ',rng('soft',0,1,0.01,c.soft))}
+    ${row('雲の種',`<input type="number" data-cl="seed" min="0" max="999999999" step="1" value="${c.seed}" ${dis} style="width:110px;"><button class="btn small" data-cl-btn="seed" ${dis}>種を変える</button>`)}
+    ${row('雲の色',`<input type="color" data-cl="color" value="${c.color}" ${dis}>`)}
+    ${row('雲の影',`<label><input type="checkbox" data-cl="shadow" ${c.shadow?'checked':''} ${dis}> 雲の下に影を描く</label>`)}
+    ${row('影の強さ',rng('shadowStrength',0,1,0.01,c.shadowStrength))}
+    ${row('雲の動き',rng('speed',0,2,0.05,c.speed,' °/年'))}
+    <div class="lp-note" style="margin-top:8px;">雲は表示だけです(地形・領土・標高のデータは変わりません)。保存されるのは、ここの設定と種だけです。同じ設定と種なら、いつも同じ雲になります。2Dの雲は、この設定を地図の座標へ写して描きます(2Dの画面からは変えられません)。動きは、年代に応じた経度方向のずれで、0 のときは止まります。${dis?'<br><b>この世界の雲の設定を変える権限がありません。</b>':''}</div></div>`;
+  openModal('☁ 3D地球儀の雲の設定',html,[{label:'閉じる',cls:'primary',onClick:closeModal}]);
+}
+function cloudGoto(){ try{ switchView('globe3d'); }catch(e){} setTimeout(()=>{ try{ openCloudSettings(); }catch(e){ console.error(e); } },200); }
+document.addEventListener('input',(ev)=>{ const t=ev.target; if(!t||!t.matches||!t.matches('#cloudPanel input[type=range][data-cl]')) return; const v=document.querySelector(`[data-cl-v="${t.dataset.cl}"]`); if(v) v.textContent=t.value+(t.dataset.cl==='speed'?' °/年':''); });
+document.addEventListener('change',(ev)=>{
+  const t=ev.target; if(!t||!t.matches||!t.matches('#cloudPanel [data-cl]')||t.disabled) return; const k=t.dataset.cl;
+  if(k==='on') cloudMutate('3D地球儀の雲(表示)',(c)=>{ c.on=!!t.checked; });
+  else if(k==='shadow') cloudMutate('3D地球儀の雲(影)',(c)=>{ c.shadow=!!t.checked; });
+  else if(k==='color'){ const v=String(t.value||'').toLowerCase(); if(/^#[0-9a-f]{6}$/.test(v)) cloudMutate('3D地球儀の雲(色)',(c)=>{ c.color=v; }); }
+  else if(k==='seed'){ const v=Math.floor(Number(t.value)); if(Number.isInteger(v)&&v>=0&&v<=999999999) cloudMutate('3D地球儀の雲(種)',(c)=>{ c.seed=v; }); else t.value=cloudCfgOf().seed; }
+  else if(['amount','soft','shadowStrength','speed'].includes(k)){ const v=Number(t.value); cloudMutate('3D地球儀の雲('+({amount:'量',soft:'柔らかさ',shadowStrength:'影の強さ',speed:'動き'}[k])+')',(c)=>{ c[k]=v; }); }
+});
+document.addEventListener('click',(ev)=>{
+  const t=ev.target&&ev.target.closest?ev.target.closest('button[data-cl-btn="seed"]'):null; if(!t||t.disabled) return;
+  let nv; if(cloudMutate('3D地球儀の雲(種を変更)',(c)=>{ do{ nv=Math.floor(Math.random()*1000000); }while(nv===c.seed); c.seed=nv; })){ const i=document.querySelector('#cloudPanel input[data-cl="seed"]'); if(i) i.value=nv; }
+});
+function globeHasElevData(w){ w=w||W(); let sid; try{ sid=currentStateId(); }catch(e){ return false; } const k=sid+'|'+Store.rev; if(_ehd.k===k) return _ehd.v; const R=resolveState(sid); let v=false; if(R&&R.layers&&R.layers.elev){ R.layers.elev.forEach(t=>{ if(v) return; for(let i=0;i<t.length;i++){ if(t[i]){ v=true; break; } } }); } _ehd={k,v}; return v; }
+function globeElevInfo(w){ w=w||W(); const layerOn=mapDisp(w).elevation; const has=globeHasElevData(w); const st=w.geo3d.elevExaggeration||0; return {layerOn,has,strength:st,effective:layerOn&&has&&st>0}; }
+function globeElevText(w){ const i=globeElevInfo(w); if(!i.layerOn) return '標高レイヤーがオフのため、標高は表示されません'; if(i.strength>0&&!i.has) return 'この世界には標高のデータがありません'; return ''; }
+function globeElevNoteUpdate(){ const n=document.getElementById('g3dElevNote'); const w=W(); if(!n||!w) return; const t=globeElevText(w); n.textContent=t; n.style.display=t?'inline':'none'; }
+/* 標高の凹凸が分かるように、標高が反映されるときだけ、環境光を弱め・太陽光を強める(陰影の差を大きくする)。標高が反映されないときは従来の明るさ */
+function globeApplyRelief(amb,sun,w){ if(!amb||!sun) return; const i=globeElevInfo(w); const k=i.effective?Math.min(1,i.strength/0.04):0; amb.intensity=0.6-0.18*k; sun.intensity=0.85+0.25*k; }
 function globeElevScale(w){ w=w||W(); return mapDisp(w).elevation?(w.geo3d.elevExaggeration||0):0; }   /* 2Dの標高レイヤーがオフなら高さ0。elevExaggeration の値自体は保持する */
 function globeApplyLight(sun){
   if(!sun) return; const d=mapDisp(); if(!d.lightCustom){ sun.position.set(3,2,4); return; }
@@ -15826,6 +16003,7 @@ function globeApplyLight(sun){
   sun.position.set(Math.sin(az)*Math.cos(al)*k, Math.cos(az)*Math.cos(al)*k, Math.sin(al)*k);
 }
 function globeSyncElevation(){
+  globeApplyRelief(Globe3D.amb,Globe3D.sun);
   if(!Globe3D.sphere) return; const sc=globeElevScale(); if(Globe3D.elevScaleApplied===sc) return;
   applyElevationToGeometry(Globe3D.sphere.geometry, Globe3D.heightCanvas, sc); Globe3D.elevScaleApplied=sc;
 }
