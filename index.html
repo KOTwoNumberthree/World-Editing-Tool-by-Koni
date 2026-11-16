@@ -1,8 +1,28 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
+<!doctype html><html lang="ja"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <link rel="icon" type="image/png" href="atlas_icon.png?v=1">
 <link rel="apple-touch-icon" href="atlas_icon.png?v=1">
+<title>架空世界管理ツール｜架空地図・国家・歴史・宇宙を一元管理する創作設定制作アプリ</title>
+<meta name="description" content="架空地図（2Dタイル地図・3D地球儀・世界線分岐・タイムラプス）、国家・年表・系譜図・外交・戦争・人物・組織・交易・文化の管理、架空文字フォント、独自言語辞書、3D宇宙・暦換算に対応。ブラウザ完結・登録不要・自動保存、JSON/PNG/Word出力対応。">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#12161d">
+<link rel="canonical" href="https://kotwonumberthree.github.io/World-Editing-Tool-by-Koni/">
+<!-- OGP / Twitter Card。og:image は現在アイコン(atlas_icon.png)。公開時は 1200x630 の専用画像に差し替えてください(例: og_image.png を同じ場所に置き、下の2か所の URL を変更) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="架空世界管理ツール">
+<meta property="og:title" content="架空世界管理ツール｜架空地図・国家・歴史・宇宙を一元管理する創作設定制作アプリ">
+<meta property="og:description" content="架空地図（2Dタイル地図・3D地球儀・世界線分岐・タイムラプス）、国家・年表・系譜図・外交・戦争・人物・組織・交易・文化の管理、架空文字フォント、独自言語辞書、3D宇宙・暦換算に対応。ブラウザ完結・登録不要・自動保存、JSON/PNG/Word出力対応。">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:url" content="https://kotwonumberthree.github.io/World-Editing-Tool-by-Koni/">
+<meta property="og:image" content="https://kotwonumberthree.github.io/World-Editing-Tool-by-Koni/atlas_icon.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="架空世界管理ツール｜架空地図・国家・歴史・宇宙を一元管理する創作設定制作アプリ">
+<meta name="twitter:description" content="架空地図（2Dタイル地図・3D地球儀・世界線分岐・タイムラプス）、国家・年表・系譜図・外交・戦争・人物・組織・交易・文化の管理、架空文字フォント、独自言語辞書、3D宇宙・暦換算に対応。ブラウザ完結・登録不要・自動保存、JSON/PNG/Word出力対応。">
+<meta name="twitter:image" content="https://kotwonumberthree.github.io/World-Editing-Tool-by-Koni/atlas_icon.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"架空世界管理ツール","url":"https://kotwonumberthree.github.io/World-Editing-Tool-by-Koni/","description":"架空地図（2Dタイル地図・3D地球儀・世界線分岐・タイムラプス）、国家・年表・系譜図・外交・戦争・人物・組織・交易・文化の管理、架空文字フォント、独自言語辞書、3D宇宙・暦換算に対応。ブラウザ完結・登録不要・自動保存、JSON/PNG/Word出力対応。","applicationCategory":"DesignApplication","operatingSystem":"All (Webブラウザ)","browserRequirements":"JavaScript が有効な最新のWebブラウザ","inLanguage":"ja","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"image":"https://kotwonumberthree.github.io/World-Editing-Tool-by-Koni/atlas_icon.png","featureList":["架空地図の制作(2Dタイル地図・世界線分岐・タイムラプス)","3D地球儀の表示と出力","3D宇宙・独自暦の計算と換算","国家・年表・系譜図の管理","外交・戦争・人物・組織・交易・文化の管理","架空文字(フォント)の作成","独自言語辞書","ブラウザ内に自動保存(登録不要)","JSON・PNG・Word形式での書き出し"]}
+</script>
 </head><body>
-<title>架空世界管理ツール</title>
+<noscript><section style="padding:24px;max-width:760px;margin:0 auto;font-family:sans-serif;line-height:1.7;"><h1>架空世界管理ツール</h1><p>架空地図・国家・歴史・宇宙を一元管理する、ブラウザ完結の創作設定制作アプリです。利用には JavaScript を有効にしてください。登録不要・無料で、データはお使いの端末のブラウザ内に自動保存されます。</p><h2>主な機能</h2><ul><li>架空地図の制作: 2Dタイル地図、3D地球儀、世界線の分岐、タイムラプス</li><li>国家・年表・系譜図・外交・戦争・人物・組織・交易・文化の管理</li><li>架空文字(フォント)の作成と、独自言語辞書</li><li>3D宇宙と、独自の暦の計算・換算</li><li>JSON・PNG・Word形式での書き出しと読み込み</li></ul></section></noscript>
 <script>/* ONEDRIVE-RETURN */(function(){ try{ if(/[?&](code|error)=/.test(location.search) && /[?&]state=/.test(location.search)){ var ch=new BroadcastChannel('atlas-od-auth'); ch.postMessage({atlasOd:1,search:location.search}); setTimeout(function(){ try{ ch.close(); }catch(e){} },300); try{ history.replaceState(null,'',location.pathname); }catch(e){} window.__ATLAS_AUTH_RETURN=1; try{ window.close(); }catch(e){} } }catch(e){} })();</script>
 <style>
 :root{
@@ -310,6 +330,10 @@ table.datatable td.txt{font-family:var(--font-body);}
 /* welcome */
 #welcome{position:fixed;inset:0;background:var(--ink);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;}
 #welcome.hidden{display:none;}
+#welcome .welcomecard{max-height:100%;overflow:auto;}
+.welcome-about{margin-top:14px;text-align:left;font-size:13px;opacity:.85;}
+.welcome-about summary{cursor:pointer;text-align:center;}
+.welcome-about ul{margin:8px 0 0;padding-left:20px;line-height:1.7;}
 .welcomecard{max-width:520px;text-align:center;}
 .welcomecard h1{font-size:30px;color:var(--brass);}
 .welcomecard p{color:var(--text-dim);font-size:13px;margin-bottom:20px;}
@@ -694,6 +718,15 @@ select.uvc{max-width:70px;}
       <button class="btn" id="welcomeOpenBtn">保存済みの世界を開く</button>
       <button class="btn" id="welcomeImportBtn">JSONから読み込む</button>
     </div>
+    <details class="welcome-about"><summary>主な機能・特徴</summary>
+      <ul>
+        <li>架空地図の制作: 2Dタイル地図・3D地球儀・世界線の分岐・タイムラプス</li>
+        <li>国家・年表・系譜図・外交・戦争・人物・組織・交易・文化の管理</li>
+        <li>架空文字(フォント)の作成と、独自言語辞書</li>
+        <li>3D宇宙・独自の暦の計算と換算</li>
+        <li>ブラウザ完結・登録不要・自動保存。JSON / PNG / Word で書き出し</li>
+      </ul>
+    </details>
   </div>
 </div>
 
