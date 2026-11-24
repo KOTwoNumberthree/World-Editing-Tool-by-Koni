@@ -11951,7 +11951,7 @@ function buildTutorialCategories(){
         { title:'基本のカテゴリーは、ここまでです', desc:'お疲れさまでした。ここまでで、基本の機能を一通り確認しました。続けて、表示と3D・文化・交易・辞書・文書と出力・保存先と共同編集・高度な編集・AIアシスタントのカテゴリーで、追加の機能も確認できます(「次へ」で進みます。ここで終えるには右上の✕)。「？」ボタンからはいつでも再開・やり直しできます。練習用のサンプル世界は、終了のあとに保存するか破棄するか選べます。', target:null },
       ]
     },
-  ].concat(tutNewCategories());
+  ].concat(tutNewCategories()).concat(tutNewCategories2());
 }
 
 /* =========================================================
@@ -11960,6 +11960,8 @@ function buildTutorialCategories(){
    ・文中の「」は、画面の文字列(テストで画面と照合する)。『』は、画面の文字列ではない用語
    ========================================================= */
 const TUT_NEW_CATS=['display3d','cultrade','docsout','storage','advedit','aiassist'];
+const TUT_NEW_CATS2=['universe','mapplus','globeplus','devices'];   /* v67: さらに追加したカテゴリー */
+TUT_NEW_CATS.push(...TUT_NEW_CATS2);
 const tq=(sel)=>()=>document.querySelector(sel);
 const tqRow=(sel)=>()=>{ const e=document.querySelector(sel); return e?(e.closest('.lp-row')||e):null; };
 const tqText=(root,txt)=>()=>[...document.querySelectorAll(root+' h2,'+root+' h3,'+root+' h4,'+root+' .set-h')].map(e=>e.closest('section,.panel,.set-sec,div')||e).find((e,i)=>/./.test(e.textContent)&&(([...document.querySelectorAll(root+' h2,'+root+' h3,'+root+' h4,'+root+' .set-h')][i]||{}).textContent||'').indexOf(txt)>=0)||null;
@@ -12145,6 +12147,73 @@ function tutNewCategories(){
     ]},
   ];
 }
+/* =========================================================
+   v67: 追加カテゴリー(4)。宇宙と暦・地図の応用・3D地球儀の応用・端末と画面
+   ・文中の「」は画面の文字列(テストで画面と照合する)。『』は、画面の文字列ではない用語
+   ========================================================= */
+function tutNewCategories2(){
+  const F=(n,k)=>[n,k];
+  const rectTool=()=>{ tutView('map'); const b=document.querySelector('#maptoolbar [data-tool="rect"]'); if(b) tutBy(()=>b.click()); };
+  return [
+  { id:'universe', label:'宇宙と暦', icon:'✦',
+    desc:'この世界の宇宙・恒星と惑星の追加・宇宙暦・距離の基準・3Dと星図と一覧・惑星ごとの年代の換算・出力を学びます。',
+    steps:[
+      { title:'宇宙の画面', view:'universe', target:tq('#uvBar'), features:[F('宇宙の画面','うちゅうのがめん')],
+        desc:'左のナビゲーションの「宇宙」は、この世界そのものの宇宙です(世界を作ると同時にあります)。恒星・惑星・衛星を置いて、位置(光年)・周期・宇宙暦を管理します。上のバーに、宇宙暦の設定・出力・表示の切り替え・追加ボタン・宇宙暦の進め方・距離の基準が並びます。<b>宇宙のデータは、地図や国家のデータとは別に保存されます。</b>' },
+      { title:'恒星と惑星を追加する', view:'universe', target:tq('#uvAddStar'), features:[F('恒星の追加','こうせいのついか'),F('惑星の追加','わくせいのついか'),F('衛星','えいせい')],
+        desc:'「＋恒星」で、名前・位置(x・y・z、単位は光年)・大きさ・色・光度などを入れて恒星を足します。「＋惑星」では、どの恒星のまわりか・軌道・公転と自転の周期などを入れます。惑星には衛星も足せます。<b>この世界の中の惑星として、新しい世界を作るか、既存の世界を移す</b>ことも選べます。数には上限があり、上のバーに、恒星・惑星・衛星の数が出ます。' },
+      { title:'3D・星図・一覧の切り替え', view:'universe', target:tq('#uvMode3d'), features:[F('宇宙の表示の切り替え','うちゅうのひょうじのきりかえ'),F('惑星の一覧','わくせいのいちらん'),F('恒星の一覧','こうせいのいちらん')],
+        desc:'表示は「3D」「星図(2D)」「惑星の一覧」「恒星の一覧」の4つから選びます。「3D」は立体で見る画面、「星図(2D)」は平面に置いた図、一覧は表で並べて、列の見出しで並べ替えたり、検索欄で絞り込んだりできます。星図と3Dでは「名前」で、星の名前の表示を切り替えられます。' },
+      { title:'宇宙暦と、進める量', view:'universe', target:tq('#uvStep'), features:[F('宇宙暦','うちゅうれき'),F('宇宙暦を進める','うちゅうれきをすすめる')],
+        desc:'「宇宙暦」は、宇宙の中の今の日付です。数値を直接入れるか、「◀」「▶」で、横の選択欄で選んだ量だけ戻したり進めたりします。惑星は、この日付に合わせて軌道の上を動きます。<b>宇宙暦は、地図の年代(上部の年代)とは別の時計です</b>。惑星ごとに、年代との換算を決められます(次のステップ)。' },
+      { title:'距離の基準と距離線', view:'universe', target:tq('#uvRef'), features:[F('距離の基準','きょりのきじゅん'),F('距離線','きょりせん')],
+        desc:'「距離の基準」で星を1つ選ぶと、選んだ星から、ほかの星までの距離(光年)が表に出ます。星図(2D)では「距離線」で、基準の星からの線を引けます。星を選ぶと、右側の欄に、距離などの詳細が出ます。' },
+      { title:'宇宙暦の設定と、年代の換算', view:'universe', target:tq('#uvInfo'), features:[F('宇宙暦の設定','うちゅうれきのせってい'),F('年代の換算','ねんだいのかんさん'),F('暦の換算','こよみのかんさん')],
+        desc:'「宇宙暦の設定」で、宇宙暦の1日・1か月・1年の長さ(日数の取り方)などを決めます。惑星ごとの公転・自転の周期から、その惑星の1年・1日の長さを使った『惑星ごとの年代』に換算できます。たとえば、ある惑星で何年にあたるかを、宇宙暦から計算します。換算は表示用で、地図の年代のデータは変わりません。' },
+      { title:'宇宙の出力', view:'universe', target:tq('#uvPngBtn'), features:[F('宇宙のPNG出力','うちゅうのぴーえぬじーしゅつりょく'),F('宇宙のWord出力','うちゅうのわーどしゅつりょく')],
+        desc:'「PNG出力」は、いま表示している宇宙の図を画像にします。「Word出力」は、恒星・惑星の一覧と図を、Wordの文書にまとめます。設定書には、宇宙の章としても入れられます(「ファイル」メニューの世界設定書)。' },
+    ]},
+  { id:'mapplus', label:'地図の応用', icon:'🧭',
+    desc:'左右の端をつなげる地図・年代間コピー・表示スタイルの管理・タイムラプスの範囲・地域と期間の画面を学びます。',
+    steps:[
+      { title:'左右の端をつなげる地図', view:'map', target:tq('input[data-mstyle="wrapx"]'), features:[F('左右の端をつなげる','さゆうのはしをつなげる'),F('つなげた表示を確認','つなげたひょうじをかくにん')],
+        desc:'「左右の端をつなげる」を入れると、地図の右の端と左の端が続き、横方向に無限に続く地図(惑星の経度の一周)になります。新しい世界を作るときの画面にも、同じ名前の選択があります。「つなげた表示を確認…」で、横に並べた見た目を確かめられます。<b>上下は折り返しません</b>。地図の幅を変えると、つながる位置が変わるので、変更のときに確認が出ます。3D地球儀では、経度360°が地図の1周期になり、経度の境目に線が出ません。' },
+      { title:'年代間コピー', view:'map', beforeShow:rectTool, target:tq('#ycOpen'), features:[F('年代間コピー','ねんだいかんこぴー')],
+        desc:'「範囲選択」ツールを選ぶと、左のパネルに「年代間コピー」が出ます。「年代間コピー…」を押すと、ある年代(地図状態)から、選んだレイヤーだけを別の年代へコピーできます。コピー元は読み取りだけで、変わりません。範囲(全体か四角い範囲)・方法を選ぶと、変わる範囲と件数の確認が出て、実行できます。元に戻すには、1回で全体が戻ります。' },
+      { title:'表示スタイルの管理', view:'map', target:tq('button[data-mstyle="manage"]'), features:[F('表示スタイルの管理','ひょうじすたいるのかんり'),F('自分のスタイル','じぶんのすたいる')],
+        desc:'「スタイルを管理…」を押すと「表示スタイルの管理」が開きます。標準の6つの形を元に「新規作成…」で自分のスタイルを作り、「使う」「編集」「名前変更」「削除」「複製」「書き出し」ができます。保存先は『この世界』か『この端末』です。ファイル(.json)から取り込むこともできます。<b>表示だけを変えるので、地形・国家・都市のデータは変わりません</b>。' },
+      { title:'タイムラプスの再生と範囲', view:'map', target:tq('#tlRangePlay'), features:[F('タイムラプスの再生','たいむらぷすのさいせい'),F('タイムラプスの範囲','たいむらぷすのはんい')],
+        desc:'下のタイムラインの「開始年」「終了年」で範囲を決めて、「▶ タイムラプス再生」で、範囲の年代を順に再生します。いまの年代が範囲の中にあれば、そこから再生し、範囲の外なら、開始年に移ってから再生します(0年からではありません)。再生の速さ・間隔・ループは、横の選択で変えられます。出力の画面の開始・終了には、あなたが入れた開始年が、既定で入ります。' },
+      { title:'地域(大陸・地方)', view:'regions', target:tq('#view-regions'), features:[F('地域','ちいき')],
+        desc:'左のナビゲーションの「地域」では、大陸・地方などの階層構造を管理します。地域に属する国家や領域をまとめて扱えるので、広い世界を整理するのに使います。' },
+      { title:'期間(存在期間のバー)', view:'chrono', target:tq('#view-chrono'), features:[F('期間','きかん')],
+        desc:'左のナビゲーションの「期間」は、国家・組織・人物・条約などの存在期間を、横長のバーで見せます。同じ時代に何があったかを、ひと目で比べられます。年代を変えても、バーの全体は変わりません。' },
+    ]},
+  { id:'globeplus', label:'3D地球儀の応用', icon:'🌍',
+    desc:'標高の強さと案内・雲の設定・2Dの雲の読み取り専用・3D地球儀のタイムラプス出力を学びます。どれも表示だけを変えます。',
+    steps:[
+      { title:'標高の強さと案内', view:'globe3d', target:tq('#g3dElevExag'), features:[F('標高の強さ','ひょうこうのつよさ'),F('標高の案内','ひょうこうのあんない')],
+        desc:'「高さ倍率」を上げると、標高の凹凸が強くなり、陰影もはっきりします。地球儀の見た目と、出力の見た目は、同じ強さ・同じ陰影です。標高のレイヤーがオフのときは「標高レイヤーがオフのため、標高は表示されません」、標高のデータがないときは「この世界には標高のデータがありません」と、倍率の近くに案内が出ます。' },
+      { title:'☁ 雲の設定', view:'globe3d', target:tq('#g3dCloudBtn'), features:[F('3D地球儀の雲','さんでぃーちきゅうぎのくも'),F('雲の量と柔らかさ','くものりょうとやわらかさ'),F('雲の種','くものたね'),F('雲の影','くものかげ'),F('雲の動き','くものうごき')],
+        desc:'「☁ 雲」で「3D地球儀の雲の設定」が開きます。「雲を表示」「雲の量」「雲の柔らかさ」「雲の種」「雲の色」「雲の影」「影の強さ」「雲の動き」を決めます。雲は球の上で作るので、極の近くでも引き延ばされません。同じ設定と種なら、いつも同じ雲です。雲は表示だけで、地形・領土・標高のデータは変わりません。「雲の動き」は年代に応じた経度方向のずれで、0のときは止まります。' },
+      { title:'2Dの雲(衛星風)は読み取り専用', view:'map', beforeShow:()=>tutDisp({style:'satellite'}), target:tqRow('button[data-mstyle="cloud-goto"]'), features:[F('2Dの雲','にーでぃーのくも')],
+        desc:'「表示スタイル」を「衛星風」にすると、2Dの地図にも雲が出ます。この雲は、3D地球儀の雲の設定を、地図の座標に写したものです。「雲を重ねる」は読み取り専用で、2Dの画面からは変えられません。「3D地球儀の設定で変更します」と示され、「3D地球儀の雲の設定へ」で、3D地球儀の画面へ移れます。雲をオフにすると、2Dと3Dの両方から消えます。' },
+      { title:'3D地球儀のタイムラプス出力', view:'globe3d', target:tq('#g3dExportBtn'), features:[F('3D地球儀のタイムラプス出力','さんでぃーちきゅうぎのたいむらぷすしゅつりょく'),F('3D回転','さんでぃーかいてん')],
+        desc:'「出力」(または下のタイムラインの「⬇ 出力」)の「マップモード」で「3D地球儀」を選ぶと、年代ごとの地球儀を、GIF・動画(WebM)・画像連番(ZIP)として書き出せます。「3D回転」で「1周回転させながら出力」も選べます。標高と雲が反映されるかは、画面に表示されます。2Dの出力には、雲は2Dの雲として入ります。' },
+    ]},
+  { id:'devices', label:'端末と画面', icon:'📱',
+    desc:'表示の種類(自動・モバイル・PC)・モバイルの操作・ヘルプの使い方を学びます。使える機能は、どの表示でも同じです。',
+    steps:[
+      { title:'表示の種類(自動・モバイル・PC)', view:'settings', target:tq('#uiModePanel'), features:[F('表示の種類','ひょうじのしゅるい'),F('モバイル表示','もばいるひょうじ')],
+        desc:'「設定」画面の「表示の種類(この端末の設定)」で、「自動（推奨）」「モバイル」「PC」を選びます。自動のときは、入力方法(指かマウスか)で判定し、画面の大きさでは判定しません。この設定はこの端末だけに保存され、世界データや書き出しには含まれません。どちらの表示でも、使える機能は同じです。' },
+      { title:'モバイルの操作(ツールの開閉)', view:'map', target:()=>{ const t=document.getElementById('toolbarToggle'); return (t&&t.offsetParent!==null)?t:document.getElementById('maptoolbar'); }, features:[F('モバイルの操作','もばいるのそうさ'),F('ツールバーの開閉','つーるばーのかいへい')],
+        desc:'モバイルでは、地図の上のツールバーが、「🛠 ツール」を押して開閉する形になります。ツールバーやパネルは、地図を触っても勝手に閉じません。ツールの説明(ヒント)は、モバイルでは長押しではなく、画面の案内で見ます。宇宙の3Dは、何もない所の長押しで移動・回転、星の長押しで位置を動かします。' },
+      { title:'? ヘルプと、機能の索引', view:'dashboard', target:tutById('tutorialHelpBtn'), features:[F('チュートリアルのヘルプ','ちゅーとりあるのへるぷ')],
+        desc:'上部の「？」で、チュートリアルをいつでも開けます。カテゴリーごとの進み具合は、この端末にだけ記録されます。「機能の索引」では、機能の名前から、その機能を説明するステップへ直接移れます。これで、全カテゴリーの案内は終わりです。' },
+    ]},
+  ];
+}
+
 /* ---- 機能の索引: 機能名の一覧(50音順・カテゴリ別)と、検索 ---- */
 function tutFeatureList(){
   Tutorial.cats = Tutorial.cats || buildTutorialCategories();
@@ -12249,10 +12318,11 @@ function openTutorialHub(){
       <div class="tuth-row"><h5>${c.icon} ${esc(c.label)}</h5><span class="tut-badge ${st}" data-tut-status="${c.id}">${TUT_STATUS_LABEL[st]}${prog}</span></div>
       <p>${esc(c.desc)}</p>
     </div>`; };
-  const base=Tutorial.cats.filter(c=>!TUT_NEW_CATS.includes(c.id)), add=Tutorial.cats.filter(c=>TUT_NEW_CATS.includes(c.id));
+  const base=Tutorial.cats.filter(c=>!TUT_NEW_CATS.includes(c.id)), add=Tutorial.cats.filter(c=>TUT_NEW_CATS.includes(c.id)&&!TUT_NEW_CATS2.includes(c.id)), add2=Tutorial.cats.filter(c=>TUT_NEW_CATS2.includes(c.id));
   const body = `<div class="lp-note" style="margin-bottom:10px;">実際の画面を操作しながら、カテゴリーごとに機能を学べます。操作を試すあいだは、チュートリアル専用のサンプル世界に切り替わります(現在の世界は変わりません)。進み具合は、この端末の中にだけ記録され、世界のデータには含まれません。</div>
     <div class="lp-note" style="margin:8px 0 4px;"><b>基本のカテゴリー</b></div>${base.map(row).join('')}
-    <div class="lp-note" style="margin:12px 0 4px;"><b>追加の機能(v36 までに加わった機能)</b></div>${add.map(row).join('')}`;
+    <div class="lp-note" style="margin:12px 0 4px;"><b>追加の機能</b></div>${add.map(row).join('')}
+    <div class="lp-note" style="margin:12px 0 4px;"><b>応用・最近の機能(宇宙・地図の応用・3D地球儀の応用・端末と画面)</b></div>${add2.map(row).join('')}`;
   openModal('チュートリアル', body, [
     {label:'進捗をリセット', onClick:()=>{ tutResetAllProgress(); closeModal(); openTutorialHub(); }},
     {label:'機能の索引', onClick:()=>{ closeModal(); openTutorialIndex(); }},
