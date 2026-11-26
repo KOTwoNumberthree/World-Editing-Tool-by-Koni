@@ -563,6 +563,8 @@ html,body{max-width:100%;overflow-x:hidden;}
 #app{min-width:0;max-width:100vw;}
 #topbar{max-width:100vw;overflow-x:auto;scrollbar-width:thin;}
 #topbar .group{flex-shrink:0;}
+#topbar .discord-link{flex:0 0 auto;white-space:nowrap;font-size:12px;color:var(--accent);text-decoration:underline;padding:0 4px;}
+@media (max-width:1100px){ #topbar .discord-link .dl-txt{display:none;} #topbar .discord-link{text-decoration:none;font-size:16px;} }
 
 
 /* 外交・勢力圏 */
@@ -731,6 +733,9 @@ select.uvc{max-width:70px;}
         <li>ブラウザ完結・登録不要・自動保存。JSON / PNG / Word で書き出し</li>
       </ul>
     </details>
+    <p style="margin:14px 0 0;font-size:13px;opacity:.9;">
+      <a href="https://discord.gg/MuWDVf5M4A" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">感想・ルール要望はこちら（Discordサーバー）</a>
+    </p>
   </div>
 </div>
 
@@ -747,6 +752,7 @@ select.uvc{max-width:70px;}
       <button class="icon-btn small" id="yearPlusBtn" data-tip="1年進める|現在の年代を1年進めます">›</button>
     </div>
     <div class="spacer"></div>
+    <a class="discord-link" id="discordLink" href="https://discord.gg/MuWDVf5M4A" target="_blank" rel="noopener" data-tip="Discordサーバー|この道具の開発・感想・ルール要望の場所です(外部サイトが開きます)" aria-label="感想・ルール要望はこちら（Discordサーバー）">💬<span class="dl-txt"> 感想・ルール要望はこちら（Discordサーバー）</span></a>
     <div id="saveState">保存済み</div>
     <div class="group">
       <button class="icon-btn" id="undoBtn" data-tip="元に戻す (Ctrl+Z)|直前の編集操作を1つ取り消します">↶</button>
@@ -12322,7 +12328,8 @@ function openTutorialHub(){
   const body = `<div class="lp-note" style="margin-bottom:10px;">実際の画面を操作しながら、カテゴリーごとに機能を学べます。操作を試すあいだは、チュートリアル専用のサンプル世界に切り替わります(現在の世界は変わりません)。進み具合は、この端末の中にだけ記録され、世界のデータには含まれません。</div>
     <div class="lp-note" style="margin:8px 0 4px;"><b>基本のカテゴリー</b></div>${base.map(row).join('')}
     <div class="lp-note" style="margin:12px 0 4px;"><b>追加の機能</b></div>${add.map(row).join('')}
-    <div class="lp-note" style="margin:12px 0 4px;"><b>応用・最近の機能(宇宙・地図の応用・3D地球儀の応用・端末と画面)</b></div>${add2.map(row).join('')}`;
+    <div class="lp-note" style="margin:12px 0 4px;"><b>応用・最近の機能(宇宙・地図の応用・3D地球儀の応用・端末と画面)</b></div>${add2.map(row).join('')}
+    <p class="lp-note" style="margin:14px 0 0;">この道具の開発・感想・ルール要望の場所: <a href="https://discord.gg/MuWDVf5M4A" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;">感想・ルール要望はこちら（Discordサーバー）</a></p>`;
   openModal('チュートリアル', body, [
     {label:'進捗をリセット', onClick:()=>{ tutResetAllProgress(); closeModal(); openTutorialHub(); }},
     {label:'機能の索引', onClick:()=>{ closeModal(); openTutorialIndex(); }},
